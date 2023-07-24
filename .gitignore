@@ -1,0 +1,4 @@
+.*
+C_correctness/Debug
+C_correctness/Release
+!/.gitignore
