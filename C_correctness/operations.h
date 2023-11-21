@@ -19,5 +19,4 @@
     void cordic_rot(archvar arr[3], int j);
     void p_idft(archvar in[9][3], archvar out[15]);
 
-
 #endif

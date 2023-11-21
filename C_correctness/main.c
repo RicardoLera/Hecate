@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     archvar X = archmul(twiddle_arr[2][0], kcon); // cos(2pi/8) * kcon
     archvar Y = archmul(twiddle_arr[3][0], kcon); // cos(3pi/8) * kcon
 
-    for (int N; N < 9; N++) {
+    for (int N = 0; N < 9; N++) {
         if (N%2 == 1) {
             idft_mul[N][0][0] = archmul(Product[N][0], W);
             idft_mul[N][1][0] = archmul(Product[N][1], W);
@@ -188,14 +188,6 @@ int main(int argc, char *argv[]) {
             idft_mul[N][1][1] = archmul(Product[N][1], X);
         }
     }
-
-    printf("\n\n%x\n\n", (idft_mul[1][0][0].pre << 16) + idft_mul[1][0][0].post );
-
-
-
-
-
-
 
     print_arch_con("Variable W (N * cos(pi/8)  * kcon)", idft_mul, 0);
     print_arch_con("Variable X (N * cos(2pi/8) * kcon)", idft_mul, 1);
