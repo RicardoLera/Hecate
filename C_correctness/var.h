@@ -1,12 +1,15 @@
 #ifndef VAR_H
 #define VAR_H
 
+#include <stdint.h>
+
     typedef struct archvar {
-        unsigned int aux: 9;
-        signed int core: 16;
+        uint8_t  sign:  1;
+        uint8_t  pre:   8;
+        uint16_t post: 16;
     } archvar;
 
-    extern archvar twiddle_arr[8];
-    extern archvar twiddle_mat[8][8];
+    extern archvar twiddle_arr[16][2];
+    extern archvar arctan[24];
 
 #endif
