@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     archvar Input[9][3] = {0};    // x / y / alpha
     archvar Kernel[9][3] = {0};
     archvar Product[9][3];
-    archvar output[15] = {0};
+    archvar output[15][2] = {0};
 
     archvar zero = {0b0, 0x00, 0x0000};
 
@@ -166,37 +166,42 @@ int main(int argc, char *argv[]) {
     print_arch_rec("Product (rectangular coordinates)", Product);
 
     // Constant Multiplication for CORDIC correction and part of IDFT
-    archvar idft_mul[9][2][3] = {0};
+    archvar idft_mul[9][2][4] = {0};
     archvar kcon = {0b0, 0x00, 0x3953}; // kcon = 1 / k^3
+    archvar V = archmul(twiddle_arr[0][0], kcon); // cos(0)     * kcon
     archvar W = archmul(twiddle_arr[1][0], kcon); // cos(pi/8)  * kcon
     archvar X = archmul(twiddle_arr[2][0], kcon); // cos(2pi/8) * kcon
     archvar Y = archmul(twiddle_arr[3][0], kcon); // cos(3pi/8) * kcon
 
     for (int N = 0; N < 9; N++) {
+        idft_mul[N][0][0] = archmul(Product[N][0], V);
+        idft_mul[N][1][0] = archmul(Product[N][1], V);
+
         if (N%2 == 1) {
-            idft_mul[N][0][0] = archmul(Product[N][0], W);
-            idft_mul[N][1][0] = archmul(Product[N][1], W);
+            idft_mul[N][0][1] = archmul(Product[N][0], W);
+            idft_mul[N][1][1] = archmul(Product[N][1], W);
 
-            idft_mul[N][0][1] = archmul(Product[N][0], X);
-            idft_mul[N][1][1] = archmul(Product[N][1], X);
+            idft_mul[N][0][2] = archmul(Product[N][0], X);
+            idft_mul[N][1][2] = archmul(Product[N][1], X);
 
-            idft_mul[N][0][2] = archmul(Product[N][0], Y);
-            idft_mul[N][1][2] = archmul(Product[N][1], Y);
+            idft_mul[N][0][3] = archmul(Product[N][0], Y);
+            idft_mul[N][1][3] = archmul(Product[N][1], Y);
         }
         else if (N == 2 || N == 6) {
-            idft_mul[N][0][1] = archmul(Product[N][0], X);
-            idft_mul[N][1][1] = archmul(Product[N][1], X);
+            idft_mul[N][0][2] = archmul(Product[N][0], X);
+            idft_mul[N][1][2] = archmul(Product[N][1], X);
         }
     }
 
-    print_arch_con("Variable W (N * cos(pi/8)  * kcon)", idft_mul, 0);
-    print_arch_con("Variable X (N * cos(2pi/8) * kcon)", idft_mul, 1);
-    print_arch_con("Variable Y (N * cos(3pi/8) * kcon)", idft_mul, 2);
+    print_arch_con("Variable V (N * cos(0) * kcon)", idft_mul, 0);
+    print_arch_con("Variable W (N * cos(pi/8) * kcon)", idft_mul, 1);
+    print_arch_con("Variable X (N * cos(2pi/8) * kcon)", idft_mul, 2);
+    print_arch_con("Variable Y (N * cos(3pi/8) * kcon)", idft_mul, 3);
 
     // Partial IDFT/IFFT
-    p_idft(Product, output);
+    p_idft(idft_mul, output);
 
-    print_arch_array("output: [NOT FINISHED]", 15, output);
+    print_arch_out("output", output);
 
 
 

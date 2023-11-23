@@ -54,7 +54,7 @@ void print_arch_pol(char* name, archvar arr[9][3]) {
     for (int i = 0; i < 9; i++) (print_archvar(arr[i][0]), printf("angle "), print_archvar(arr[i][2]), printf("\n"));
 }
 
-void print_arch_con(char* name, archvar arr[9][2][3], int c) {
+void print_arch_con(char* name, archvar arr[9][2][4], int c) {
     printf("\n%s:\n", name);
     for (int i = 0; i < 9; i++) {
         if (arr[i][1][c].sign == 0)
@@ -63,6 +63,19 @@ void print_arch_con(char* name, archvar arr[9][2][3], int c) {
             arr[i][1][c].sign = 0;
             (print_archvar(arr[i][0][c]), printf("- "), print_archvar(arr[i][1][c]), printf("i\n"));
             arr[i][1][c].sign = 1;
+        }
+    }
+}
+
+void print_arch_out (char* name, archvar arr[15][2]) {
+    printf("\n%s:\n", name);
+    for (int i = 0; i < 15; i++) {
+        if (arr[i][1].sign == 0)
+            (print_archvar(arr[i][0]), printf("+ "), print_archvar(arr[i][1]), printf("i\n"));
+        else {
+            arr[i][1].sign = 0;
+            (print_archvar(arr[i][0]), printf("- "), print_archvar(arr[i][1]), printf("i\n"));
+            arr[i][1].sign = 1;
         }
     }
 }
@@ -167,7 +180,6 @@ void dft(archvar in[8], archvar out[9][3]) {
         out[N][0] = archmul(out[N][0], one_over_four);
         out[N][1] = archmul(out[N][1], one_over_four);
     }
-
 }
 
 void cordic_vec(archvar arr[3], int j) {
@@ -232,6 +244,59 @@ void cordic_rot(archvar arr[3], int j) {
     }
 }
 
-void p_idft(archvar in[9][3], archvar out[15]) {
+void p_idft(archvar con[9][2][4], archvar out[15][2]) {
+    archvar zero = {0b0, 0x00, 0x0000}, temp_conR, temp_conI;
+    int C, mod_i, w;
 
+    for (int N = 0; N < 15; N++) {
+        for (int i = 0; i < 16; i++) {
+
+            (i < 9) ? (C = i) : (C = i-8); // C     -> constant array identifier, corrected for Complex conjugate
+            mod_i = (i*N) % 16;            // mod_i -> exponent of w in the full unit circle (0~15)
+            w = mod_i % 4;                 // w     -> exponent of w in quadrant 1 (0~3)
+
+            temp_conR = con[C][0][w];      // These values so far only account for [N * kcon * cos(w)]
+            temp_conI = con[C][1][w];      // Sign inversions or complete cancellation depend on i, mod_i, and w; as below
+
+            if (i >= 9)                temp_conI.sign = ~temp_conI.sign; // Complex conjugate inversion
+            if (mod_i>4 && mod_i<12)   temp_conR.sign = ~temp_conR.sign; // Quadrants 2 & 3 -> Real part negative
+            if (mod_i>8)               temp_conI.sign = ~temp_conI.sign; // Quadrants 3 & 4 -> Imaginary part negative
+            if (mod_i==4 || mod_i==12) temp_conR = zero;                 // Orthogonal X cancellation
+            if (mod_i==0 || mod_i==8)  temp_conI = zero;                 // Orthogonal Y cancellation
+
+
+            out[N][0] = archadd(out[N][0], temp_conR);
+            out[N][1] = archadd(out[N][1], temp_conI);
+        }
+    }
+    //for (int N = 0; N < 15; N++) {
+    //    out[N][0] = archmul(out[N][0], one_over_four);
+    //    out[N][1] = archmul(out[N][1], one_over_four);
+    //}
 }
+
+
+
+
+
+
+//for (int i = 4; i < 8; i++) { // Quadrant 2: ~R I
+//    con[C][0][i].sign = ~con[C][0][i].sign;
+//    out[N][0] = archadd(out[N][0], con[C][0][i]);
+//    out[N][1] = archadd(out[N][1], con[C][1][i]);
+//    con[C][0][i].sign = ~con[C][0][i].sign;
+//}
+//for (int i = 8; i < 12; i++) { // Quadrant 3: ~R ~I
+//    con[C][0][i].sign = ~con[C][0][i].sign;
+//    con[C][0][i].sign = ~con[C][1][i].sign;
+//    out[N][0] = archadd(out[N][0], con[C][0][i]);
+//    out[N][1] = archadd(out[N][1], con[C][1][i]);
+//    con[C][0][i].sign = ~con[C][0][i].sign;
+//    con[C][0][i].sign = ~con[C][1][i].sign;
+//}
+//for (int i = 12; i < 16; i++) { // Quadrant 4: R ~I
+//    con[C][0][i].sign = ~con[C][1][i].sign;
+//    out[N][0] = archadd(out[N][0], con[C][0][i]);
+//    out[N][1] = archadd(out[N][1], con[C][1][i]);
+//    con[C][0][i].sign = ~con[C][1][i].sign;
+//}
