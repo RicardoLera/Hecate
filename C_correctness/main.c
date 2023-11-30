@@ -9,7 +9,7 @@
 
 // w^0 ~ w^15
 archvar twiddle_arr[16][2] = {
-        {{0b0, 0x01, 0x0000}, {0b0, 0x00, 0x0000}}, // w^0 = e^0               = + cos(0pi/8) + 0           = + 1      + 0
+        {{0b0, 0x01, 0x0000}, {0b0, 0x00, 0x0000}}, // w^0 = e^0              = + cos(0pi/8) + 0           = + 1      + 0
         {{0b0, 0x00, 0xec84}, {0b0, 0x00, 0x61f8}}, // w^1 = e^(2pi*i/16)     = + cos(pi/8)  + sin(pi/8)i  ~ + 0.ec84 + 0.61f8 i
         {{0b0, 0x00, 0xb505}, {0b0, 0x00, 0xb505}}, // w^2 = e^(2*(2pi*i/16)) = + cos(2pi/8) + sin(2pi/8)i ~ + 0.b505 + 0.b505 i
         {{0b0, 0x00, 0x61f8}, {0b0, 0x00, 0xec84}}, // w^3 = e^(3*(2pi*i/16)) = + cos(3pi/8) + sin(3pi/8)i ~ + 0.61f8 + 0.ec84 i
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     archvar Input[9][3] = {0};    // x / y / alpha
     archvar Kernel[9][3] = {0};
     archvar Product[9][3];
-    archvar output[15][2] = {0};
+    archvar output[16][2] = {0};
 
     archvar zero = {0b0, 0x00, 0x0000};
 
@@ -141,14 +141,13 @@ int main(int argc, char *argv[]) {
     // Rotation CORDIC
     for (int N = 0; N < 9; N++) {
 
+        bool x_sign = 0, y_sign = 0;
         uint32_t angle = (Product[N][2].pre << 16) + Product[N][2].post;
         uint32_t hex_pi = M_PI*0xffff, hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1;
-        uint32_t mod_angle = angle % (2*hex_pi), cor_angle = mod_angle;
-
+        uint32_t mod_angle = angle % (hex_pi << 1), cor_angle = mod_angle;
         uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
-        bool x_sign = 0, y_sign = 0;
 
-        if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign = 1, cor_angle = 2*hex_pi - mod_angle);
+        if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign = 1, cor_angle = (hex_pi << 1) - mod_angle);
         else if (mod_angle >= hex_pi)         (x_sign = 1, y_sign = 1, cor_angle = mod_angle - hex_pi);
         else if (mod_angle > hex_half_pi)     (x_sign = 1, y_sign = 0, cor_angle = hex_pi - mod_angle);
 
