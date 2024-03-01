@@ -1,82 +1,98 @@
-LIBRARY work;
-USE work.b25_types.ALL;
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
+library work;
+  use work.b25_types.all;
 
-ENTITY fft_8_tb IS
-END fft_8_tb;
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
-ARCHITECTURE arch OF fft_8_tb IS
+entity fft_8_tb is
+end entity fft_8_tb;
 
-    COMPONENT fft_8 IS
-        PORT (
-            i : IN real_array(0 TO 7);
-            o : OUT complex_array(0 TO 15)
-            --        clock, start, reset : IN STD_LOGIC;
-            --        busy : OUT STD_LOGIC
-        );
-    END COMPONENT;
+architecture arch of fft_8_tb is
 
-    TYPE test_tuple_t IS ARRAY(1 DOWNTO 0) OF real_array(7 DOWNTO 0);
-    CONSTANT test_tuple : test_tuple_t := (
+  component fft_8 is
+    port (
+      i       : in    real_array(0 to 7);
+      o       : out   complex_array(0 to 15);
+      clock   : in    std_logic;
+      start   : in    std_logic;
+      reset   : in    std_logic;
+      s_ready : out   std_logic
+    );
+  end component;
+
+  type test_tuple_t is ARRAY(1 downto 0) OF real_array(7 downto 0);
+
+  constant test_tuple : test_tuple_t :=
+  (
     (
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000"
-        ),
-		  (
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000"
-        )
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000"
+    ),
+    (
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000",
+      "0000000010000000000000000"
+    )
+  );
+
+  signal   img_in,  ker_in  : real_array(7 downto 0);
+  signal   img_out, ker_out : complex_array(15 downto 0) := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal   clock            : std_logic                  := '0';
+  signal   start            : std_logic                  := '0';
+  signal   reset            : std_logic                  := '0';
+  signal   s_ready_i        : std_logic                  := '0';
+  signal   s_ready_k        : std_logic                  := '0';
+  constant clockperiod      : TIME                       := 1 ms; -- 1KHz
+
+begin
+
+  clock <= (NOT clock) and start AFTER clockperiod / 2;
+
+  dut0 : component fft_8
+    port map (
+      i       => img_in,
+      o       => img_out,
+      clock   => clock,
+      start   => start,
+      reset   => reset,
+      s_ready => s_ready_i
     );
 
-    -- TYPE t_cos_val_ref IS ARRAY(0 TO 15) OF NATURAL RANGE 0 TO 4;
-    -- TYPE t_cos_sig_ref IS ARRAY(0 TO 15) OF BOOLEAN;
-    -- CONSTANT cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1);
-    -- CONSTANT cos_sig_ref : t_cos_sig_ref := (FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE);
+  dut1 : component fft_8
+    port map (
+      i       => ker_in,
+      o       => ker_out,
+      clock   => clock,
+      start   => start,
+      reset   => reset,
+      s_ready => s_ready_k
+    );
 
-    -- TYPE t_calc_vals IS ARRAY(0 TO 3) OF STD_LOGIC_VECTOR(24 DOWNTO 0);
-    -- TYPE t_calc_vals_arr IS ARRAY(0 TO 7) OF t_calc_vals;
+  test : process is
+  begin
 
-    -- TYPE t_calc_vals_aux IS ARRAY(0 TO 2) OF STD_LOGIC_VECTOR(31 DOWNTO 0);
-    -- TYPE t_calc_vals_aux_arr IS ARRAY(0 TO 7) OF t_calc_vals_aux;
+    img_in <= test_tuple(0);
+    ker_in <= test_tuple(1);
+    start  <= '1';
+    wait until s_ready_i = '1' and s_ready_k = '1';
+    start  <= '0';
+    wait;
 
-    -- SIGNAL calc_vals_arr, calc_vals_arr_neg : t_calc_vals_arr;
-    -- SIGNAL calc_vals_arr_aux : t_calc_vals_aux_arr;
+  end process test;
 
-    SIGNAL img_in, ker_in : real_array(7 DOWNTO 0);
-    SIGNAL img_out, ker_out : complex_array(15 DOWNTO 0);
-    SIGNAL keep_simulating : STD_LOGIC := '0'; -- generates clock
-    CONSTANT clockPeriod : TIME := 1 ms; -- 1KHz
-
-BEGIN
-
-    dut0 : entity work.fft_8(arch) PORT MAP(img_in, img_out);
-    dut1 : entity work.fft_8(arch) PORT MAP(ker_in, ker_out);
-
-    test : PROCESS
-    BEGIN
-        img_in <= test_tuple(0);
-        ker_in <= test_tuple(1);
-        keep_simulating <= '1';
-        WAIT FOR 100* clockPeriod;
-        keep_simulating <= '0';
-        wait;
-    END PROCESS test;
-
-END ARCHITECTURE;
+end architecture arch;
 
 
 

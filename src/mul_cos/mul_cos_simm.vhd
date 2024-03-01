@@ -1,26 +1,30 @@
 
-LIBRARY IEEE;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
-USE std.textio.ALL;
-ENTITY mul_cos_simm IS
-    PORT (
-        a, const : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-        res : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
-    );
-END mul_cos_simm;
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
+  use std.textio.all;
 
-ARCHITECTURE arch OF mul_cos_simm IS
+entity mul_cos_simm is
+  port (
+    a     : in    std_logic_vector(15 downto 0);
+    const : in    std_logic_vector(15 downto 0);
+    res   : out   std_logic_vector(31 downto 0)
+  );
+end entity mul_cos_simm;
 
-    -- SIGNAL parc : STD_LOGIC_VECTOR(49 DOWNTO 0);
+architecture arch of mul_cos_simm is
 
-BEGIN
-    -- simm_mul : PROCESS (a, const)
-    --     VARIABLE prod : STD_LOGIC_VECTOR(24 DOWNTO 0);
-    -- BEGIN
+-- SIGNAL parc : STD_LOGIC_VECTOR(49 DOWNTO 0);
 
-    -- END PROCESS; -- simm_mul
+begin
 
-    res <= STD_LOGIC_VECTOR(unsigned(a) * unsigned(const));
-    -- res <= parc(40 DOWNTO 16);
-END arch; -- arch
+  -- simm_mul : PROCESS (a, const)
+  --     VARIABLE prod : STD_LOGIC_VECTOR(24 DOWNTO 0);
+  -- BEGIN
+
+  -- END PROCESS; -- simm_mul
+
+  res <= std_logic_vector(unsigned(a) * unsigned(const));
+-- res <= parc(40 DOWNTO 16);
+
+end architecture arch; -- arch
