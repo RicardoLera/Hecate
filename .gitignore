@@ -1,4 +1,5 @@
 .*
-C_correctness/Debug
-C_correctness/Release
+src/*.cf
+correctness/Debug
+correctness/Release
 !/.gitignore
