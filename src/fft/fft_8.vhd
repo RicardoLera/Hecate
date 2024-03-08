@@ -86,22 +86,22 @@ begin
       mul_22 : component b25_cmul
         port map (
           a   => i(id),
-          con => "0000000001110110010000011",
-          res => calc_vals_arr(id)(0)
+          con => "0000000001110110010000100",
+          res => calc_vals_arr(id)(1)
         );
 
       mul_45 : component b25_cmul
         port map (
           a   => i(id),
-          con => "0000000001011010100000100",
-          res => calc_vals_arr(id)(1)
+          con => "0000000001011010100000101",
+          res => calc_vals_arr(id)(2)
         );
 
       mul_67 : component b25_cmul
         port map (
           a   => i(id),
-          con => "0000000000110000111110111",
-          res => calc_vals_arr(id)(2)
+          con => "0000000000110000111111000",
+          res => calc_vals_arr(id)(3)
         );
 
     end generate gen_mul_22_67;
@@ -118,7 +118,7 @@ begin
     end generate gen_mul_45;
 
     gen_calc_vals_negs : for j in 0 to 3 generate
-      calc_vals_arr_neg(id)(j) <= std_logic_vector(unsigned(NOT calc_vals_arr(id)(j)) + to_unsigned(1, 25));
+      calc_vals_arr_neg(id)(j) <= (23 downto 0 => calc_vals_arr(id)(j)(23 downto 0), 24 => '1');
     end generate gen_calc_vals_negs;
 
   end generate gen_calc_vals;
@@ -144,52 +144,53 @@ begin
     sum_pro : process (clock) is
 
       variable i_id         : NATURAL RANGE 0 to 8 := 0;
-      variable a_buf, b_buf : complex              := (OTHERS => (OTHERS => '0'));
 
     begin
 
-        -- now need to fix registers
-
-      add_a(o_id) <= a_buf;
-      add_b(o_id) <= b_buf;
-
       if rising_edge(clock) then
         if (reset = '0' and start = '1') then
-          if (cos_val_ref((i_id * o_id) MOD 16) /= 4) then
-            a_buf(0) := add_r(o_id)(0);
+          if (i_id < 8) then
 
-            if cos_sig_ref((i_id * o_id) MOD 16) then
-              b_buf(0) := calc_vals_arr_neg(i_id)(cos_val_ref((i_id * o_id) MOD 16));
-            else
-              b_buf(0) := calc_vals_arr(i_id)(cos_val_ref((i_id * o_id) MOD 16));
+            if (cos_val_ref((i_id * o_id) MOD 16) /= 4) then -- if the exponent of w is not 4
+              add_a(o_id)(0) <= add_r(o_id)(0);
+
+              if cos_sig_ref((i_id * o_id) MOD 16) then -- if the real part is negative
+                add_b(o_id)(0) <= calc_vals_arr_neg(i_id)(cos_val_ref((i_id * o_id) MOD 16));
+              else
+                add_b(o_id)(0) <= calc_vals_arr(i_id)(cos_val_ref((i_id * o_id) MOD 16));
+              end if;
             end if;
-          end if;
 
-          if (cos_val_ref((4 - i_id * o_id) MOD 16) /= 4) then
-            a_buf(1) := add_r(o_id)(1);
+            if (cos_val_ref((i_id * o_id) MOD 16) /= 0) then -- if the exponent of w is not 0
+              add_a(o_id)(1) <= add_r(o_id)(1);
 
-            if cos_sig_ref((4 - i_id * o_id) MOD 16) then
-              b_buf(1) := calc_vals_arr_neg(i_id)(cos_val_ref((4 - i_id * o_id) MOD 16));
-            else
-              b_buf(1) := calc_vals_arr(i_id)(cos_val_ref((4 - i_id * o_id) MOD 16));
+              if cos_sig_ref((4 - i_id * o_id) MOD 16) then -- if the complex part is negative
+                add_b(o_id)(1) <= calc_vals_arr_neg(i_id)(cos_val_ref((4 - i_id * o_id) MOD 16));
+              else
+                add_b(o_id)(1) <= calc_vals_arr(i_id)(cos_val_ref((4 - i_id * o_id) MOD 16));
+              end if;
             end if;
-          end if;
 
-          i_id := i_id + 1;
-          if (i_id = 8) then
-            o(o_id)(0)      <= add_r(o_id)(0);
-            o(o_id)(1)      <= add_r(o_id)(1);
+            i_id := i_id + 1;
+          else 
             fft_ready(o_id) <= '1';
-            i_id            := 0;
           end if;
-        end if;
+        end if; 
       end if;
-
     end process sum_pro;
 
+    o(o_id)(0)      <= (21 downto 0 => add_r(o_id)(0)(23 downto 2), -- "Divide" by sqrt(16)
+                        23 downto 22 => "00",
+                        24 => add_r(o_id)(0)(24)
+                        );
+    o(o_id)(1)      <= (21 downto 0 => add_r(o_id)(1)(23 downto 2),
+                        23 downto 22 => "00",
+                        24 => add_r(o_id)(1)(24)
+                        );
+                          
   end generate gen_sums;
 
-  s_ready <= '1' when fft_ready = "1111111111111111" else
+  s_ready <= '1' when fft_ready = x"FFFF" else
              '0';
 
 end architecture arch;

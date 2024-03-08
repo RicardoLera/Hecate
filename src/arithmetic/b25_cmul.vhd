@@ -21,8 +21,9 @@ begin
   temp_res  <= std_logic_vector(
                                 resize(
                                         unsigned(a(23 downto 0)) * unsigned(con(23 downto 0)),
-                                        49)
-                              );
+                                        49
+                                      )
+                               );
   temp_sign <= a(24) xor con(24);
 
   res(23 downto 0) <= temp_res(39 downto 16);
