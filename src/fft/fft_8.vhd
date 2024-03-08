@@ -67,7 +67,7 @@ architecture arch of fft_8 is
 
   type t_calc_vals_arr is ARRAY(0 to 7) OF t_calc_vals;
 
-  signal calc_vals_arr, calc_vals_arr_neg : t_calc_vals_arr               := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal calc_vals_arr                    : t_calc_vals_arr               := (OTHERS => (OTHERS => (OTHERS => '0')));
   signal add_a                            : complex_array(0 to 15)        := (OTHERS => (OTHERS => (OTHERS => '0')));
   signal add_b                            : complex_array(0 to 15)        := (OTHERS => (OTHERS => (OTHERS => '0')));
   signal add_r                            : complex_array(0 to 15)        := (OTHERS => (OTHERS => (OTHERS => '0')));
@@ -117,10 +117,6 @@ begin
 
     end generate gen_mul_45;
 
-    gen_calc_vals_negs : for j in 0 to 3 generate
-      calc_vals_arr_neg(id)(j) <= (23 downto 0 => calc_vals_arr(id)(j)(23 downto 0), 24 => '1');
-    end generate gen_calc_vals_negs;
-
   end generate gen_calc_vals;
 
   -- Addition Layer
@@ -143,7 +139,9 @@ begin
 
     sum_pro : process (clock) is
 
-      variable i_id         : NATURAL RANGE 0 to 8 := 0;
+      variable i_id       : NATURAL RANGE 0 to 8;
+      variable w, wi      : NATURAL RANGE 0 to 15;
+      variable c, ci      : std_logic_vector(24 downto 0);
 
     begin
 
@@ -151,24 +149,23 @@ begin
         if (reset = '0' and start = '1') then
           if (i_id < 8) then
 
-            if (cos_val_ref((i_id * o_id) MOD 16) /= 4) then -- if the exponent of w is not 4
+            w  := (i_id * o_id) MOD 16;
+            wi := (4 - i_id * o_id) MOD 16;
+            
+            if (cos_val_ref(w) /= 4) then -- if the exponent of w is not 4
+              c := calc_vals_arr(i_id)(cos_val_ref(w));
               add_a(o_id)(0) <= add_r(o_id)(0);
-
-              if cos_sig_ref((i_id * o_id) MOD 16) then -- if the real part is negative
-                add_b(o_id)(0) <= calc_vals_arr_neg(i_id)(cos_val_ref((i_id * o_id) MOD 16));
-              else
-                add_b(o_id)(0) <= calc_vals_arr(i_id)(cos_val_ref((i_id * o_id) MOD 16));
-              end if;
+              add_b(o_id)(0)(23 downto 0) <= c(23 downto 0);
+              add_b(o_id)(0)(24) <= not c(24) when cos_sig_ref(w) else
+                                        c(24);
             end if;
 
-            if (cos_val_ref((i_id * o_id) MOD 16) /= 0) then -- if the exponent of w is not 0
+            if (cos_val_ref(w) /= 0) then -- if the exponent of w is not 0
+              ci := calc_vals_arr(i_id)(cos_val_ref(wi));
               add_a(o_id)(1) <= add_r(o_id)(1);
-
-              if cos_sig_ref((4 - i_id * o_id) MOD 16) then -- if the complex part is negative
-                add_b(o_id)(1) <= calc_vals_arr_neg(i_id)(cos_val_ref((4 - i_id * o_id) MOD 16));
-              else
-                add_b(o_id)(1) <= calc_vals_arr(i_id)(cos_val_ref((4 - i_id * o_id) MOD 16));
-              end if;
+              add_b(o_id)(1)(23 downto 0) <= ci(23 downto 0);
+              add_b(o_id)(1)(24) <= not ci(24) when cos_sig_ref(wi) else
+                                        ci(24);
             end if;
 
             i_id := i_id + 1;
@@ -183,6 +180,7 @@ begin
                         23 downto 22 => "00",
                         24 => add_r(o_id)(0)(24)
                         );
+
     o(o_id)(1)      <= (21 downto 0 => add_r(o_id)(1)(23 downto 2),
                         23 downto 22 => "00",
                         24 => add_r(o_id)(1)(24)
