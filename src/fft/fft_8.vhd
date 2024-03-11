@@ -112,7 +112,7 @@ begin
         port map (
           a   => i(id),
           con => "0000000001011010100000100",
-          res => calc_vals_arr(id)(1)
+          res => calc_vals_arr(id)(2)
         );
 
     end generate gen_mul_45;
@@ -160,7 +160,7 @@ begin
                                         c(24);
             end if;
 
-            if (cos_val_ref(w) /= 0) then -- if the exponent of w is not 0
+            if (cos_val_ref(wi) /= 4) then -- if the exponent of w is not 0
               ci := calc_vals_arr(i_id)(cos_val_ref(wi));
               add_a(o_id)(1) <= add_r(o_id)(1);
               add_b(o_id)(1)(23 downto 0) <= ci(23 downto 0);
