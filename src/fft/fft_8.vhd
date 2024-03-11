@@ -188,7 +188,7 @@ begin
                           
   end generate gen_sums;
 
-  s_ready <= '1' when fft_ready = x"FFFF" else
+  s_ready <= '1' when fft_ready = b"111111111" else
              '0';
 
 end architecture arch;
