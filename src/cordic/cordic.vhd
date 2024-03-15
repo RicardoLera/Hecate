@@ -39,44 +39,17 @@ architecture arch of cordic is
     );
   end component;
 
-  component comp_sign_conv is
-    generic (
-      size : natural := 32
-    );
+  component b25_add is
     port (
-      comp_in : in    std_logic_vector(size - 1 downto 0);
-      mag_out : out   std_logic_vector(size - 1 downto 0);
-      s       : out   std_logic
+      a   : in    std_logic_vector(24 downto 0);
+      b   : in    std_logic_vector(24 downto 0);
+      res : out   std_logic_vector(24 downto 0)
     );
   end component;
 
-  component sign_comp_conv is
-    generic (
-      size : natural := 32
-    );
-    port (
-      mag_in : in    std_logic_vector(size - 1 downto 0);
-      s      : in    std_logic;
-      comp   : out   std_logic_vector(size - 1 downto 0)
-    );
-  end component;
-
-  signal shifted_x          : std_logic_vector(coords_len - 1 downto 0);
-  signal shifted_y          : std_logic_vector(coords_len - 1 downto 0);
-  signal s_y_out            : std_logic_vector(coords_len - 1 downto 0);
-  signal s_z_out, z_lut     : std_logic_vector(z_len - 1 downto 0);
-  signal x_in_mag           : std_logic_vector(coords_len - 1 downto 0);
-  signal y_in_mag           : std_logic_vector(coords_len - 1 downto 0);
-  signal shifted_x_mag      : std_logic_vector(coords_len - 1 downto 0);
-  signal shifted_y_mag      : std_logic_vector(coords_len - 1 downto 0);
-  signal long_x_in_mag      : std_logic_vector(31 downto 0) := (OTHERS => '0');
-  signal long_y_in_mag      : std_logic_vector(31 downto 0) := (OTHERS => '0');
-  signal long_shifted_x_mag : std_logic_vector(31 downto 0) := (OTHERS => '0');
-  signal long_shifted_y_mag : std_logic_vector(31 downto 0) := (OTHERS => '0');
-  signal x_in_sign          : std_logic;
-  signal y_in_sign          : std_logic;
-  signal x_sign_flipped     : std_logic;
-  signal y_sign_flipped     : std_logic;
+  signal shifted_x, shifted_y : std_logic_vector(coords_len - 1 downto 0);
+  signal x_add, y_add  : std_logic_vector(coords_len - 1 downto 0);
+  signal z_add : std_logic_vector(z_len - 1 downto 0) := (others => '0');
 
   type lut_type is ARRAY (0 to 31) OF std_logic_vector(33 downto 0);
 
@@ -117,101 +90,61 @@ architecture arch of cordic is
   );
 
 begin
-
-  -- x treatment
-
-  magsign_x : component comp_sign_conv
-    generic map (
-      size => coords_len
-    )
-    port map (
-      comp_in => x_in,
-      mag_out => x_in_mag,
-      s       => x_in_sign
-    );
-
-  x_sign_flipped <= x_in_sign xor (sigma_in);
   
   shift_x : component varshiftright
     generic map (
       len => coords_len
     )
     port map (
-      data     => x_in_mag,
+      data     => x_in,
       distance => j,
-      result   => shifted_x_mag
+      result   => shifted_x
     );
 
-
-  signmag_x : component sign_comp_conv
-    generic map (
-      size => coords_len
-    )
-    port map (
-      mag_in => shifted_x_mag,
-      s      => x_sign_flipped,
-      comp   => shifted_x
-    );
-
-  -- y treatment
-
-  magsign_y : component comp_sign_conv
-    generic map (
-      size => coords_len
-    )
-    port map (
-      comp_in => y_in,
-      mag_out => y_in_mag,
-      s       => y_in_sign
-    );
-
-  y_sign_flipped <= y_in_sign xor (NOT sigma_in);
-  --  shift_y : shiftright PORT MAP(y_in_mag, j, shifted_y_mag);
   shift_y : component varshiftright
     generic map (
       len => coords_len
     )
     port map (
-      data     => y_in_mag,
+      data     => y_in,
       distance => j,
-      result   => shifted_y_mag
+      result   => shifted_y
     );
 
-  -- shift_y_ip : ip_rightshift PORT MAP(long_y_in_mag, j, long_shifted_y_mag);
-  -- long_y_in_mag <= "0000000" & y_in_mag;
-  -- shifted_y_mag <= long_shifted_y_mag(coords_len - 1 DOWNTO 0);
-  signmag_y : component sign_comp_conv
-    generic map (
-      size => coords_len
-    )
-    port map (
-      mag_in => shifted_y_mag,
-      s => y_sign_flipped,
-      comp => shifted_y
-    );
+  xadd : b25_add port map(
+    a => x_in,
+    b => y_add,
+    res => x_out
+  );
+
+  yadd : b25_add port map(
+    a => y_in,
+    b => x_add,
+    res => y_out
+  );
+
+  -- zadd : b25_add port map(
+  --   a => z_in,
+  --   b => z_add,
+  --   res => z_out
+  -- );
+
+  with sigma_in select y_add <= not shifted_y(coords_len-1) & shifted_y(coords_len-2 downto 0) when '0', -- x-s_y when '0',
+                                    shifted_y(coords_len-1) & shifted_y(coords_len-2 downto 0) when others;  -- x+s_y when others;
+
+  with sigma_in select x_add <= not shifted_x(coords_len-1) & shifted_x(coords_len-2 downto 0) when '0', -- y+x when '0'
+                                    shifted_x(coords_len-1) & shifted_x(coords_len-2 downto 0) when others;  -- y-s_x when OTHERS;
+
+  z_add <= lut(to_integer(unsigned(j)))(33 downto 0);
+  with sigma_in select z_out <=
+    std_logic_vector(signed(z_in) - signed(z_add)) when '0',    -- z-lut when '0'
+    std_logic_vector(signed(z_in) + signed(z_add)) when OTHERS; -- z+lut when OTHERS;
 
   with rotation select sigma_out <=
-    s_z_out(z_len - 1) when '1',
-    NOT s_y_out(s_y_out'length - 1) when OTHERS;
+    z_out(z_len - 1) when '1',
+    NOT y_out(y_out'length - 1) when OTHERS;
 
-  --  WITH sigma_in SELECT
-  --  x_out <= STD_LOGIC_VECTOR(signed(x_in) - signed(shifted_y)) WHEN '0',
-  --  STD_LOGIC_VECTOR(signed(x_in) + signed(shifted_y)) WHEN OTHERS;
-  --
-  --  WITH sigma_in SELECT
-  --  s_y_out <= STD_LOGIC_VECTOR(signed(y_in) + signed(shifted_x)) WHEN '0',
-  --  STD_LOGIC_VECTOR(signed(y_in) - signed(shifted_x)) WHEN OTHERS;
 
-  x_out   <= std_logic_vector(signed(x_in) + signed(shifted_y));
-  s_y_out <= std_logic_vector(signed(y_in) + signed(shifted_x));
 
-  y_out                             <= s_y_out;
-  z_lut(z_lut_len - 1 DOWNTO 0)     <= lut(to_integer(unsigned(j)))(33 downto 34 - z_lut_len);
-  z_lut(z_len - 1 DOWNTO z_lut_len) <= (OTHERS => '0');
-
-  with sigma_in select s_z_out <=
-    std_logic_vector(signed(z_in) - signed(z_lut)) when '0',
-    std_logic_vector(signed(z_in) + signed(z_lut)) when OTHERS;
-  z_out <= s_z_out;
 
 end architecture arch;
