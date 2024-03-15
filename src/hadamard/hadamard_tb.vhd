@@ -1,0 +1,128 @@
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.math_real.all;
+  use ieee.numeric_std.all;
+  use std.textio.all;
+
+entity hadamard_tb is
+end entity hadamard_tb;
+
+architecture rtl of hadamard_tb is
+
+  component hadamard is
+    generic (
+      lut_size : natural RANGE 1 to 4 := 1
+    );
+    port (
+      clock     : in    std_logic;
+      reset     : in    std_logic;
+      start     : in    std_logic;
+      x_i       : in    std_logic_vector(24 downto 0);
+      y_i       : in    std_logic_vector(24 downto 0);
+      x_k       : in    std_logic_vector(24 downto 0);
+      y_k       : in    std_logic_vector(24 downto 0);
+      lut       : in    std_logic_vector((lut_size * 25) - 1 downto 0);
+      p_coefs_x : out   std_logic_vector((lut_size * 25) - 1 downto 0);
+      p_coefs_y : out   std_logic_vector((lut_size * 25) - 1 downto 0);
+      ready     : buffer std_logic
+    );
+  end component;
+
+  component b25_cmul is
+    port (
+      a   : in    std_logic_vector(24 downto 0);
+      con : in    std_logic_vector(24 downto 0);
+      res : out   std_logic_vector(24 downto 0)
+    );
+  end component;
+
+  signal reset, start : std_logic;
+  signal x_i          : std_logic_vector(24 downto 0);
+  signal y_i          : std_logic_vector(24 downto 0);
+  signal x_k          : std_logic_vector(24 downto 0);
+  signal y_k          : std_logic_vector(24 downto 0); -- s_iiii'iiii.ffff'ffff'ffff'ffff
+  signal lut          : std_logic_vector((4 * 25) - 1 downto 0);
+  signal p_coefs_x    : std_logic_vector((4 * 25) - 1 downto 0);
+  signal p_coefs_y    : std_logic_vector((4 * 25) - 1 downto 0);
+  signal ready        : std_logic;
+
+  signal   clk             : std_logic := '0';
+  signal   keep_simulating : std_logic := '0';  -- delimita o tempo de geração do clock
+  constant clockperiod     : TIME      := 1 ms; -- frequencia 1KHz
+
+  constant kcon : std_logic_vector(24 downto 0) := "0000000000011100101010011"; -- kcon = 1 / k^3
+-- constant kcon : std_logic_vector(24 downto 0) := "0000000000000001110010101"; -- 4 shifts
+
+begin
+
+  clk <= (NOT clk) and keep_simulating AFTER clockperiod / 2;
+
+  dut : component hadamard
+    generic map (
+        4
+    )
+    port map (
+        clk,
+ reset,
+ start,
+        x_i,
+ y_i,
+ x_k,
+ y_k,
+        lut,
+        p_coefs_x,
+        p_coefs_y,
+        ready
+    );
+
+  -- lut <= "0000000010000000000000000" & "0000000010000000000000000" & "0000000010000000000000000" & "0000000010000000000000000";
+  -- lut <= "0000000000000000101011111" &
+  --        "0000000000000001010001001" & -- 2
+  --        "0000000000000001101001111" & -- 1
+  --        "0000000000000001110010101";         It has like 6 shifts? The fuck?
+
+  lut(24 downto 0) <= kcon;
+
+  lut_mul1 : component b25_cmul
+    port map (
+"0000000001110110010000100",
+ kcon,
+ lut(49 downto 25)
+    );
+
+  lut_mul2 : component b25_cmul
+    port map (
+"0000000001011010100000101",
+ kcon,
+ lut(74 downto 50)
+    );
+
+  lut_mul3 : component b25_cmul
+    port map (
+"0000000000110000111111000",
+ kcon,
+ lut(99 downto 75)
+    );
+
+  x_i <= "0000000000100000000000000"; -- 0x0.4
+  y_i <= "0000000010100000111000000"; -- 0x1.41c
+  x_k <= "0000000000100000000000000"; -- 0x0.4
+  y_k <= "0000000010100000111000000"; -- 0x1.41c
+
+  test : process is
+  begin
+
+    keep_simulating <= '1';
+    reset           <= '0';
+    start           <= '1';
+
+    WAIT FOR 100 * clockperiod;
+
+    keep_simulating <= '0';
+    -- report integer'image(to_integer(unsigned(addr))) & " - " & integer'image(to_integer(unsigned(data)));
+    -- REPORT INTEGER'image(to_integer(unsigned(res)));
+    WAIT;
+
+  end process test;
+
+end architecture rtl;

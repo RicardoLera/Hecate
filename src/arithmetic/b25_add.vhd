@@ -18,25 +18,30 @@ architecture arch of b25_add is
 
 begin
 
-  process(a,b)
+  add : process (a, b) is
+
     variable ua : unsigned(23 downto 0);
     variable ub : unsigned(23 downto 0);
+
   begin
+
     ua := unsigned(a(23 downto 0));
     ub := unsigned(b(23 downto 0));
+
     if ((a(24) xor b(24)) = '1') then
       if (ua > ub) then
-        temp_res <= std_logic_vector(ua - ub);
+        temp_res  <= std_logic_vector(ua - ub);
         temp_sign <= a(24);
       else
-        temp_res <= std_logic_vector(ub - ua);
+        temp_res  <= std_logic_vector(ub - ua);
         temp_sign <= b(24);
       end if;
     else
-      temp_res <= std_logic_vector(ua + ub);
+      temp_res  <= std_logic_vector(ua + ub);
       temp_sign <= a(24);
     end if;
-  end process;
+
+  end process add;
 
   -- temp_res <= std_logic_vector(unsigned(a(23 downto 0)) - unsigned(b(23 downto 0)))
   --             when ((a(24) xor b(24)) = '1') and (unsigned(a(23 downto 0)) > unsigned(b(23 downto 0))) else

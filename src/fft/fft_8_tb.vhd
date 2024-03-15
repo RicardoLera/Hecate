@@ -13,7 +13,7 @@ architecture arch of fft_8_tb is
   component fft_8 is
     port (
       i       : in    real_array(0 to 7);
-      o       : out   complex_array(0 to 15);
+      o       : out   complex_array(0 to 8);
       clock   : in    std_logic;
       start   : in    std_logic;
       reset   : in    std_logic;
@@ -48,13 +48,13 @@ architecture arch of fft_8_tb is
   );
 
   signal   img_in,  ker_in  : real_array(7 downto 0);
-  signal   img_out, ker_out : complex_array(15 downto 0) := (OTHERS => (OTHERS => (OTHERS => '0')));
-  signal   clock            : std_logic                  := '0';
-  signal   start            : std_logic                  := '0';
-  signal   reset            : std_logic                  := '0';
-  signal   s_ready_i        : std_logic                  := '0';
-  signal   s_ready_k        : std_logic                  := '0';
-  constant clockperiod      : TIME                       := 1 ms; -- 1KHz
+  signal   img_out, ker_out : complex_array(8 downto 0) := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal   clock            : std_logic                 := '0';
+  signal   start            : std_logic                 := '0';
+  signal   reset            : std_logic                 := '0';
+  signal   s_ready_i        : std_logic                 := '0';
+  signal   s_ready_k        : std_logic                 := '0';
+  constant clockperiod      : TIME                      := 1 ms; -- 1KHz
 
 begin
 
