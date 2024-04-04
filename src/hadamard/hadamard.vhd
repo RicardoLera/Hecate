@@ -44,7 +44,7 @@ architecture arch of hadamard is
       b       : in    std_logic_vector(size - 1 downto 0);
       a_nex   : in    std_logic_vector(size - 1 downto 0);
       b_nex   : in    std_logic_vector(size - 1 downto 0);
-      lut     : std_logic_vector((lut_size * size) - 1 downto 0);
+      lut     : in    std_logic_vector((lut_size * size) - 1 downto 0);
       coefs_x : out   std_logic_vector((lut_size * size) - 1 downto 0);
       coefs_y : out   std_logic_vector((lut_size * size) - 1 downto 0);
       p       : out   std_logic_vector(size - 1 downto 0);

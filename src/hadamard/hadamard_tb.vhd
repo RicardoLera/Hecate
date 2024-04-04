@@ -50,8 +50,8 @@ architecture rtl of hadamard_tb is
   signal   keep_simulating : std_logic := '0';  -- delimita o tempo de geração do clock
   constant clockperiod     : TIME      := 1 ms; -- frequencia 1KHz
 
-  constant kcon : std_logic_vector(24 downto 0) := "0000000000011100101010011"; -- kcon = 1 / k^3
--- constant kcon : std_logic_vector(24 downto 0) := "0000000000000001110010101"; -- 4 shifts
+  --constant kcon : std_logic_vector(24 downto 0) := "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
+    constant kcon : std_logic_vector(24 downto 0) := "0000000000000001110010101"; -- 4 shifts
 
 begin
 
@@ -79,35 +79,41 @@ begin
   -- lut <= "0000000000000000101011111" &
   --        "0000000000000001010001001" & -- 2
   --        "0000000000000001101001111" & -- 1
-  --        "0000000000000001110010101";         It has like 6 shifts? The fuck?
+  --        "0000000000000001110010101";
+  -- It has like 6 shifts? The fuck?
 
   lut(24 downto 0) <= kcon;
 
   lut_mul1 : component b25_cmul
     port map (
-"0000000001110110010000100",
- kcon,
- lut(49 downto 25)
+      a   => "0000000001110110010000100",
+      con => kcon,
+      res => lut(49 downto 25)
     );
 
   lut_mul2 : component b25_cmul
     port map (
-"0000000001011010100000101",
- kcon,
- lut(74 downto 50)
+      a   => "0000000001011010100000101",
+      con => kcon,
+      res => lut(74 downto 50)
     );
 
   lut_mul3 : component b25_cmul
     port map (
-"0000000000110000111111000",
- kcon,
- lut(99 downto 75)
+      a   => "0000000000110000111111000",
+      con => kcon,
+      res => lut(99 downto 75)
     );
 
-  x_i <= "0000000000100000000000000"; -- 0x0.4
-  y_i <= "0000000010100000111000000"; -- 0x1.41c
-  x_k <= "0000000000100000000000000"; -- 0x0.4
-  y_k <= "0000000010100000111000000"; -- 0x1.41c
+    x_i <= "0000000100000000000000000"; -- 0x2
+    y_i <= "0000000000000000000000000"; -- 0x0
+    x_k <= "0000000100000000000000000"; -- 0x2
+    y_k <= "0000000000000000000000000"; -- 0x0
+
+  -- x_i <= "0000000000100000000000000"; -- 0x0.4
+  -- y_i <= "0000000010100000111000000"; -- 0x1.41c
+  -- x_k <= "0000000000100000000000000"; -- 0x0.4
+  -- y_k <= "0000000010100000111000000"; -- 0x1.41c
 
   test : process is
   begin

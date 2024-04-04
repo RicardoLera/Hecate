@@ -48,8 +48,8 @@ architecture arch of cordic is
   end component;
 
   signal shifted_x, shifted_y : std_logic_vector(coords_len - 1 downto 0);
-  signal x_add, y_add  : std_logic_vector(coords_len - 1 downto 0);
-  signal z_add : std_logic_vector(z_len - 1 downto 0) := (others => '0');
+  signal x_add,     y_add     : std_logic_vector(coords_len - 1 downto 0);
+  signal z_add                : std_logic_vector(z_len - 1 downto 0) := (others => '0');
 
   type lut_type is ARRAY (0 to 31) OF std_logic_vector(33 downto 0);
 
@@ -90,7 +90,7 @@ architecture arch of cordic is
   );
 
 begin
-  
+
   shift_x : component varshiftright
     generic map (
       len => coords_len
@@ -111,17 +111,19 @@ begin
       result   => shifted_y
     );
 
-  xadd : b25_add port map(
-    a => x_in,
-    b => y_add,
-    res => x_out
-  );
+  xadd : component b25_add
+    port map (
+      a   => x_in,
+      b   => y_add,
+      res => x_out
+    );
 
-  yadd : b25_add port map(
-    a => y_in,
-    b => x_add,
-    res => y_out
-  );
+  yadd : component b25_add
+    port map (
+      a   => y_in,
+      b   => x_add,
+      res => y_out
+    );
 
   -- zadd : b25_add port map(
   --   a => z_in,
@@ -129,22 +131,26 @@ begin
   --   res => z_out
   -- );
 
-  with sigma_in select y_add <= not shifted_y(coords_len-1) & shifted_y(coords_len-2 downto 0) when '0', -- x-s_y when '0',
-                                    shifted_y(coords_len-1) & shifted_y(coords_len-2 downto 0) when others;  -- x+s_y when others;
-
-  with sigma_in select x_add <= not shifted_x(coords_len-1) & shifted_x(coords_len-2 downto 0) when '0', -- y+x when '0'
-                                    shifted_x(coords_len-1) & shifted_x(coords_len-2 downto 0) when others;  -- y-s_x when OTHERS;
-
-  z_add <= lut(to_integer(unsigned(j)))(33 downto 0);
   with sigma_in select z_out <=
     std_logic_vector(signed(z_in) - signed(z_add)) when '0',    -- z-lut when '0'
-    std_logic_vector(signed(z_in) + signed(z_add)) when OTHERS; -- z+lut when OTHERS;
+    std_logic_vector(signed(z_in) + signed(z_add)) when others; -- z+lut when others;
+
+  with sigma_in select y_add <=
+    not shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when '0', -- x-s_y when '0',
+    shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when others;  -- x+s_y when others;
+
+  with sigma_in select x_add <=
+    not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when '0', -- y+s_x when '0'
+    shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others;  -- y-s_x when others;
+
+  z_add <=
+  (
+    33 downto 0 => lut(to_integer(unsigned(j))),
+    others      => '0'
+  );
 
   with rotation select sigma_out <=
     z_out(z_len - 1) when '1',
-    NOT y_out(y_out'length - 1) when OTHERS;
-
-
-
+    NOT y_out(y_out'length - 1) when others;
 
 end architecture arch;

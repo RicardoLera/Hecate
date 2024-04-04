@@ -1,5 +1,7 @@
 .*
-src/*.cf
-correctness/Debug
-correctness/Release
+work-obj*.cf
+*.code-workspace
+**/Debug
+**/Release
 !/.gitignore
+
