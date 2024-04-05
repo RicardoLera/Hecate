@@ -1,28 +1,19 @@
-module fft_8
+module hadamard
   #(parameter N = 8, logN = 3)
   (
-    input  [24:0] i[0:N-1],
-    output [24:0] o[0:N][0:1],
+    input  [24:0] img[0:1],
+    output [24:0] ker[0:1],
     input  clock, start, reset,
-    output s_ready
+    output ready
   );
 
-  wire [24:0] calc_vals_arr[0:N-1][0:logN], add_r[0:N][0:1];
-  reg  [24:0] add_a[0:N][0:1], add_b[0:N][0:1];
-  reg  [N:0]  fft_ready = '0;
+  wire [24:0] calc_vals_arr[logN+1];
+  reg  [24:0] add_a[0:8][0:1], add_b[0:8][0:1];
+  reg  [8:0]  fft_ready = '0;
 
-  wire [2:0] cos_val_ref[0:2*N-1]; // = '{3'h0, 3'h1, 3'h2, 3'h3, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0, 3'h1, 3'h2, 3'h3, 3'h4, 3'h3, 3'h2, 3'h1};
-  wire       cos_sig_ref[0:2*N-1]; // = '{1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0};
-
-  // Fix this later, and make it agnostic to N
-  assign {cos_val_ref[0], cos_val_ref[1], cos_val_ref[2], cos_val_ref[3], cos_val_ref[4], cos_val_ref[5], cos_val_ref[6], cos_val_ref[7], cos_val_ref[8], cos_val_ref[9], cos_val_ref[10], cos_val_ref[11], cos_val_ref[12], cos_val_ref[13], cos_val_ref[14], cos_val_ref[15]} = 
-         {3'h0, 3'h1, 3'h2, 3'h3, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0, 3'h1, 3'h2, 3'h3, 3'h4, 3'h3, 3'h2, 3'h1};
-
-  assign {cos_sig_ref[0], cos_sig_ref[1], cos_sig_ref[2], cos_sig_ref[3], cos_sig_ref[4], cos_sig_ref[5], cos_sig_ref[6], cos_sig_ref[7], cos_sig_ref[8], cos_sig_ref[9], cos_sig_ref[10], cos_sig_ref[11], cos_sig_ref[12], cos_sig_ref[13], cos_sig_ref[14], cos_sig_ref[15]} = 
-         {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0};
 
   initial
-    for (integer id = 0; id < N; id++)
+    for (integer id = 0; id < 8; id++)
     begin
       add_a[id][0] = '0;
       add_a[id][1] = '0;
@@ -32,12 +23,12 @@ module fft_8
 
   // Multiplication Layer
   generate
-    for (genvar id = 0; id < N; id++) // later make this loop agnostic to N
+    for (genvar id = 0; id < 8; id++)
     begin : mul_loop
 
       assign calc_vals_arr[id][0] = i[id];
 
-      if ( (id % (logN+1) == 1) | (id % (logN+1) == 3) )
+      if ( (id % 4 == 1) | (id % 4 == 3) )
       begin
         b25_cmul mul_22(
                    .a   (i[id]),
@@ -58,7 +49,7 @@ module fft_8
                  );
       end
 
-      if (id % (logN+1) == 2)
+      if (id % 4 == 2)
         b25_cmul mul_45(
                    .a   (i[id]),
                    .con (25'b0000000001011010100000101),
@@ -69,7 +60,7 @@ module fft_8
 
   // Addition Layer
   generate
-    for (genvar o_id = 0; o_id < N+1; o_id++)
+    for (genvar o_id = 0; o_id < 9; o_id++)
     begin : add_loop
 
       b25_add sum_r(
@@ -92,10 +83,10 @@ module fft_8
         reg [24:0] c, ci;
 
         if (reset == 1'b0 & start == 1'b1)
-          if (i_id < N)
+          if (i_id < 8)
           begin
-            w  = (i_id * o_id) % (2*N);
-            wi = (logN+1 - i_id * o_id) % (2*N);
+            w  = (i_id * o_id) % 16;
+            wi = (4 - i_id * o_id) % 16;
 
             if (cos_val_ref[w] != 4) // if the exponent of w is not 4
             begin
