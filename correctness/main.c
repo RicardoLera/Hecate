@@ -1,6 +1,9 @@
 #include <stdlib.h>
+#include <inttypes.h>
+
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <math.h>
 #include "var.h"
 #include "operations.h"
@@ -107,8 +110,11 @@ int main(int argc, char *argv[]) {
     for (int N = 0; N < 9; N++) {
         uint64_t C = 0, A = 0, B = 0, mask, litA, litB;
         bool At, Bt;
+          
+          printf("\nN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
+        
         for (int j = 0; j < 24; j++) {
-
+                                                
             cordic_vec(Input[N], j);
             cordic_vec(Kernel[N], j);
 
@@ -126,12 +132,22 @@ int main(int argc, char *argv[]) {
 
             A = (A << 1) + At;
             B = (B << 1) + Bt;
+          
+              printf("%x\t\t",j);
+              print_archvar(Input[N][0]); printf("\t");
+              print_archvar(Input[N][1]); printf("\t");
+              print_archvar(Input[N][2]); printf("\t");
+              printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
         }
         uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
         Product[N][0].pre = ((C >> 16) & pre_mask) >> 16;
         Product[N][0].post = (C >> 16) & post_mask;
         Product[N][0].sign = Input[N][0].sign ^ Kernel[N][0].sign;
         Product[N][2] = archadd(Input[N][2],Kernel[N][2]);
+
+          printf("Product = ");
+          print_archvar(Product[N][0]);
+          printf("\n");
     }
 
     print_arch_pol("Input (polar coordinates)", Input);
@@ -155,11 +171,20 @@ int main(int argc, char *argv[]) {
         Product[N][2].pre = (cor_angle & pre_mask) >> 16;
         Product[N][2].post = cor_angle & post_mask;
 
-        for (int j = 0; j < 24; j++)
+          printf("\nN = %d\nj\t\tX\t\tY\t\tZ\t\t\n", N);
+
+        for (int j = 0; j < 24; j++) {
             cordic_rot(Product[N], j);
+
+              printf("%x\t\t",j);
+              print_archvar(Product[N][0]); printf("\t");
+              print_archvar(Product[N][1]); printf("\t");
+              print_archvar(Product[N][2]); printf("\n");
+        }
 
         Product[N][0].sign = x_sign;
         Product[N][1].sign = y_sign;
+
     }
 
     print_arch_rec("Product (rectangular coordinates)", Product);

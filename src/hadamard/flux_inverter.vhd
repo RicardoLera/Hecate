@@ -64,7 +64,7 @@ begin
 
   m_n(0)             <= filtered_or(size - 1);
   m_n(size DOWNTO 1) <= m(size - 1 downto 0);
-  s_ready            <= m(size);
+  s_ready            <= m(size);             
   ready              <= s_ready;
 
   new_bit <= m_n(0);

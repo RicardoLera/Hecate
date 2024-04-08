@@ -24,7 +24,7 @@ entity hadamard is
   -- db_c1, db_c2, db_c3, db_c4 : OUT STD_LOGIC_VECTOR(24 DOWNTO 0);
   -- db_in_bit : IN STD_LOGIC;
   -- db_in_coor : IN STD_LOGIC_VECTOR(24 DOWNTO 0);
-  -- db_in_ang : IN STD_LOGIC_VECTOR(35 DOWNTO 0)
+  -- db_in_ang : IN STD_LOGIC_VECTOR(24 DOWNTO 0)
   );
 end entity hadamard;
 
@@ -71,10 +71,8 @@ architecture arch of hadamard is
 
   component cordic is
     generic (
-      z_len      : natural := 36;
-      z_lut_len  : natural := 34;
       j_len      : natural := 5;
-      coords_len : natural := 32
+      coords_len : natural := 25
     );
     port (
       sigma_in  : in    std_logic;
@@ -82,10 +80,10 @@ architecture arch of hadamard is
       j         : in    std_logic_vector(j_len - 1 downto 0);
       x_in      : in    std_logic_vector(coords_len - 1 downto 0);
       y_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      z_in      : in    std_logic_vector(z_len - 1 downto 0);
+      z_in      : in    std_logic_vector(coords_len - 1 downto 0);
       x_out     : out   std_logic_vector(coords_len - 1 downto 0);
       y_out     : out   std_logic_vector(coords_len - 1 downto 0);
-      z_out     : out   std_logic_vector(z_len - 1 downto 0);
+      z_out     : out   std_logic_vector(coords_len - 1 downto 0);
       sigma_out : out   std_logic
     );
   end component;
@@ -118,14 +116,14 @@ architecture arch of hadamard is
 
   -- Secondary CORDIC signals
   signal sc_x_cur,   sc_y_cur : std_logic_vector(24 downto 0) := (OTHERS => '0');
-  signal sc_z_cur             : std_logic_vector(35 downto 0) := (OTHERS => '0');
+  signal sc_z_cur             : std_logic_vector(24 downto 0) := (OTHERS => '0');
   signal sc_sig_cur           : std_logic                     := '0';
 
   signal sc_x_nex               : std_logic_vector(24 downto 0);
   signal sc_y_nex               : std_logic_vector(24 downto 0);
   signal sc_x_cor               : std_logic_vector(24 downto 0);
   signal sc_y_cor               : std_logic_vector(24 downto 0);
-  signal sc_z_nex,   sc_z_cor   : std_logic_vector(35 downto 0);
+  signal sc_z_nex,   sc_z_cor   : std_logic_vector(24 downto 0);
   signal sc_sig_nex, sc_sig_cor : std_logic;
 
   -- J control
@@ -135,7 +133,7 @@ architecture arch of hadamard is
   -- Primary CORDIC
 
   signal pc_x_cur,   pc_y_cur : std_logic_vector(24 downto 0) := (OTHERS => '0');
-  signal pc_z_cur             : std_logic_vector(35 downto 0) := (OTHERS => '0');
+  signal pc_z_cur             : std_logic_vector(24 downto 0) := (OTHERS => '0');
   signal pc_sig_cur           : std_logic                     := '0';
 
   signal pc_x_nex   : std_logic_vector(24 downto 0);
@@ -144,16 +142,16 @@ architecture arch of hadamard is
   signal pc_y_cor   : std_logic_vector(24 downto 0);
   signal pc_x_sel   : std_logic_vector(24 downto 0);
   signal pc_y_sel   : std_logic_vector(24 downto 0);
-  signal pc_z_nex   : std_logic_vector(35 downto 0);
-  signal pc_z_cor   : std_logic_vector(35 downto 0);
-  signal pc_z_sel   : std_logic_vector(35 downto 0);
+  signal pc_z_nex   : std_logic_vector(24 downto 0);
+  signal pc_z_cor   : std_logic_vector(24 downto 0);
+  signal pc_z_sel   : std_logic_vector(24 downto 0);
   signal pc_sig_nex : std_logic;
   signal pc_sig_cor : std_logic;
   signal pc_sig_sel : std_logic;
 
   -- Multiplier
 
-  signal prod_z,     prod_z_norm : std_logic_vector(35 downto 0);
+  signal prod_z,     prod_z_norm : std_logic_vector(24 downto 0);
   signal prod_mod                : std_logic_vector(24 downto 0);
   signal mul_a                   : std_logic_vector(24 downto 0);
   signal mul_a_nex               : std_logic_vector(24 downto 0);
@@ -264,7 +262,7 @@ begin
 
   sec_cordic : component cordic
     generic map (
-		36, 34, 5, 25
+	  5, 25
     )
     port map (
 		sc_sig_cur,
@@ -332,7 +330,7 @@ begin
   -- Primary Cordic
   pri_cordic : component cordic
     generic map (
-		36, 34, 5, 25
+		5, 25
     )
     port map (
 		pc_sig_cur,
@@ -395,8 +393,8 @@ begin
   -- Multiplier
 
   prod_z           <= std_logic_vector(unsigned(pc_z_cur) + unsigned(sc_z_cur));
-  prod_z_norm      <= "00" & prod_z(33 downto 0);
-  increment_change <= prod_z(34);
+  prod_z_norm      <= '0' & prod_z(23 downto 0);
+  increment_change <= prod_z(24);
 
   -- OBS: check if run can be left at high
   flux_mul : component flux_multiplier

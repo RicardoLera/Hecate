@@ -57,7 +57,7 @@ architecture synth of flux_multiplier is
     );
   end component;
 
-  signal a_flux,   b_flux : std_logic_vector(size downto 0);
+  signal a_flux,   b_flux : std_logic_vector(size - 2 downto 0);
   signal a_sel            : ieee.numeric_std.unsigned(size downto 0);
   signal b_sel            : ieee.numeric_std.unsigned(size downto 0);
   signal sum              : ieee.numeric_std.unsigned(size downto 0);
@@ -110,7 +110,7 @@ begin
 
   a_flux_inv : component flux_inverter
     generic map (
-size
+size-1
     )
     port map (
 clock,
@@ -119,7 +119,7 @@ clock,
  run,
  a,
  a_nex,
- a_flux(size - 1 DOWNTO 0),
+ a_flux,
  a_bit,
  a_ready,
  a_error
@@ -127,7 +127,7 @@ clock,
 
   b_flux_inv : component flux_inverter
     generic map (
-size
+size-1
     )
     port map (
 clock,
@@ -136,7 +136,7 @@ clock,
  run,
  b,
  b_nex,
- b_flux(size - 1 DOWNTO 0),
+ b_flux,
  b_bit,
  b_ready,
  b_error
@@ -145,8 +145,6 @@ clock,
   s_error <= a_error or b_error;
   s_reset <= s_error or reset;
 
-  a_flux(size) <= '0';
-  b_flux(size) <= '0';
   with b_bit select a_sel <=
     ieee.numeric_std.unsigned(a_flux) when '1',
     to_unsigned(0, size + 1) when OTHERS;

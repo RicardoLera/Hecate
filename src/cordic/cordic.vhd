@@ -5,8 +5,7 @@ library ieee;
 
 entity cordic is
   generic (
-    z_len      : natural := 36;
-    z_lut_len  : natural := 34;
+
     j_len      : natural := 5;
     coords_len : natural := 25
   );
@@ -18,10 +17,10 @@ entity cordic is
     j         : in    std_logic_vector(j_len - 1 downto 0);
     x_in      : in    std_logic_vector(coords_len - 1 downto 0);
     y_in      : in    std_logic_vector(coords_len - 1 downto 0);
-    z_in      : in    std_logic_vector(z_len - 1 downto 0);
+    z_in      : in    std_logic_vector(coords_len - 1 downto 0);
     x_out     : out   std_logic_vector(coords_len - 1 downto 0);
     y_out     : out   std_logic_vector(coords_len - 1 downto 0);
-    z_out     : out   std_logic_vector(z_len - 1 downto 0);
+    z_out     : out   std_logic_vector(coords_len - 1 downto 0);
     sigma_out : out   std_logic
   );
 end entity cordic;
@@ -49,44 +48,51 @@ architecture arch of cordic is
 
   signal shifted_x, shifted_y : std_logic_vector(coords_len - 1 downto 0);
   signal x_add,     y_add     : std_logic_vector(coords_len - 1 downto 0);
-  signal z_add                : std_logic_vector(z_len - 1 downto 0) := (others => '0');
+  signal z_add                : std_logic_vector(coords_len - 1 downto 0) := (others => '0');
 
-  type lut_type is ARRAY (0 to 31) OF std_logic_vector(33 downto 0);
+  type lut_type is ARRAY (0 to 31) OF std_logic_vector(coords_len-2 downto 0); -- Fix later, doesn't need 31
 
   constant lut : lut_type :=
   (
-    "1000000000000000000000000000000000",
-    "0100101110010000000101000111011001",
-    "0010011111101100111000010110110101",
-    "0001010001000100010001110101000001",
-    "0000101000101100001101010000110000",
-    "0000010100010111010111111000010101",
-    "0000001010001011110110000111100101",
-    "0000000101000101111100010101010001",
-    "0000000010100010111110010100110100",
-    "0000000001010001011111001011101011",
-    "0000000000101000101111100110000000",
-    "0000000000010100010111110011000001",
-    "0000000000001010001011111001100000",
-    "0000000000000101000101111100110000",
-    "0000000000000010100010111110011000",
-    "0000000000000001010001011111001100",
-    "0000000000000000101000101111100110",
-    "0000000000000000010100010111110011",
-    "0000000000000000001010001011111001",
-    "0000000000000000000101000101111100",
-    "0000000000000000000010100010111110",
-    "0000000000000000000001010001011111",
-    "0000000000000000000000101000101111",
-    "0000000000000000000000010100010111",
-    "0000000000000000000000001010001011",
-    "0000000000000000000000000101000101",
-    "0000000000000000000000000010100010",
-    "0000000000000000000000000001010001",
-    "0000000000000000000000000000101000",
-    "0000000000000000000000000000010100",
-    "0000000000000000000000000000001010",
-    "0000000000000000000000000000000101"
+    24x"c910",
+    24x"76b2",
+    24x"3eb7",
+    24x"1fd6",
+
+    24x"0ffb",
+    24x"07ff",
+    24x"0400",
+    24x"0200",
+
+    24x"0100",
+    24x"0080",
+    24x"0040",
+    24x"0020",
+
+    24x"0010",
+    24x"0008",
+    24x"0004",
+    24x"0002",
+
+    24x"0001",
+    24x"0000",
+    24x"0000",
+    24x"0000",
+
+    24x"0000",
+    24x"0000",
+    24x"0000",
+    24x"0000",
+
+    24x"0000",
+    24x"0000",
+    24x"0000",
+    24x"0000",
+
+    24x"0000",
+    24x"0000",
+    24x"0000",
+    24x"0000"
   );
 
 begin
@@ -125,32 +131,27 @@ begin
       res => y_out
     );
 
-  -- zadd : b25_add port map(
-  --   a => z_in,
-  --   b => z_add,
-  --   res => z_out
-  -- );
-
-  with sigma_in select z_out <=
-    std_logic_vector(signed(z_in) - signed(z_add)) when '0',    -- z-lut when '0'
-    std_logic_vector(signed(z_in) + signed(z_add)) when others; -- z+lut when others;
+  zadd : component b25_add
+    port map(
+      a   => z_in,
+      b   => z_add,
+      res => z_out
+    );
 
   with sigma_in select y_add <=
     not shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when '0', -- x-s_y when '0',
     shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when others;  -- x+s_y when others;
 
   with sigma_in select x_add <=
-    not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when '0', -- y+s_x when '0'
-    shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others;  -- y-s_x when others;
+    shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when '0',         -- y+s_x when '0'
+    not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others;  -- y-s_x when others;
 
-  z_add <=
-  (
-    33 downto 0 => lut(to_integer(unsigned(j))),
-    others      => '0'
-  );
+  with sigma_in select z_add <=
+    '1' & std_logic_vector(lut(to_integer(unsigned(j)))) when '0',    -- z-lut when '0'
+    '0' & std_logic_vector(lut(to_integer(unsigned(j)))) when others; -- z+lut when others;
 
   with rotation select sigma_out <=
-    z_out(z_len - 1) when '1',
-    NOT y_out(y_out'length - 1) when others;
+    z_out(z_out'length - 1) when '1',
+    not y_out(y_out'length - 1) when others;
 
 end architecture arch;

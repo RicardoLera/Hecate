@@ -18,6 +18,6 @@ architecture syn of varshiftright is
 
 begin
 
-  result <= std_logic_vector(shift_right(unsigned(data), to_integer(unsigned(distance))));
+  result <= data(len - 1) & std_logic_vector(shift_right(unsigned(data(len - 2 downto 0)), to_integer(unsigned(distance))));
 
 end architecture syn;
