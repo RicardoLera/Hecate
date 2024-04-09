@@ -5,7 +5,6 @@ library ieee;
 
 entity cordic is
   generic (
-
     j_len      : natural := 5;
     coords_len : natural := 25
   );
@@ -50,7 +49,7 @@ architecture arch of cordic is
   signal x_add,     y_add     : std_logic_vector(coords_len - 1 downto 0);
   signal z_add                : std_logic_vector(coords_len - 1 downto 0) := (others => '0');
 
-  type lut_type is ARRAY (0 to 31) OF std_logic_vector(coords_len-2 downto 0); -- Fix later, doesn't need 31
+  type lut_type is ARRAY (0 to 31) OF std_logic_vector(coords_len - 2 downto 0); -- Fix later, doesn't need 31
 
   constant lut : lut_type :=
   (
@@ -132,7 +131,7 @@ begin
     );
 
   zadd : component b25_add
-    port map(
+    port map (
       a   => z_in,
       b   => z_add,
       res => z_out
@@ -143,8 +142,8 @@ begin
     shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when others;  -- x+s_y when others;
 
   with sigma_in select x_add <=
-    shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when '0',         -- y+s_x when '0'
-    not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others;  -- y-s_x when others;
+    shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when '0',        -- y+s_x when '0'
+    not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others; -- y-s_x when others;
 
   with sigma_in select z_add <=
     '1' & std_logic_vector(lut(to_integer(unsigned(j)))) when '0',    -- z-lut when '0'

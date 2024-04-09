@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
         uint64_t C = 0, A = 0, B = 0, mask, litA, litB;
         bool At, Bt;
           
-          printf("\nN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
+          printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
         
         for (int j = 0; j < 24; j++) {
                                                 
@@ -171,7 +171,10 @@ int main(int argc, char *argv[]) {
         Product[N][2].pre = (cor_angle & pre_mask) >> 16;
         Product[N][2].post = cor_angle & post_mask;
 
-          printf("\nN = %d\nj\t\tX\t\tY\t\tZ\t\t\n", N);
+          printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
+          print_archvar(Product[N][0]); printf("\t");
+          print_archvar(Product[N][1]); printf("\t");
+          print_archvar(Product[N][2]); printf("\n");
 
         for (int j = 0; j < 24; j++) {
             cordic_rot(Product[N], j);

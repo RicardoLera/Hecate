@@ -4,7 +4,8 @@ library ieee;
 
 entity hadamard is
   generic (
-    lut_size : natural RANGE 1 to 4 := 1
+    logN  : natural RANGE 1 to 3 := 3;
+    N_idx : natural range 0 to 7 := 0
   );
   port (
     clock     : in    std_logic;
@@ -14,9 +15,9 @@ entity hadamard is
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
     y_k       : in    std_logic_vector(24 downto 0); -- s_iiii'iiii.ffff'ffff'ffff'ffff
-    lut       : in    std_logic_vector((lut_size * 25) - 1 downto 0);
-    p_coefs_x : out   std_logic_vector((lut_size * 25) - 1 downto 0);
-    p_coefs_y : out   std_logic_vector((lut_size * 25) - 1 downto 0);
+    lut       : in    std_logic_vector(((logN+1) * 25) - 1 downto 0);
+    p_coefs_x : out   std_logic_vector(((logN+1) * 25) - 1 downto 0);
+    p_coefs_y : out   std_logic_vector(((logN+1) * 25) - 1 downto 0);
     ready     : buffer std_logic
 
   -- debugging ports
@@ -32,9 +33,10 @@ architecture arch of hadamard is
 
   component flux_multiplier is
     generic (
-      size      : natural := 8;
-      frac_size : natural := 4;
-      lut_size  : natural RANGE 1 to 4 := 1
+      size      : natural              := 25;
+      frac_size : natural              := 16;
+      logN      : natural RANGE 1 to 3 := 3;
+      N_idx     : natural range 0 to 7 := 0
     );
     port (
       clock   : in    std_logic;
@@ -44,9 +46,9 @@ architecture arch of hadamard is
       b       : in    std_logic_vector(size - 1 downto 0);
       a_nex   : in    std_logic_vector(size - 1 downto 0);
       b_nex   : in    std_logic_vector(size - 1 downto 0);
-      lut     : in    std_logic_vector((lut_size * size) - 1 downto 0);
-      coefs_x : out   std_logic_vector((lut_size * size) - 1 downto 0);
-      coefs_y : out   std_logic_vector((lut_size * size) - 1 downto 0);
+      lut     : in    std_logic_vector(((logN+1) * size) - 1 downto 0);
+      coefs_x : out   std_logic_vector(((logN+1) * size) - 1 downto 0);
+      coefs_y : out   std_logic_vector(((logN+1) * size) - 1 downto 0);
       p       : out   std_logic_vector(size - 1 downto 0);
       ready   : out   std_logic
     );
@@ -85,6 +87,14 @@ architecture arch of hadamard is
       y_out     : out   std_logic_vector(coords_len - 1 downto 0);
       z_out     : out   std_logic_vector(coords_len - 1 downto 0);
       sigma_out : out   std_logic
+    );
+  end component;
+
+  component b25_add is
+    port (
+      a   : in    std_logic_vector(24 downto 0);
+      b   : in    std_logic_vector(24 downto 0);
+      res : out   std_logic_vector(24 downto 0)
     );
   end component;
 
@@ -158,16 +168,16 @@ architecture arch of hadamard is
   signal mul_b                   : std_logic_vector(24 downto 0);
   signal mul_b_nex               : std_logic_vector(24 downto 0);
   signal mul_b_nex_sel           : std_logic_vector(24 downto 0);
-  signal mul_coefs_x             : std_logic_vector((lut_size * 25) - 1 downto 0);
-  signal mul_coefs_y             : std_logic_vector((lut_size * 25) - 1 downto 0);
-  signal neg_mul_coefs_x         : std_logic_vector((lut_size * 25) - 1 downto 0);
-  signal neg_mul_coefs_y         : std_logic_vector((lut_size * 25) - 1 downto 0);
+  signal mul_coefs_x             : std_logic_vector(((logN+1) * 25) - 1 downto 0);
+  signal mul_coefs_y             : std_logic_vector(((logN+1) * 25) - 1 downto 0);
+  signal neg_mul_coefs_x         : std_logic_vector(((logN+1) * 25) - 1 downto 0);
+  signal neg_mul_coefs_y         : std_logic_vector(((logN+1) * 25) - 1 downto 0);
 
   -- Output
-  signal p_coefs_nex_x : std_logic_vector((lut_size * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_nex_y : std_logic_vector((lut_size * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_x_s   : std_logic_vector((lut_size * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_y_s   : std_logic_vector((lut_size * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_nex_x : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_nex_y : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_x_s   : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_y_s   : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
 
 begin
 
@@ -392,19 +402,25 @@ begin
 
   -- Multiplier
 
-  prod_z           <= std_logic_vector(unsigned(pc_z_cur) + unsigned(sc_z_cur));
+  z_addition : component b25_add
+  port map (
+    a => pc_z_cur,
+    b => sc_z_cur,
+    res => prod_z
+  );
+
   prod_z_norm      <= '0' & prod_z(23 downto 0);
   increment_change <= prod_z(24);
 
-  -- OBS: check if run can be left at high
+  -- OBS (from prev): check if run can be left at high
   flux_mul : component flux_multiplier
     generic map (
-25, 16, lut_size
+25, 16, 3, N_idx
     )
     port map (
 		clock,
  reset,
- '1',
+ start,
 		mul_a,
  mul_b,
  mul_a_nex,
@@ -432,7 +448,7 @@ begin
 
   -- Change processing at output
 
-  gen_mul_negs : for i IN 0 to lut_size - 1 generate
+  gen_mul_negs : for i IN 0 to logN generate
     neg_mul_coefs_x(25 * (i + 1) - 1 DOWNTO 25 * i) <= std_logic_vector(unsigned(NOT mul_coefs_x(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
     neg_mul_coefs_y(25 * (i + 1) - 1 DOWNTO 25 * i) <= std_logic_vector(unsigned(NOT mul_coefs_y(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
   end generate gen_mul_negs;

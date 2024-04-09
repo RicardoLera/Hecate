@@ -11,7 +11,8 @@ architecture rtl of hadamard_tb is
 
   component hadamard is
     generic (
-      lut_size : natural RANGE 1 to 4 := 1
+      logN  : natural RANGE 1 to 3 := 3;
+      N_idx : natural range 0 to 7 := 0
     );
     port (
       clock     : in    std_logic;
@@ -20,10 +21,10 @@ architecture rtl of hadamard_tb is
       x_i       : in    std_logic_vector(24 downto 0);
       y_i       : in    std_logic_vector(24 downto 0);
       x_k       : in    std_logic_vector(24 downto 0);
-      y_k       : in    std_logic_vector(24 downto 0);
-      lut       : in    std_logic_vector((lut_size * 25) - 1 downto 0);
-      p_coefs_x : out   std_logic_vector((lut_size * 25) - 1 downto 0);
-      p_coefs_y : out   std_logic_vector((lut_size * 25) - 1 downto 0);
+      y_k       : in    std_logic_vector(24 downto 0); -- s_iiii'iiii.ffff'ffff'ffff'ffff
+      lut       : in    std_logic_vector(((logN+1) * 25) - 1 downto 0);
+      p_coefs_x : out   std_logic_vector(((logN+1) * 25) - 1 downto 0);
+      p_coefs_y : out   std_logic_vector(((logN+1) * 25) - 1 downto 0);
       ready     : buffer std_logic
     );
   end component;
@@ -50,8 +51,10 @@ architecture rtl of hadamard_tb is
   signal   keep_simulating : std_logic := '0';  -- delimita o tempo de geração do clock
   constant clockperiod     : TIME      := 1 ms; -- frequencia 1KHz
 
-  --constant kcon : std_logic_vector(24 downto 0) := "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
-    constant kcon : std_logic_vector(24 downto 0) := "0000000000000001110010101"; -- 4 shifts
+  constant kcon : std_logic_vector(24 downto 0) := "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
+  -- constant kcon : std_logic_vector(24 downto 0) := "0000000000000001110010101"; -- 4 shifts
+
+  signal p_coefs_x_0, p_coefs_x_1, p_coefs_x_2, p_coefs_x_3 : std_logic_vector(25 - 1 downto 0);
 
 begin
 
@@ -59,21 +62,27 @@ begin
 
   dut : component hadamard
     generic map (
-        4
+      logN=>3,
+      N_idx=>1
     )
     port map (
-        clk,
- reset,
- start,
-        x_i,
- y_i,
- x_k,
- y_k,
-        lut,
-        p_coefs_x,
-        p_coefs_y,
-        ready
+      clock=>clk,
+      reset=>reset,
+      start=>start,
+      x_i=>x_i,
+      y_i=>y_i,
+      x_k=>x_k,
+      y_k=>y_k,
+      lut=>lut,
+      p_coefs_x=>p_coefs_x,
+      p_coefs_y=>p_coefs_y,
+      ready=>ready
     );
+
+    p_coefs_x_0 <= p_coefs_x(24 downto 0);
+    p_coefs_x_1 <= p_coefs_x(49 downto 25);
+    p_coefs_x_2 <= p_coefs_x(74 downto 50);
+    p_coefs_x_3 <= p_coefs_x(99 downto 75);
 
   -- lut <= "0000000010000000000000000" & "0000000010000000000000000" & "0000000010000000000000000" & "0000000010000000000000000";
   -- lut <= "0000000000000000101011111" &
@@ -105,15 +114,15 @@ begin
       res => lut(99 downto 75)
     );
 
-    x_i <= "0000000100000000000000000"; -- 0x2
-    y_i <= "0000000000000000000000000"; -- 0x0
-    x_k <= "0000000100000000000000000"; -- 0x2
-    y_k <= "0000000000000000000000000"; -- 0x0
+  -- x_i <= "0000000100000000000000000"; -- 0x2
+  -- y_i <= "0000000000000000000000000"; -- 0x0
+  -- x_k <= "0000000100000000000000000"; -- 0x2
+  -- y_k <= "0000000000000000000000000"; -- 0x0
 
-  -- x_i <= "0000000000100000000000000"; -- 0x0.4
-  -- y_i <= "0000000010100000111000000"; -- 0x1.41c
-  -- x_k <= "0000000000100000000000000"; -- 0x0.4
-  -- y_k <= "0000000010100000111000000"; -- 0x1.41c
+  x_i <= "0000000000100000000000000"; -- 0x0.4
+  y_i <= "0000000010100000111000000"; -- 0x1.41c
+  x_k <= "0000000000100000000000000"; -- 0x0.4
+  y_k <= "0000000010100000111000000"; -- 0x1.41c
 
   test : process is
   begin
@@ -122,12 +131,20 @@ begin
     reset           <= '0';
     start           <= '1';
 
-    WAIT FOR 100 * clockperiod;
+    wait until ready;
+    start           <= '0';
 
+    wait for 25 * clockperiod;
+    reset           <= '1';
+    wait for 5 * clockperiod;
+    reset           <= '0';
+
+    wait for 20 * clockperiod;
     keep_simulating <= '0';
+
     -- report integer'image(to_integer(unsigned(addr))) & " - " & integer'image(to_integer(unsigned(data)));
     -- REPORT INTEGER'image(to_integer(unsigned(res)));
-    WAIT;
+    wait;
 
   end process test;
 
