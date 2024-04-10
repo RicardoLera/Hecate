@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Tue Apr  9 17:10:34 2024
+[*] Wed Apr 10 17:48:10 2024
 [*]
 [dumpfile] "/home/ricardo/git/Hecate/src/waveforms/had.ghw"
-[dumpfile_mtime] "Tue Apr  9 16:10:54 2024"
-[dumpfile_size] 98566
+[dumpfile_mtime] "Wed Apr 10 17:47:20 2024"
+[dumpfile_size] 114383
 [savefile] "/home/ricardo/git/Hecate/src/waveforms/had_testbench.gtkw"
-[timestart] 0
+[timestart] 10390000000000
 [size] 1915 2110
 [pos] -1 -1
-*-44.000000 30040000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-44.000000 66500000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.hadamard_tb.
 [treeopen] top.hadamard_tb.dut.
@@ -17,7 +17,7 @@
 [treeopen] top.hadamard_tb.dut.flux_mul.adder.
 [treeopen] top.hadamard_tb.dut.flux_mul.b_flux_inv.
 [sst_width] 218
-[signals_width] 251
+[signals_width] 417
 [sst_expanded] 1
 [sst_vpaned_height] 919
 @22
@@ -27,9 +27,8 @@
 #{top.hadamard_tb.y_k[24:0]} top.hadamard_tb.y_k[24] top.hadamard_tb.y_k[23] top.hadamard_tb.y_k[22] top.hadamard_tb.y_k[21] top.hadamard_tb.y_k[20] top.hadamard_tb.y_k[19] top.hadamard_tb.y_k[18] top.hadamard_tb.y_k[17] top.hadamard_tb.y_k[16] top.hadamard_tb.y_k[15] top.hadamard_tb.y_k[14] top.hadamard_tb.y_k[13] top.hadamard_tb.y_k[12] top.hadamard_tb.y_k[11] top.hadamard_tb.y_k[10] top.hadamard_tb.y_k[9] top.hadamard_tb.y_k[8] top.hadamard_tb.y_k[7] top.hadamard_tb.y_k[6] top.hadamard_tb.y_k[5] top.hadamard_tb.y_k[4] top.hadamard_tb.y_k[3] top.hadamard_tb.y_k[2] top.hadamard_tb.y_k[1] top.hadamard_tb.y_k[0]
 @200
 -
-@29
-top.hadamard_tb.clk
 @28
+top.hadamard_tb.clk
 top.hadamard_tb.dut.uc.start
 top.hadamard_tb.dut.uc.reset
 top.hadamard_tb.dut.ready
@@ -115,7 +114,7 @@ top.hadamard_tb.dut.sec_cordic.sigma_out
 -Secondary CORDIC
 @200
 -
-@800200
+@c00200
 -Flux Inverter A
 @22
 #{top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[23:0]} top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[23] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[22] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[21] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[20] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[19] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[18] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[17] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[16] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[15] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[14] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[13] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[12] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[11] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[10] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[9] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[8] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[7] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[6] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[5] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[4] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[3] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[2] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[1] top.hadamard_tb.dut.flux_mul.a_flux_inv.inp[0]
@@ -128,11 +127,11 @@ top.hadamard_tb.dut.sec_cordic.sigma_out
 #{top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[23:0]} top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[23] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[22] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[21] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[20] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[19] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[18] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[17] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[16] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[15] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[14] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[13] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[12] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[11] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[10] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[9] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[8] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[7] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[6] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[5] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[4] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[3] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[2] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[1] top.hadamard_tb.dut.flux_mul.a_flux_inv.compared[0]
 @22
 #{top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[23:0]} top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[23] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[22] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[21] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[20] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[19] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[18] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[17] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[16] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[15] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[14] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[13] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[12] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[11] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[10] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[9] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[8] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[7] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[6] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[5] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[4] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[3] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[2] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[1] top.hadamard_tb.dut.flux_mul.a_flux_inv.outp[0]
-@1000200
+@1401200
 -Flux Inverter A
 @200
 -
-@800200
+@c00200
 -Flux Inverter B
 @22
 #{top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[23:0]} top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[23] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[22] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[21] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[20] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[19] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[18] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[17] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[16] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[15] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[14] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[13] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[12] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[11] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[10] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[9] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[8] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[7] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[6] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[5] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[4] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[3] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[2] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[1] top.hadamard_tb.dut.flux_mul.b_flux_inv.inp[0]
@@ -145,7 +144,7 @@ top.hadamard_tb.dut.sec_cordic.sigma_out
 #{top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[23:0]} top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[23] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[22] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[21] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[20] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[19] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[18] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[17] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[16] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[15] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[14] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[13] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[12] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[11] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[10] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[9] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[8] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[7] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[6] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[5] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[4] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[3] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[2] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[1] top.hadamard_tb.dut.flux_mul.b_flux_inv.compared[0]
 @22
 #{top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[23:0]} top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[23] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[22] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[21] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[20] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[19] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[18] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[17] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[16] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[15] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[14] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[13] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[12] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[11] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[10] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[9] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[8] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[7] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[6] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[5] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[4] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[3] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[2] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[1] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[0]
-@1000200
+@1401200
 -Flux Inverter B
 @200
 -
@@ -162,6 +161,8 @@ top.hadamard_tb.dut.flux_mul.s_reset
 #{top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[24:0]} top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[23] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[22] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[21] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[20] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[19] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[18] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[17] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[16] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[15] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[14] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[13] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[12] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[11] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[10] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[9] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[8] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[7] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[6] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[5] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[4] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[3] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[2] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[1] top.hadamard_tb.dut.flux_mul.b_flux_inv.outp[0]
 #{top.hadamard_tb.dut.flux_mul.p[24:0]} top.hadamard_tb.dut.flux_mul.p[24] top.hadamard_tb.dut.flux_mul.p[23] top.hadamard_tb.dut.flux_mul.p[22] top.hadamard_tb.dut.flux_mul.p[21] top.hadamard_tb.dut.flux_mul.p[20] top.hadamard_tb.dut.flux_mul.p[19] top.hadamard_tb.dut.flux_mul.p[18] top.hadamard_tb.dut.flux_mul.p[17] top.hadamard_tb.dut.flux_mul.p[16] top.hadamard_tb.dut.flux_mul.p[15] top.hadamard_tb.dut.flux_mul.p[14] top.hadamard_tb.dut.flux_mul.p[13] top.hadamard_tb.dut.flux_mul.p[12] top.hadamard_tb.dut.flux_mul.p[11] top.hadamard_tb.dut.flux_mul.p[10] top.hadamard_tb.dut.flux_mul.p[9] top.hadamard_tb.dut.flux_mul.p[8] top.hadamard_tb.dut.flux_mul.p[7] top.hadamard_tb.dut.flux_mul.p[6] top.hadamard_tb.dut.flux_mul.p[5] top.hadamard_tb.dut.flux_mul.p[4] top.hadamard_tb.dut.flux_mul.p[3] top.hadamard_tb.dut.flux_mul.p[2] top.hadamard_tb.dut.flux_mul.p[1] top.hadamard_tb.dut.flux_mul.p[0]
 @28
+top.hadamard_tb.dut.flux_mul.a_bit
+top.hadamard_tb.dut.flux_mul.b_bit
 top.hadamard_tb.dut.flux_mul.ready
 @1000200
 -Flux Multiplier
@@ -281,5 +282,11 @@ top.hadamard_tb.p_coefs_x[0]
 -
 @22
 #{top.hadamard_tb.p_coefs_y[99:0]} top.hadamard_tb.p_coefs_y[99] top.hadamard_tb.p_coefs_y[98] top.hadamard_tb.p_coefs_y[97] top.hadamard_tb.p_coefs_y[96] top.hadamard_tb.p_coefs_y[95] top.hadamard_tb.p_coefs_y[94] top.hadamard_tb.p_coefs_y[93] top.hadamard_tb.p_coefs_y[92] top.hadamard_tb.p_coefs_y[91] top.hadamard_tb.p_coefs_y[90] top.hadamard_tb.p_coefs_y[89] top.hadamard_tb.p_coefs_y[88] top.hadamard_tb.p_coefs_y[87] top.hadamard_tb.p_coefs_y[86] top.hadamard_tb.p_coefs_y[85] top.hadamard_tb.p_coefs_y[84] top.hadamard_tb.p_coefs_y[83] top.hadamard_tb.p_coefs_y[82] top.hadamard_tb.p_coefs_y[81] top.hadamard_tb.p_coefs_y[80] top.hadamard_tb.p_coefs_y[79] top.hadamard_tb.p_coefs_y[78] top.hadamard_tb.p_coefs_y[77] top.hadamard_tb.p_coefs_y[76] top.hadamard_tb.p_coefs_y[75] top.hadamard_tb.p_coefs_y[74] top.hadamard_tb.p_coefs_y[73] top.hadamard_tb.p_coefs_y[72] top.hadamard_tb.p_coefs_y[71] top.hadamard_tb.p_coefs_y[70] top.hadamard_tb.p_coefs_y[69] top.hadamard_tb.p_coefs_y[68] top.hadamard_tb.p_coefs_y[67] top.hadamard_tb.p_coefs_y[66] top.hadamard_tb.p_coefs_y[65] top.hadamard_tb.p_coefs_y[64] top.hadamard_tb.p_coefs_y[63] top.hadamard_tb.p_coefs_y[62] top.hadamard_tb.p_coefs_y[61] top.hadamard_tb.p_coefs_y[60] top.hadamard_tb.p_coefs_y[59] top.hadamard_tb.p_coefs_y[58] top.hadamard_tb.p_coefs_y[57] top.hadamard_tb.p_coefs_y[56] top.hadamard_tb.p_coefs_y[55] top.hadamard_tb.p_coefs_y[54] top.hadamard_tb.p_coefs_y[53] top.hadamard_tb.p_coefs_y[52] top.hadamard_tb.p_coefs_y[51] top.hadamard_tb.p_coefs_y[50] top.hadamard_tb.p_coefs_y[49] top.hadamard_tb.p_coefs_y[48] top.hadamard_tb.p_coefs_y[47] top.hadamard_tb.p_coefs_y[46] top.hadamard_tb.p_coefs_y[45] top.hadamard_tb.p_coefs_y[44] top.hadamard_tb.p_coefs_y[43] top.hadamard_tb.p_coefs_y[42] top.hadamard_tb.p_coefs_y[41] top.hadamard_tb.p_coefs_y[40] top.hadamard_tb.p_coefs_y[39] top.hadamard_tb.p_coefs_y[38] top.hadamard_tb.p_coefs_y[37] top.hadamard_tb.p_coefs_y[36] top.hadamard_tb.p_coefs_y[35] top.hadamard_tb.p_coefs_y[34] top.hadamard_tb.p_coefs_y[33] top.hadamard_tb.p_coefs_y[32] top.hadamard_tb.p_coefs_y[31] top.hadamard_tb.p_coefs_y[30] top.hadamard_tb.p_coefs_y[29] top.hadamard_tb.p_coefs_y[28] top.hadamard_tb.p_coefs_y[27] top.hadamard_tb.p_coefs_y[26] top.hadamard_tb.p_coefs_y[25] top.hadamard_tb.p_coefs_y[24] top.hadamard_tb.p_coefs_y[23] top.hadamard_tb.p_coefs_y[22] top.hadamard_tb.p_coefs_y[21] top.hadamard_tb.p_coefs_y[20] top.hadamard_tb.p_coefs_y[19] top.hadamard_tb.p_coefs_y[18] top.hadamard_tb.p_coefs_y[17] top.hadamard_tb.p_coefs_y[16] top.hadamard_tb.p_coefs_y[15] top.hadamard_tb.p_coefs_y[14] top.hadamard_tb.p_coefs_y[13] top.hadamard_tb.p_coefs_y[12] top.hadamard_tb.p_coefs_y[11] top.hadamard_tb.p_coefs_y[10] top.hadamard_tb.p_coefs_y[9] top.hadamard_tb.p_coefs_y[8] top.hadamard_tb.p_coefs_y[7] top.hadamard_tb.p_coefs_y[6] top.hadamard_tb.p_coefs_y[5] top.hadamard_tb.p_coefs_y[4] top.hadamard_tb.p_coefs_y[3] top.hadamard_tb.p_coefs_y[2] top.hadamard_tb.p_coefs_y[1] top.hadamard_tb.p_coefs_y[0]
+#{top.hadamard_tb.p_coefs_y_0[24:0]} top.hadamard_tb.p_coefs_y_0[24] top.hadamard_tb.p_coefs_y_0[23] top.hadamard_tb.p_coefs_y_0[22] top.hadamard_tb.p_coefs_y_0[21] top.hadamard_tb.p_coefs_y_0[20] top.hadamard_tb.p_coefs_y_0[19] top.hadamard_tb.p_coefs_y_0[18] top.hadamard_tb.p_coefs_y_0[17] top.hadamard_tb.p_coefs_y_0[16] top.hadamard_tb.p_coefs_y_0[15] top.hadamard_tb.p_coefs_y_0[14] top.hadamard_tb.p_coefs_y_0[13] top.hadamard_tb.p_coefs_y_0[12] top.hadamard_tb.p_coefs_y_0[11] top.hadamard_tb.p_coefs_y_0[10] top.hadamard_tb.p_coefs_y_0[9] top.hadamard_tb.p_coefs_y_0[8] top.hadamard_tb.p_coefs_y_0[7] top.hadamard_tb.p_coefs_y_0[6] top.hadamard_tb.p_coefs_y_0[5] top.hadamard_tb.p_coefs_y_0[4] top.hadamard_tb.p_coefs_y_0[3] top.hadamard_tb.p_coefs_y_0[2] top.hadamard_tb.p_coefs_y_0[1] top.hadamard_tb.p_coefs_y_0[0]
+#{top.hadamard_tb.p_coefs_y_1[24:0]} top.hadamard_tb.p_coefs_y_1[24] top.hadamard_tb.p_coefs_y_1[23] top.hadamard_tb.p_coefs_y_1[22] top.hadamard_tb.p_coefs_y_1[21] top.hadamard_tb.p_coefs_y_1[20] top.hadamard_tb.p_coefs_y_1[19] top.hadamard_tb.p_coefs_y_1[18] top.hadamard_tb.p_coefs_y_1[17] top.hadamard_tb.p_coefs_y_1[16] top.hadamard_tb.p_coefs_y_1[15] top.hadamard_tb.p_coefs_y_1[14] top.hadamard_tb.p_coefs_y_1[13] top.hadamard_tb.p_coefs_y_1[12] top.hadamard_tb.p_coefs_y_1[11] top.hadamard_tb.p_coefs_y_1[10] top.hadamard_tb.p_coefs_y_1[9] top.hadamard_tb.p_coefs_y_1[8] top.hadamard_tb.p_coefs_y_1[7] top.hadamard_tb.p_coefs_y_1[6] top.hadamard_tb.p_coefs_y_1[5] top.hadamard_tb.p_coefs_y_1[4] top.hadamard_tb.p_coefs_y_1[3] top.hadamard_tb.p_coefs_y_1[2] top.hadamard_tb.p_coefs_y_1[1] top.hadamard_tb.p_coefs_y_1[0]
+#{top.hadamard_tb.p_coefs_y_2[24:0]} top.hadamard_tb.p_coefs_y_2[24] top.hadamard_tb.p_coefs_y_2[23] top.hadamard_tb.p_coefs_y_2[22] top.hadamard_tb.p_coefs_y_2[21] top.hadamard_tb.p_coefs_y_2[20] top.hadamard_tb.p_coefs_y_2[19] top.hadamard_tb.p_coefs_y_2[18] top.hadamard_tb.p_coefs_y_2[17] top.hadamard_tb.p_coefs_y_2[16] top.hadamard_tb.p_coefs_y_2[15] top.hadamard_tb.p_coefs_y_2[14] top.hadamard_tb.p_coefs_y_2[13] top.hadamard_tb.p_coefs_y_2[12] top.hadamard_tb.p_coefs_y_2[11] top.hadamard_tb.p_coefs_y_2[10] top.hadamard_tb.p_coefs_y_2[9] top.hadamard_tb.p_coefs_y_2[8] top.hadamard_tb.p_coefs_y_2[7] top.hadamard_tb.p_coefs_y_2[6] top.hadamard_tb.p_coefs_y_2[5] top.hadamard_tb.p_coefs_y_2[4] top.hadamard_tb.p_coefs_y_2[3] top.hadamard_tb.p_coefs_y_2[2] top.hadamard_tb.p_coefs_y_2[1] top.hadamard_tb.p_coefs_y_2[0]
+#{top.hadamard_tb.p_coefs_y_3[24:0]} top.hadamard_tb.p_coefs_y_3[24] top.hadamard_tb.p_coefs_y_3[23] top.hadamard_tb.p_coefs_y_3[22] top.hadamard_tb.p_coefs_y_3[21] top.hadamard_tb.p_coefs_y_3[20] top.hadamard_tb.p_coefs_y_3[19] top.hadamard_tb.p_coefs_y_3[18] top.hadamard_tb.p_coefs_y_3[17] top.hadamard_tb.p_coefs_y_3[16] top.hadamard_tb.p_coefs_y_3[15] top.hadamard_tb.p_coefs_y_3[14] top.hadamard_tb.p_coefs_y_3[13] top.hadamard_tb.p_coefs_y_3[12] top.hadamard_tb.p_coefs_y_3[11] top.hadamard_tb.p_coefs_y_3[10] top.hadamard_tb.p_coefs_y_3[9] top.hadamard_tb.p_coefs_y_3[8] top.hadamard_tb.p_coefs_y_3[7] top.hadamard_tb.p_coefs_y_3[6] top.hadamard_tb.p_coefs_y_3[5] top.hadamard_tb.p_coefs_y_3[4] top.hadamard_tb.p_coefs_y_3[3] top.hadamard_tb.p_coefs_y_3[2] top.hadamard_tb.p_coefs_y_3[1] top.hadamard_tb.p_coefs_y_3[0]
+@200
+-
 [pattern_trace] 1
 [pattern_trace] 0

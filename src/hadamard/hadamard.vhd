@@ -4,7 +4,7 @@ library ieee;
 
 entity hadamard is
   generic (
-    logn  : natural RANGE 1 to 3 := 3;
+    logn  : natural range 1 to 3 := 3;
     n_idx : natural range 0 to 7 := 0
   );
   port (
@@ -21,11 +21,11 @@ entity hadamard is
     ready     : buffer std_logic
 
   -- debugging ports
-  -- db_ch1, db_ch2 : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
-  -- db_c1, db_c2, db_c3, db_c4 : OUT STD_LOGIC_VECTOR(24 DOWNTO 0);
+  -- db_ch1, db_ch2 : OUT STD_LOGIC_VECTOR(1 downto 0);
+  -- db_c1, db_c2, db_c3, db_c4 : OUT STD_LOGIC_VECTOR(24 downto 0);
   -- db_in_bit : IN STD_LOGIC;
-  -- db_in_coor : IN STD_LOGIC_VECTOR(24 DOWNTO 0);
-  -- db_in_ang : IN STD_LOGIC_VECTOR(24 DOWNTO 0)
+  -- db_in_coor : IN STD_LOGIC_VECTOR(24 downto 0);
+  -- db_in_ang : IN STD_LOGIC_VECTOR(24 downto 0)
   );
 end entity hadamard;
 
@@ -35,7 +35,7 @@ architecture arch of hadamard is
     generic (
       size      : natural              := 25;
       frac_size : natural              := 16;
-      logn      : natural RANGE 1 to 3 := 3;
+      logn      : natural range 1 to 3 := 3;
       n_idx     : natural range 0 to 7 := 0
     );
     port (
@@ -114,7 +114,7 @@ architecture arch of hadamard is
   signal in_change_sum    : std_logic_vector(1 downto 0);
   signal inc_change       : std_logic_vector(1 downto 0);
   signal next_change      : std_logic_vector(1 downto 0);
-  signal cur_change       : std_logic_vector(1 downto 0) := (OTHERS => '0');
+  signal cur_change       : std_logic_vector(1 downto 0) := (others => '0');
   signal x_i_abs          : std_logic_vector(24 downto 0);
   signal y_i_abs          : std_logic_vector(24 downto 0);
   signal x_k_abs          : std_logic_vector(24 downto 0);
@@ -125,8 +125,8 @@ architecture arch of hadamard is
   signal y_k_n            : std_logic_vector(24 downto 0);
 
   -- Secondary CORDIC signals
-  signal sc_x_cur,   sc_y_cur : std_logic_vector(24 downto 0) := (OTHERS => '0');
-  signal sc_z_cur             : std_logic_vector(24 downto 0) := (OTHERS => '0');
+  signal sc_x_cur,   sc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
+  signal sc_z_cur             : std_logic_vector(24 downto 0) := (others => '0');
   signal sc_sig_cur           : std_logic                     := '0';
 
   signal sc_x_nex               : std_logic_vector(24 downto 0);
@@ -138,12 +138,12 @@ architecture arch of hadamard is
 
   -- J control
 
-  signal j : std_logic_vector(4 downto 0) := (OTHERS => '0');
+  signal j : std_logic_vector(4 downto 0) := (others => '0');
 
   -- Primary CORDIC
 
-  signal pc_x_cur,   pc_y_cur : std_logic_vector(24 downto 0) := (OTHERS => '0');
-  signal pc_z_cur             : std_logic_vector(24 downto 0) := (OTHERS => '0');
+  signal pc_x_cur,   pc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
+  signal pc_z_cur             : std_logic_vector(24 downto 0) := (others => '0');
   signal pc_sig_cur           : std_logic                     := '0';
 
   signal pc_x_nex   : std_logic_vector(24 downto 0);
@@ -169,7 +169,10 @@ architecture arch of hadamard is
   signal prod_z          : std_logic_vector(24 downto 0);
   signal prod_z_norm     : std_logic_vector(24 downto 0);
   signal prod_mod        : std_logic_vector(24 downto 0);
+  signal prod_quadrant   : std_logic_vector(1 downto 0);
   signal z_pi            : std_logic_vector(24 downto 0);
+  signal rot_x_invert    : std_logic;
+  signal rot_y_invert    : std_logic;
   signal mul_a           : std_logic_vector(24 downto 0);
   signal mul_a_nex       : std_logic_vector(24 downto 0);
   signal mul_b           : std_logic_vector(24 downto 0);
@@ -180,11 +183,12 @@ architecture arch of hadamard is
   signal neg_mul_coefs_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
   signal neg_mul_coefs_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
 
+
   -- Output
-  signal p_coefs_nex_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_nex_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_x_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_y_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_nex_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_nex_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_x_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_y_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
 
 begin
 
@@ -214,20 +218,20 @@ begin
   in_change_img(1) <= y_i(y_i'length - 1);
 
   with x_i(x_i'length - 1) select x_i_abs <=
-    std_logic_vector(unsigned(NOT x_i) + to_unsigned(1, x_i'length)) when '1',
-    x_i when OTHERS;
+    std_logic_vector(unsigned(not x_i) + to_unsigned(1, x_i'length)) when '1',
+    x_i when others;
 
   with y_i(y_i'length - 1) select y_i_abs <=
-    std_logic_vector(unsigned(NOT y_i) + to_unsigned(1, y_i'length)) when '1',
-    y_i when OTHERS;
+    std_logic_vector(unsigned(not y_i) + to_unsigned(1, y_i'length)) when '1',
+    y_i when others;
 
   with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select x_i_n <=
     y_i_abs when '1',
-    x_i_abs when OTHERS;
+    x_i_abs when others;
 
   with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select y_i_n <=
     x_i_abs when '1',
-    y_i_abs when OTHERS;
+    y_i_abs when others;
 
   -- Kernel
 
@@ -235,20 +239,20 @@ begin
   in_change_ker(1) <= y_k(y_k'length - 1);
 
   with x_k(x_k'length - 1) select x_k_abs <=
-    std_logic_vector(unsigned(NOT x_k) + to_unsigned(1, x_k'length)) when '1',
-    x_k when OTHERS;
+    std_logic_vector(unsigned(not x_k) + to_unsigned(1, x_k'length)) when '1',
+    x_k when others;
 
   with y_k(y_i'length - 1) select y_k_abs <=
-    std_logic_vector(unsigned(NOT y_k) + to_unsigned(1, y_k'length)) when '1',
-    y_k when OTHERS;
+    std_logic_vector(unsigned(not y_k) + to_unsigned(1, y_k'length)) when '1',
+    y_k when others;
 
   with (x_k(x_k'length - 1) xor y_k(y_k'length - 1)) select x_k_n <=
     y_k_abs when '1',
-    x_k_abs when OTHERS;
+    x_k_abs when others;
 
   with (x_k(x_k'length - 1) xor y_k(y_k'length - 1)) select y_k_n <=
     x_k_abs when '1',
-    y_k_abs when OTHERS;
+    y_k_abs when others;
 
   -- Change processing circuit
 
@@ -256,18 +260,18 @@ begin
 
   with flux_to_cordic select next_change <=
     inc_change when '1',
-    in_change_sum when OTHERS;
+    in_change_sum when others;
 
   with increment_change select inc_change <=
     std_logic_vector(unsigned(cur_change) + to_unsigned(1, 2)) when '1',
-    cur_change when OTHERS;
+    cur_change when others;
 
   change_process : process (clock) is
   begin
 
     if rising_edge(clock) then
       if (reset = '1') then
-        cur_change <= (OTHERS => '0');
+        cur_change <= (others => '0');
       elsif (load_change = '1') then
         cur_change <= next_change;
       end if;
@@ -299,9 +303,9 @@ begin
 
     if rising_edge(clock) then
       if (reset = '1') then
-        sc_x_cur   <= (OTHERS => '0');
-        sc_y_cur   <= (OTHERS => '0');
-        sc_z_cur   <= (OTHERS => '0');
+        sc_x_cur   <= (others => '0');
+        sc_y_cur   <= (others => '0');
+        sc_z_cur   <= (others => '0');
         sc_sig_cur <= '0';
       elsif (freeze_terms = '0') then
         sc_x_cur   <= sc_x_nex;
@@ -315,17 +319,17 @@ begin
 
   with cordic_feedback select sc_x_nex <=
     sc_x_cor when '1',
-    x_i_n when OTHERS;
+    x_i_n when others;
   with cordic_feedback select sc_y_nex <=
     sc_y_cor when '1',
-    y_i_n when OTHERS;
+    y_i_n when others;
   with cordic_feedback select sc_z_nex <=
     sc_z_cor when '1',
-    (OTHERS => '0') when OTHERS;
+    (others => '0') when others;
   -- WITH cordic_feedback SELECT
   --   sc_sig_nex <= sc_sig_cor WHEN '1',
   --   '1' WHEN '0';
-  sc_sig_nex <= (NOT cordic_feedback) or sc_sig_cor;
+  sc_sig_nex <= (not cordic_feedback) or sc_sig_cor;
 
   -- J control signals
 
@@ -334,7 +338,7 @@ begin
 
     if rising_edge(clock) then
       if (cordic_feedback = '0') then
-        j <= (OTHERS => '0');
+        j <= (others => '0');
       else
         j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
       end if;
@@ -367,9 +371,9 @@ begin
 
     if rising_edge(clock) then
       if (reset = '1') then
-        pc_x_cur   <= (OTHERS => '0');
-        pc_y_cur   <= (OTHERS => '0');
-        pc_z_cur   <= (OTHERS => '0');
+        pc_x_cur   <= (others => '0');
+        pc_y_cur   <= (others => '0');
+        pc_z_cur   <= (others => '0');
         pc_sig_cur <= '0';
       elsif (freeze_terms = '0') then
         pc_x_cur   <= pc_x_nex;
@@ -379,32 +383,32 @@ begin
       end if;
     end if;
 
-  end process pc_cor_pro; -- sc_cor_pro
+  end process pc_cor_pro;
 
   with cordic_feedback select pc_x_sel <=
     pc_x_cor when '1',
-    x_k_n when OTHERS;
+    x_k_n when others;
   with cordic_feedback select pc_y_sel <=
     pc_y_cor when '1',
-    y_k_n when OTHERS;
+    y_k_n when others;
   with cordic_feedback select pc_z_sel <=
     pc_z_cor when '1',
-    (OTHERS => '0') when OTHERS;
+    (others => '0') when others;
   -- WITH cordic_feedback SELECT
   --   sc_sig_nex <= sc_sig_cor WHEN '1',
-  --   NOT cordic_rotation WHEN '0';
+  --   not cordic_rotation WHEN '0';
   pc_sig_sel <= (cordic_feedback and pc_sig_cor) or
-		((NOT cordic_feedback) and (NOT cordic_rotation));
+		((not cordic_feedback) and (not cordic_rotation));
 
   with flux_to_cordic select pc_x_nex <=
     pc_x_sel when '0',
-    prod_mod when OTHERS;
+    prod_mod when others;
   with flux_to_cordic select pc_y_nex <=
     pc_y_sel when '0',
-    (OTHERS => '0') when OTHERS;
+    (others => '0') when others;
   with flux_to_cordic select pc_z_nex <=
     pc_z_sel when '0',
-    prod_z_norm when OTHERS;
+    prod_z_norm when others;
   pc_sig_nex <= pc_sig_sel; -- for consistency
 
   -- Multiplier
@@ -423,14 +427,30 @@ begin
       res => prod_z_norm
     );
 
-  z_pi <= (24 => '1', others => '0') when prod_z(23 downto 0) <= half_pi else
-          '0' & pi when prod_z(23 downto 0) <= pi else
-          '1' & pi when prod_z(23 downto 0) <= three_half_pi else
-          '0' & two_pi;
+  prod_quadrant <= "00" when prod_z(23 downto 0) <= half_pi else          -- Make generic
+                    "01" when prod_z(23 downto 0) <= pi else
+                    "10" when prod_z(23 downto 0) <= three_half_pi else
+                    "11";
+  
+  with prod_quadrant select z_pi <=
+    (24 => '1', others => '0') when "00",
+    '0' & pi when "01",
+    '1' & pi when "10",
+    '0' & two_pi when others;
 
-  -- correction_sign <= not z_pi(24);
+  pc_cor_correct : process (clock) is
+  begin
+    if rising_edge(clock) then
 
-  -- store sign change for later
+      if (load_change = '1' and cordic_rotation = '1') then -- pre_rotation
+
+        rot_x_invert <= ( (not prod_quadrant(1) and prod_quadrant(0)) or (prod_quadrant(1) and not prod_quadrant(0)) ) xor prod_z(24); -- QTL QBL and invert again for Z
+        
+        rot_y_invert <= prod_quadrant(1); -- QBL QBR
+
+      end if;
+    end if;
+  end process pc_cor_correct;
 
   increment_change <= prod_z(24);
 
@@ -457,43 +477,56 @@ begin
   mul_a <= pc_x_cur;
   with freeze_terms select mul_a_nex <=
     mul_a when '1',
-    pc_x_cor when OTHERS;
+    pc_x_cor when others;
   with mul_xy select mul_b <=
     pc_y_cur when '1',
-    sc_x_cur when OTHERS;
+    sc_x_cur when others;
   with freeze_terms select mul_b_nex <=
     mul_b when '1',
-    mul_b_nex_sel when OTHERS;
+    mul_b_nex_sel when others;
   with mul_xy select mul_b_nex_sel <=
     pc_y_nex when '1',
-    sc_x_nex when OTHERS;
+    sc_x_nex when others;
 
   -- Change processing at output
 
   gen_mul_negs : for i IN 0 to logn generate
-    neg_mul_coefs_x(25 * (i + 1) - 1 DOWNTO 25 * i) <= std_logic_vector(unsigned(NOT mul_coefs_x(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
-    neg_mul_coefs_y(25 * (i + 1) - 1 DOWNTO 25 * i) <= std_logic_vector(unsigned(NOT mul_coefs_y(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
+    neg_mul_coefs_x(25 * (i + 1) - 1 downto 25 * i) <= std_logic_vector(unsigned(not mul_coefs_x(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
+    neg_mul_coefs_y(25 * (i + 1) - 1 downto 25 * i) <= std_logic_vector(unsigned(not mul_coefs_y(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
   end generate gen_mul_negs;
 
   with cur_change select p_coefs_nex_x <=
     mul_coefs_x when "00",
     mul_coefs_y when "01",
     neg_mul_coefs_x when "10",
-    neg_mul_coefs_y when OTHERS;
+    neg_mul_coefs_y when others;
 
   with cur_change select p_coefs_nex_y <=
     mul_coefs_y when "00",
     neg_mul_coefs_x when "01",
     neg_mul_coefs_y when "10",
-    mul_coefs_x when OTHERS;
+    mul_coefs_x when others;
 
   outp_reg : process (clock) is
   begin
 
     if rising_edge(clock) then
       if (ready = '0') then
-        p_coefs_x_s <= p_coefs_nex_x;
-        p_coefs_y_s <= p_coefs_nex_y;
+
+        with rot_x_invert select p_coefs_x_s <= 
+          (99 => not p_coefs_nex_x(99), 98 downto 75 => p_coefs_nex_x(98 downto 75),
+           74 => not p_coefs_nex_x(74), 73 downto 50 => p_coefs_nex_x(73 downto 50),
+           49 => not p_coefs_nex_x(49), 48 downto 25 => p_coefs_nex_x(48 downto 25),
+           24 => not p_coefs_nex_x(24), 23 downto 0  => p_coefs_nex_x(23 downto 0)) when '1',
+           p_coefs_nex_x when others;
+          
+        with rot_y_invert select p_coefs_y_s <= 
+          (99 => not p_coefs_nex_y(99), 98 downto 75 => p_coefs_nex_y(98 downto 75),
+          74 => not p_coefs_nex_y(74), 73 downto 50 => p_coefs_nex_y(73 downto 50),
+          49 => not p_coefs_nex_y(49), 48 downto 25 => p_coefs_nex_y(48 downto 25),
+          24 => not p_coefs_nex_y(24), 23 downto 0  => p_coefs_nex_y(23 downto 0)) when '1',
+          p_coefs_nex_y when others;
+          
       end if;
     end if;
 
