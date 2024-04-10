@@ -4,8 +4,8 @@ library ieee;
 
 entity hadamard is
   generic (
-    logN  : natural RANGE 1 to 3 := 3;
-    N_idx : natural range 0 to 7 := 0
+    logn  : natural RANGE 1 to 3 := 3;
+    n_idx : natural range 0 to 7 := 0
   );
   port (
     clock     : in    std_logic;
@@ -15,9 +15,9 @@ entity hadamard is
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
     y_k       : in    std_logic_vector(24 downto 0); -- s_iiii'iiii.ffff'ffff'ffff'ffff
-    lut       : in    std_logic_vector(((logN+1) * 25) - 1 downto 0);
-    p_coefs_x : out   std_logic_vector(((logN+1) * 25) - 1 downto 0);
-    p_coefs_y : out   std_logic_vector(((logN+1) * 25) - 1 downto 0);
+    lut       : in    std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+    p_coefs_x : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+    p_coefs_y : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
     ready     : buffer std_logic
 
   -- debugging ports
@@ -35,8 +35,8 @@ architecture arch of hadamard is
     generic (
       size      : natural              := 25;
       frac_size : natural              := 16;
-      logN      : natural RANGE 1 to 3 := 3;
-      N_idx     : natural range 0 to 7 := 0
+      logn      : natural RANGE 1 to 3 := 3;
+      n_idx     : natural range 0 to 7 := 0
     );
     port (
       clock   : in    std_logic;
@@ -46,9 +46,9 @@ architecture arch of hadamard is
       b       : in    std_logic_vector(size - 1 downto 0);
       a_nex   : in    std_logic_vector(size - 1 downto 0);
       b_nex   : in    std_logic_vector(size - 1 downto 0);
-      lut     : in    std_logic_vector(((logN+1) * size) - 1 downto 0);
-      coefs_x : out   std_logic_vector(((logN+1) * size) - 1 downto 0);
-      coefs_y : out   std_logic_vector(((logN+1) * size) - 1 downto 0);
+      lut     : in    std_logic_vector(((logN + 1) * size) - 1 downto 0);
+      coefs_x : out   std_logic_vector(((logN + 1) * size) - 1 downto 0);
+      coefs_y : out   std_logic_vector(((logN + 1) * size) - 1 downto 0);
       p       : out   std_logic_vector(size - 1 downto 0);
       ready   : out   std_logic
     );
@@ -159,25 +159,32 @@ architecture arch of hadamard is
   signal pc_sig_cor : std_logic;
   signal pc_sig_sel : std_logic;
 
+  constant pi            : std_logic_vector(23 downto 0) := "000000110010010000111111"; -- 011.0010010000111111
+  constant two_pi        : std_logic_vector(23 downto 0) := "000001100100100001111110"; -- 110.0100100001111110
+  constant half_pi       : std_logic_vector(23 downto 0) := "000000011001001000011111"; -- 001.1001001000011111
+  constant three_half_pi : std_logic_vector(23 downto 0) := "000001001011011001011101"; -- 100.1011011001011101
+
   -- Multiplier
 
-  signal prod_z,     prod_z_norm : std_logic_vector(24 downto 0);
-  signal prod_mod                : std_logic_vector(24 downto 0);
-  signal mul_a                   : std_logic_vector(24 downto 0);
-  signal mul_a_nex               : std_logic_vector(24 downto 0);
-  signal mul_b                   : std_logic_vector(24 downto 0);
-  signal mul_b_nex               : std_logic_vector(24 downto 0);
-  signal mul_b_nex_sel           : std_logic_vector(24 downto 0);
-  signal mul_coefs_x             : std_logic_vector(((logN+1) * 25) - 1 downto 0);
-  signal mul_coefs_y             : std_logic_vector(((logN+1) * 25) - 1 downto 0);
-  signal neg_mul_coefs_x         : std_logic_vector(((logN+1) * 25) - 1 downto 0);
-  signal neg_mul_coefs_y         : std_logic_vector(((logN+1) * 25) - 1 downto 0);
+  signal prod_z          : std_logic_vector(24 downto 0);
+  signal prod_z_norm     : std_logic_vector(24 downto 0);
+  signal prod_mod        : std_logic_vector(24 downto 0);
+  signal z_pi            : std_logic_vector(24 downto 0);
+  signal mul_a           : std_logic_vector(24 downto 0);
+  signal mul_a_nex       : std_logic_vector(24 downto 0);
+  signal mul_b           : std_logic_vector(24 downto 0);
+  signal mul_b_nex       : std_logic_vector(24 downto 0);
+  signal mul_b_nex_sel   : std_logic_vector(24 downto 0);
+  signal mul_coefs_x     : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+  signal mul_coefs_y     : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+  signal neg_mul_coefs_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+  signal neg_mul_coefs_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
 
   -- Output
-  signal p_coefs_nex_x : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_nex_y : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_x_s   : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
-  signal p_coefs_y_s   : std_logic_vector(((logN+1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_nex_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_nex_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_x_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
+  signal p_coefs_y_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (OTHERS => '0');
 
 begin
 
@@ -185,18 +192,18 @@ begin
 
   uc : component hadamard_uc
     port map (
-		clock,
- start,
- reset,
- mul_ready,
- j_end,
- load_change,
- cordic_feedback,
-		flux_to_cordic,
- freeze_terms,
- mul_xy,
- cordic_rotation,
- ready
+      clock           => clock,
+      start           => start,
+      reset           => reset,
+      mul_ready       => mul_ready,
+      j_end           => j_end,
+      load_change     => load_change,
+      cordic_feedback => cordic_feedback,
+      flux_to_cordic  => flux_to_cordic,
+      freeze_terms    => freeze_terms,
+      mul_xy          => mul_xy,
+      cordic_rotation => cordic_rotation,
+      ready           => ready
     );
 
   -- Initial sign treatment and change generation
@@ -272,19 +279,19 @@ begin
 
   sec_cordic : component cordic
     generic map (
-	  5, 25
+      j_len => 5, coords_len=> 25
     )
     port map (
-		sc_sig_cur,
- '0',
-		j,
-		sc_x_cur,
- sc_y_cur,
-		sc_z_cur,
-		sc_x_cor,
- sc_y_cor,
-		sc_z_cor,
-		sc_sig_cor
+      sigma_in  => sc_sig_cur,
+      rotation  => '0',
+      j         => j,
+      x_in      => sc_x_cur,
+      y_in      => sc_y_cur,
+      z_in      => sc_z_cur,
+      x_out     => sc_x_cor,
+      y_out     => sc_y_cor,
+      z_out     => sc_z_cor,
+      sigma_out => sc_sig_cor
     );
 
   sc_cor_pro : process (clock) is
@@ -340,19 +347,19 @@ begin
   -- Primary Cordic
   pri_cordic : component cordic
     generic map (
-		5, 25
+      j_len => 5, coords_len=> 25
     )
     port map (
-		pc_sig_cur,
- cordic_rotation,
-		j,
-		pc_x_cur,
- pc_y_cur,
-		pc_z_cur,
-		pc_x_cor,
- pc_y_cor,
-		pc_z_cor,
-		pc_sig_cor
+      sigma_in  => pc_sig_cur,
+      rotation  => cordic_rotation,
+      j         => j,
+      x_in      => pc_x_cur,
+      y_in      => pc_y_cur,
+      z_in      => pc_z_cur,
+      x_out     => pc_x_cor,
+      y_out     => pc_y_cor,
+      z_out     => pc_z_cor,
+      sigma_out => pc_sig_cor
     );
 
   pc_cor_pro : process (clock) is
@@ -403,33 +410,48 @@ begin
   -- Multiplier
 
   z_addition : component b25_add
-  port map (
-    a => pc_z_cur,
-    b => sc_z_cur,
-    res => prod_z
-  );
+    port map (
+      a   => pc_z_cur,
+      b   => sc_z_cur,
+      res => prod_z
+    );
 
-  prod_z_norm      <= '0' & prod_z(23 downto 0);
+  z_correction : component b25_add
+    port map (
+      a   => not z_pi(24) & prod_z(23 downto 0),
+      b   => z_pi,
+      res => prod_z_norm
+    );
+
+  z_pi <= (24 => '1', others => '0') when prod_z(23 downto 0) <= half_pi else
+          '0' & pi when prod_z(23 downto 0) <= pi else
+          '1' & pi when prod_z(23 downto 0) <= three_half_pi else
+          '0' & two_pi;
+
+  -- correction_sign <= not z_pi(24);
+
+  -- store sign change for later
+
   increment_change <= prod_z(24);
 
   -- OBS (from prev): check if run can be left at high
   flux_mul : component flux_multiplier
     generic map (
-25, 16, 3, N_idx
+      size => 25, frac_size=> 16, logn=> 3, n_idx=> N_idx
     )
     port map (
-		clock,
- reset,
- start,
-		mul_a,
- mul_b,
- mul_a_nex,
- mul_b_nex,
-		lut,
-		mul_coefs_x,
-		mul_coefs_y,
-		prod_mod,
-		mul_ready
+      clock   => clock,
+      reset   => reset,
+      run     => start,
+      a       => mul_a,
+      b       => mul_b,
+      a_nex   => mul_a_nex,
+      b_nex   => mul_b_nex,
+      lut     => lut,
+      coefs_x => mul_coefs_x,
+      coefs_y => mul_coefs_y,
+      p       => prod_mod,
+      ready   => mul_ready
     );
 
   mul_a <= pc_x_cur;
@@ -448,7 +470,7 @@ begin
 
   -- Change processing at output
 
-  gen_mul_negs : for i IN 0 to logN generate
+  gen_mul_negs : for i IN 0 to logn generate
     neg_mul_coefs_x(25 * (i + 1) - 1 DOWNTO 25 * i) <= std_logic_vector(unsigned(NOT mul_coefs_x(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
     neg_mul_coefs_y(25 * (i + 1) - 1 DOWNTO 25 * i) <= std_logic_vector(unsigned(NOT mul_coefs_y(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
   end generate gen_mul_negs;

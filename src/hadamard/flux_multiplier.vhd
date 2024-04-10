@@ -7,8 +7,8 @@ entity flux_multiplier is
   generic (
     size      : natural              := 25;
     frac_size : natural              := 16;
-    logN      : natural RANGE 1 to 3 := 3;
-    N_idx     : natural range 0 to 7 := 0
+    logn      : natural RANGE 1 to 3 := 3;
+    n_idx     : natural range 0 to 7 := 0
   );
   port (
     clock   : in    std_logic;
@@ -18,9 +18,9 @@ entity flux_multiplier is
     b       : in    std_logic_vector(size - 1 downto 0);
     a_nex   : in    std_logic_vector(size - 1 downto 0);
     b_nex   : in    std_logic_vector(size - 1 downto 0);
-    lut     : in    std_logic_vector(((logN+1) * size) - 1 downto 0);
-    coefs_x : out   std_logic_vector(((logN+1) * size) - 1 downto 0);
-    coefs_y : out   std_logic_vector(((logN+1) * size) - 1 downto 0);
+    lut     : in    std_logic_vector(((logn + 1) * size) - 1 downto 0);
+    coefs_x : out   std_logic_vector(((logn + 1) * size) - 1 downto 0);
+    coefs_y : out   std_logic_vector(((logn + 1) * size) - 1 downto 0);
     p       : out   std_logic_vector(size - 1 downto 0);
     ready   : out   std_logic
   );
@@ -79,14 +79,14 @@ architecture synth of flux_multiplier is
   signal p_full,   a_kx           : std_logic_vector((2 * size) - 1 downto 0) := (others => '0');
   signal p_full_n, p_full_shifted : std_logic_vector((2 * size) - 1 downto 0);
 
-  signal kx_mux_x   : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_add_x   : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_reg_x   : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_shift_x : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_mux_y   : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_add_y   : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_reg_y   : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
-  signal kx_shift_y : ieee.numeric_std.unsigned((2 * (logN+1) * size) - 1 downto 0) := (others => '0');
+  signal kx_mux_x   : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_add_x   : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_reg_x   : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_shift_x : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_mux_y   : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_add_y   : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_reg_y   : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
+  signal kx_shift_y : ieee.numeric_std.unsigned((2 * (logn + 1) * size) - 1 downto 0) := (others => '0');
 
 -- SIGNAL p_full_shifted_u, shift_sum_u : unsigned((2 * size) - 1 downto 0);
 -- SIGNAL bit_prod_u : unsigned((2*size)-1 downto 0);
@@ -164,7 +164,7 @@ begin
 
   p_full_shifted(1 downto 0)                         <= "00";
   p_full_shifted(p_full_shifted'length - 1 downto 2) <= p_full(p_full_shifted'length - 3 downto 0);
-  
+
   -- p_full_n <= p_full_shifted + shift_sum + ("" & bit_prod);
   -- p_full_shifted_u <= ;
   -- shift_sum_u <= ;
@@ -188,12 +188,13 @@ begin
 
   p <= p_full(size + frac_size - 1 downto frac_size);
 
-
   -- Constant multipliers (KX)
 
-  kx_x : for idx in 0 to logN generate
+  kx_x : for idx in 0 to logn generate
   begin
-    select_gen_x : if (N_idx mod 2 = 1) or ( (N_idx mod 4 = 2) and (idx mod 4 = 2) ) or ( (N_idx = 0) and (idx = 0) ) generate       -- Make generic later
+
+    select_gen_x : if (n_idx mod 2 = 1) or ((n_idx mod 4 = 2) and (idx mod 4 = 2)) or ((n_idx = 0) and (idx = 0)) generate       -- Make generic later
+    
       kx_mux_x(2 * (idx + 1) * size - 1 downto 2 * idx * size + size) <= (others => '0');
       with a_bit select kx_mux_x(2 * (idx + 1) * size - size - 1 downto 2 * idx * size) <=
         unsigned(lut((idx + 1) * size - 1 downto idx * size)) when '1',
@@ -210,24 +211,26 @@ begin
           end if;
         end if;
 
-      end process kx_proc_x; -- kx_proc_x
+      end process kx_proc_x;
 
       kx_add_x(2 * (idx + 1) * size - 1 downto 2 * idx * size)       <= kx_mux_x(2 * (idx + 1) * size - 1 downto 2 * idx * size) +
                                                                         kx_shift_x(2 * (idx + 1) * size - 1 downto 2 * idx * size);
       kx_shift_x(2 * (idx + 1) * size - 1 downto 2 * idx * size + 1) <= kx_reg_x(2 * (idx + 1) * size - 2 downto 2 * idx * size);
 
       coefs_x((idx + 1) * size - 1 downto idx * size) <= std_logic_vector(kx_reg_x(2 * idx * size + frac_size + size - 1 downto 2 * idx * size + frac_size));
-      -- coefs_x((idx+1)*size - 1 downto idx*size) <= std_logic_vector(kx_reg_x((idx+1)*size + frac_size - 1 downto idx*size + frac_size));
-    
+    -- coefs_x((idx+1)*size - 1 downto idx*size) <= std_logic_vector(kx_reg_x((idx+1)*size + frac_size - 1 downto idx*size + frac_size));
+
     else generate
-      coefs_x((idx + 1) * size - 1 downto idx * size) <= (others => '0');   -- Not sure if this makes a ton of hardware
+      coefs_x((idx + 1) * size - 1 downto idx * size) <= (others => '0'); -- Not sure if this makes a ton of hardware
     end generate select_gen_x;
 
   end generate kx_x;
 
-  kx_y : for idx in 0 to logN generate
+  kx_y : for idx in 0 to logn generate
   begin
-    select_gen_y : if (N_idx mod 2 = 1) or ( (N_idx mod 4 = 2) and (idx mod 4 = 2) ) or ( (N_idx = 0) and (idx = 0) ) generate
+
+    select_gen_y : if (n_idx mod 2 = 1) or ((n_idx mod 4 = 2) and (idx mod 4 = 2)) or ((n_idx = 0) and (idx = 0)) generate
+
       kx_mux_y(2 * (idx + 1) * size - 1 downto 2 * idx * size + size) <= (others => '0');
       with b_bit select kx_mux_y(2 * (idx + 1) * size - size - 1 downto 2 * idx * size) <=
         unsigned(lut((idx + 1) * size - 1 downto idx * size)) when '1',
@@ -244,19 +247,19 @@ begin
           end if;
         end if;
 
-      end process kx_proc_y; -- kx_proc_y
+      end process kx_proc_y;
 
       kx_add_y(2 * (idx + 1) * size - 1 downto 2 * idx * size)   <= kx_mux_y(2 * (idx + 1) * size - 1 downto 2 * idx * size) +
                                                                     kx_shift_y(2 * (idx + 1) * size - 1 downto 2 * idx * size);
-      kx_shift_y(2 * (idx + 1) * size - 1 downto 2 * idx * size) <= kx_reg_y(2 * (idx + 1) * size - 1 downto 2 * idx * size);
+      kx_shift_y(2 * (idx + 1) * size - 1 downto 2 * idx * size + 1) <= kx_reg_y(2 * (idx + 1) * size - 2 downto 2 * idx * size);
 
       coefs_y((idx + 1) * size - 1 downto idx * size) <= std_logic_vector(kx_reg_y(2 * idx * size + frac_size + size - 1 downto 2 * idx * size + frac_size));
-      -- coefs_y((idx+1)*size - 1 downto idx*size) <= std_logic_vector(kx_reg_y((idx+1)*size + frac_size - 1 downto idx*size + frac_size));
-    
+    -- coefs_y((idx+1)*size - 1 downto idx*size) <= std_logic_vector(kx_reg_y((idx+1)*size + frac_size - 1 downto idx*size + frac_size));
+
     else generate
       coefs_y((idx + 1) * size - 1 downto idx * size) <= (others => '0');
     end generate select_gen_y;
-    
+
   end generate kx_y;
 
 end architecture synth;

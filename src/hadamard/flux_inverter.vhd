@@ -62,10 +62,10 @@ begin
   s_error <= compared_or(size - 2);
   erro    <= s_error;
 
-  m_n(0)             <= filtered_or(size - 2);
+  m_n(0)                 <= filtered_or(size - 2);
   m_n(size - 1 downto 1) <= m(size - 2 downto 0);
-  s_ready            <= m(size - 1);
-  ready              <= s_ready;
+  s_ready                <= m(size - 1);
+  ready                  <= s_ready;
 
   new_bit <= m_n(0);
 
