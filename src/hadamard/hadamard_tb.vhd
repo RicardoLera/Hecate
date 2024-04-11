@@ -11,7 +11,7 @@ architecture rtl of hadamard_tb is
 
   component hadamard is
     generic (
-      logn  : natural RANGE 1 to 3 := 3;
+      logn  : natural range 1 to 3 := 3;
       n_idx : natural range 0 to 7 := 0
     );
     port (
@@ -22,9 +22,8 @@ architecture rtl of hadamard_tb is
       y_i       : in    std_logic_vector(24 downto 0);
       x_k       : in    std_logic_vector(24 downto 0);
       y_k       : in    std_logic_vector(24 downto 0);
-      lut       : in    std_logic_vector(((logN + 1) * 25) - 1 downto 0);
-      p_coefs_x : out   std_logic_vector(((logN + 1) * 25) - 1 downto 0);
-      p_coefs_y : out   std_logic_vector(((logN + 1) * 25) - 1 downto 0);
+      p_coefs_x : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+      p_coefs_y : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
       ready     : buffer std_logic
     );
   end component;
@@ -50,8 +49,6 @@ architecture rtl of hadamard_tb is
   signal   clk             : std_logic := '0';
   signal   keep_simulating : std_logic := '0';
   constant clockperiod     : TIME      := 1 ms;
-
-  constant kcon : std_logic_vector(24 downto 0) := "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
 
   signal p_coefs_x_0 : std_logic_vector(25 - 1 downto 0);
   signal p_coefs_x_1 : std_logic_vector(25 - 1 downto 0);
@@ -79,7 +76,6 @@ begin
       y_i       => y_i,
       x_k       => x_k,
       y_k       => y_k,
-      lut       => lut,
       p_coefs_x => p_coefs_x,
       p_coefs_y => p_coefs_y,
       ready     => ready
@@ -94,29 +90,6 @@ begin
   p_coefs_y_1 <= p_coefs_y(49 downto 25);
   p_coefs_y_2 <= p_coefs_y(74 downto 50);
   p_coefs_y_3 <= p_coefs_y(99 downto 75);
-
-  lut(24 downto 0) <= kcon;
-
-  lut_mul1 : component b25_cmul
-    port map (
-      a   => "0000000001110110010000100",
-      con => kcon,
-      res => lut(49 downto 25)
-    );
-
-  lut_mul2 : component b25_cmul
-    port map (
-      a   => "0000000001011010100000101",
-      con => kcon,
-      res => lut(74 downto 50)
-    );
-
-  lut_mul3 : component b25_cmul
-    port map (
-      a   => "0000000000110000111111000",
-      con => kcon,
-      res => lut(99 downto 75)
-    );
 
   -- x_i <= "0000000100000000000000000"; -- 0x2
   -- y_i <= "0000000000000000000000000"; -- 0x0
@@ -146,8 +119,6 @@ begin
     wait for 20 * clockperiod;
     keep_simulating <= '0';
 
-    -- report integer'image(to_integer(unsigned(addr))) & " - " & integer'image(to_integer(unsigned(data)));
-    -- REPORT INTEGER'image(to_integer(unsigned(res)));
     wait;
 
   end process test;

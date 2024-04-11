@@ -194,7 +194,7 @@ begin
   begin
 
     select_gen_x : if (n_idx mod 2 = 1) or ((n_idx mod 4 = 2) and (idx mod 4 = 2)) or ((n_idx = 0) and (idx = 0)) generate       -- Make generic later
-    
+
       kx_mux_x(2 * (idx + 1) * size - 1 downto 2 * idx * size + size) <= (others => '0');
       with a_bit select kx_mux_x(2 * (idx + 1) * size - size - 1 downto 2 * idx * size) <=
         unsigned(lut((idx + 1) * size - 1 downto idx * size)) when '1',
@@ -249,8 +249,8 @@ begin
 
       end process kx_proc_y;
 
-      kx_add_y(2 * (idx + 1) * size - 1 downto 2 * idx * size)   <= kx_mux_y(2 * (idx + 1) * size - 1 downto 2 * idx * size) +
-                                                                    kx_shift_y(2 * (idx + 1) * size - 1 downto 2 * idx * size);
+      kx_add_y(2 * (idx + 1) * size - 1 downto 2 * idx * size)       <= kx_mux_y(2 * (idx + 1) * size - 1 downto 2 * idx * size) +
+                                                                        kx_shift_y(2 * (idx + 1) * size - 1 downto 2 * idx * size);
       kx_shift_y(2 * (idx + 1) * size - 1 downto 2 * idx * size + 1) <= kx_reg_y(2 * (idx + 1) * size - 2 downto 2 * idx * size);
 
       coefs_y((idx + 1) * size - 1 downto idx * size) <= std_logic_vector(kx_reg_y(2 * idx * size + frac_size + size - 1 downto 2 * idx * size + frac_size));

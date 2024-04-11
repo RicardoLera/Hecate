@@ -14,18 +14,10 @@ entity hadamard is
     x_i       : in    std_logic_vector(24 downto 0);
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
-    y_k       : in    std_logic_vector(24 downto 0); -- s_iiii'iiii.ffff'ffff'ffff'ffff
-    lut       : in    std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+    y_k       : in    std_logic_vector(24 downto 0);
     p_coefs_x : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
     p_coefs_y : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
     ready     : buffer std_logic
-
-  -- debugging ports
-  -- db_ch1, db_ch2 : OUT STD_LOGIC_VECTOR(1 downto 0);
-  -- db_c1, db_c2, db_c3, db_c4 : OUT STD_LOGIC_VECTOR(24 downto 0);
-  -- db_in_bit : IN STD_LOGIC;
-  -- db_in_coor : IN STD_LOGIC_VECTOR(24 downto 0);
-  -- db_in_ang : IN STD_LOGIC_VECTOR(24 downto 0)
   );
 end entity hadamard;
 
@@ -46,9 +38,9 @@ architecture arch of hadamard is
       b       : in    std_logic_vector(size - 1 downto 0);
       a_nex   : in    std_logic_vector(size - 1 downto 0);
       b_nex   : in    std_logic_vector(size - 1 downto 0);
-      lut     : in    std_logic_vector(((logN + 1) * size) - 1 downto 0);
-      coefs_x : out   std_logic_vector(((logN + 1) * size) - 1 downto 0);
-      coefs_y : out   std_logic_vector(((logN + 1) * size) - 1 downto 0);
+      lut     : in    std_logic_vector(((logn + 1) * size) - 1 downto 0);
+      coefs_x : out   std_logic_vector(((logn + 1) * size) - 1 downto 0);
+      coefs_y : out   std_logic_vector(((logn + 1) * size) - 1 downto 0);
       p       : out   std_logic_vector(size - 1 downto 0);
       ready   : out   std_logic
     );
@@ -137,11 +129,9 @@ architecture arch of hadamard is
   signal sc_sig_nex, sc_sig_cor : std_logic;
 
   -- J control
-
   signal j : std_logic_vector(4 downto 0) := (others => '0');
 
   -- Primary CORDIC
-
   signal pc_x_cur,   pc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
   signal pc_z_cur             : std_logic_vector(24 downto 0) := (others => '0');
   signal pc_sig_cur           : std_logic                     := '0';
@@ -165,7 +155,6 @@ architecture arch of hadamard is
   constant three_half_pi : std_logic_vector(23 downto 0) := "000001001011011001011101"; -- 100.1011011001011101
 
   -- Multiplier
-
   signal prod_z          : std_logic_vector(24 downto 0);
   signal prod_z_norm     : std_logic_vector(24 downto 0);
   signal prod_mod        : std_logic_vector(24 downto 0);
@@ -183,12 +172,19 @@ architecture arch of hadamard is
   signal neg_mul_coefs_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
   signal neg_mul_coefs_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
 
-
   -- Output
   signal p_coefs_nex_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
   signal p_coefs_nex_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
   signal p_coefs_x_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
   signal p_coefs_y_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
+
+  -- Lookup Table
+  constant lut : std_logic_vector(((logn + 1) * 25) - 1 downto 0) :=
+    "0000000000001010111101111000000000001010001000100000000000000110100111101100000000000011100101010011";    -- Make generic
+  -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
+  -- lut(49 downto 25) <= "0000000000011010011110110"; -- 0x34f6
+  -- lut(74 downto 50) <= "0000000000010100010001000"; -- 0x2888
+  -- lut(99 downto 75) <= "0000000000001010111101111"; -- 0x15ef
 
 begin
 
