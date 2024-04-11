@@ -1,22 +1,11 @@
 #!/bin/bash
 
 ghdl remove
-ghdl -a --std=08 \
-    arithmetic/*.vhd                    \
-    fft/fft_8.vhd                       \
-    cordic/cordic.vhd                   \
-    hadamard/hadamard.vhd               \
-    hadamard/hadamard_uc.vhd            \
-    hadamard/flux_inverter.vhd          \
-    hadamard/flux_multiplier.vhd
-    
 
-if [ "$1" = "had" ] ; then
-    ghdl -a --std=08 hadamard/hadamard_tb.vhd
-    ghdl -e --std=08 hadamard
-    ghdl -r --std=08 hadamard_tb --wave=waveforms/had.ghw
+if [ "$1" = "fft" ] ; then
+  ghdl -c --std=08 */*.vhd -r fft_8_tb --wave=waveforms/fft.ghw
+elif ["$1" = "had"] ; then
+  ghdl -c --std=08 */*.vhd -r hadamard_tb --wave=waveforms/had.ghw
 else
-    ghdl -a --std=02 -P=intel --ieee=synopsys -frelaxed Polyanna_MVP_tb.vhd
-    ghdl -e --std=02 -P=intel --ieee=synopsys -frelaxed Polyanna_MVP
-    ghdl -r --std=02 -P=intel --ieee=synopsys -frelaxed Polyanna_MVP_tb --wave=waveforms/poly_mvp.ghw
+  ghdl -c --std=08 *.vhd */*.vhd -r hecate_tb --wave=waveforms/hecate.ghw
 fi
