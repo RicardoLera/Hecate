@@ -3,5 +3,6 @@ work-obj*.cf
 *.code-workspace
 **/Debug
 **/Release
+**/waveforms
 !/.gitignore
 
