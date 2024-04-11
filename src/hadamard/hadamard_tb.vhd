@@ -28,14 +28,6 @@ architecture rtl of hadamard_tb is
     );
   end component;
 
-  component b25_cmul is
-    port (
-      a   : in    std_logic_vector(24 downto 0);
-      con : in    std_logic_vector(24 downto 0);
-      res : out   std_logic_vector(24 downto 0)
-    );
-  end component;
-
   signal reset, start : std_logic;
   signal x_i          : std_logic_vector(24 downto 0);
   signal y_i          : std_logic_vector(24 downto 0);
