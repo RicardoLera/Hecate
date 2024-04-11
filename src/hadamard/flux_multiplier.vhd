@@ -8,7 +8,7 @@ entity flux_multiplier is
     size      : natural              := 25;
     frac_size : natural              := 16;
     logn      : natural RANGE 1 to 3 := 3;
-    n_idx     : natural range 0 to 7 := 0
+    n_idx     : natural range 0 to 8 := 0
   );
   port (
     clock   : in    std_logic;

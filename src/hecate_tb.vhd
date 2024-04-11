@@ -24,9 +24,9 @@ architecture rtl of hecate_tb is
     );
   end component;
 
-  signal img, ker                     : real_array(0 to 7);
-  signal clock, reset, start, o_ready : std_logic;
-  signal res                          : complex_array(0 to 15);
+  signal img, ker              : real_array(0 to 7);
+  signal reset, start, o_ready : std_logic;
+  signal res                   : complex_array(0 to 15);
 
   signal   clk             : std_logic := '0';
   signal   keep_simulating : std_logic := '0';

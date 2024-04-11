@@ -5,7 +5,7 @@ library ieee;
 entity hadamard is
   generic (
     logn  : natural range 1 to 3 := 3;
-    n_idx : natural range 0 to 7 := 0
+    n_idx : natural range 0 to 8 := 0
   );
   port (
     clock     : in    std_logic;
@@ -28,7 +28,7 @@ architecture arch of hadamard is
       size      : natural              := 25;
       frac_size : natural              := 16;
       logn      : natural range 1 to 3 := 3;
-      n_idx     : natural range 0 to 7 := 0
+      n_idx     : natural range 0 to 8 := 0
     );
     port (
       clock   : in    std_logic;
@@ -453,7 +453,7 @@ begin
   -- OBS (from prev): check if run can be left at high
   flux_mul : component flux_multiplier
     generic map (
-      size => 25, frac_size=> 16, logn=> 3, n_idx=> N_idx
+      size => 25, frac_size=> 16, logn=> 3, n_idx=> n_idx
     )
     port map (
       clock   => clock,

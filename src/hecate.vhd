@@ -22,7 +22,7 @@ architecture arch of hecate is
   component hadamard is
     generic (
       logn  : natural range 1 to 3 := 3;
-      n_idx : natural range 0 to 7 := 0
+      n_idx : natural range 0 to 8 := 0
     );
     port (
       clock     : in    std_logic;
@@ -52,17 +52,17 @@ architecture arch of hecate is
   signal img_transf, ker_transf : complex_array(0 to 8);
 
   type t_calc_vals_c_aux is array (0 to 1) OF std_logic_vector(99 downto 0);
-  type t_calc_vals_aux is array (0 to 15) OF t_calc_vals_c_aux;
+  type t_calc_vals_aux is array (0 to 8) OF t_calc_vals_c_aux;
   signal calc_vals_aux : t_calc_vals_aux := (others => (others => (others => '0')));
 
   type t_calc_vals is array(0 to 3) OF std_logic_vector(24 downto 0);
   type t_calc_vals_c is array(0 to 1) OF t_calc_vals;
-  type t_calc_vals_c_arr is array (0 to 15) OF t_calc_vals_c;
+  type t_calc_vals_c_arr is array (0 to 8) OF t_calc_vals_c;
   signal calc_vals : t_calc_vals_c_arr := (others => (others => (others => (others => '0'))));
 
   signal ready_fft : std_logic_vector(0 to 1);
   signal ready_had : std_logic_vector(0 to 8);
-  signal ffts_ready, hads_ready, s_ready : std_logic     := '0';
+  signal ffts_ready, hads_ready, s_ready : std_logic := '0';
 
   signal add_ax, add_ay, add_bx, add_by, add_rx, add_ry : complex_array(0 to 15) := (others => (others => (others => '0')));
 
@@ -92,6 +92,8 @@ begin
     reset   => reset,
     s_ready => ready_fft(1)
   );
+
+  ffts_ready <= and(ready_fft);
 
   -- gen_hads_read : process (ready_had) is
   --   variable rd : std_logic := '1';
@@ -130,7 +132,7 @@ begin
       port map (
         clock     => clock,
         reset     => reset,
-        start     => start,
+        start     => ffts_ready,
         x_i       => img_transf(id)(0),
         y_i       => img_transf(id)(1),
         x_k       => ker_transf(id)(0),
@@ -147,30 +149,37 @@ begin
 
   end generate gen_calc_vals;
 
-  gen_sums : for o_id in 0 to 15 generate       -- correct for hermitian symmetry
+  gen_sums : for o_id in 0 to 7 generate       -- correct for hermitian symmetry
 
     sum_pro : process (clock) is
 
-      variable i_id  : natural range 0 to 8;
-      variable wx, wy : natural range 0 to 15;
+      variable i_id, wx, wy: natural range 0 to 15;
+      variable i_id_cor : natural range 0 to 8;  
       variable cx, cy, cxi, cyi : std_logic_vector(24 downto 0);
 
     begin
 
       if rising_edge(clock) then
         if (reset = '0' and start = '1') then
-          if (i_id < 8) then
-            wx  := (i_id * o_id) mod 16;
-            wy := (4 - i_id * o_id) mod 16;
+          if (i_id < 15) then
+
+            if (i_id > 8) then      -- correct
+              i_id_cor := i_id - 8;
+            else
+              i_id_cor := i_id;
+            end if;
+                                                        -- this is a complex multiplication by w. And now its input is also complex. you'll have to change this a lot more.
+            wx  := (i_id_cor * o_id) mod 16;
+            wy := (4 - i_id_cor * o_id) mod 16;
 
             if (cos_val_ref(wx) /= 4) then                                          -- if the exponent of w is not 4
-              cx                           := calc_vals(i_id)(0)(cos_val_ref(wx));
+              cx                           := calc_vals(i_id_cor)(0)(cos_val_ref(wx));
               add_ax(o_id)(0)              <= add_rx(o_id)(0);
               add_bx(o_id)(0)(23 downto 0) <= cx(23 downto 0);
               add_bx(o_id)(0)(24)          <= not cx(24) when cos_sig_ref(wx) else
                                               cx(24);
               
-              cxi                          := calc_vals(i_id)(1)(cos_val_ref(wx));
+              cxi                          := calc_vals(i_id_cor)(1)(cos_val_ref(wx));
               add_ax(o_id)(1)              <= add_rx(o_id)(1);
               add_bx(o_id)(1)(23 downto 0) <= cxi(23 downto 0);
               add_bx(o_id)(1)(24)          <= not cxi(24) when cos_sig_ref(wx) else
@@ -178,13 +187,13 @@ begin
             end if;
 
             if (cos_val_ref(wx) /= 0) then                                          -- if the exponent of w is not 0
-              cy                           := calc_vals(i_id)(0)(cos_val_ref(wy));
+              cy                           := calc_vals(i_id_cor)(0)(cos_val_ref(wy));
               add_ay(o_id)(0)              <= add_ry(o_id)(0);
               add_by(o_id)(0)(23 downto 0) <= cy(23 downto 0);
               add_by(o_id)(0)(24)          <= not cy(24) when cos_sig_ref(wy) else
                                               cy(24);
               
-              cyi                          := calc_vals(i_id)(1)(cos_val_ref(wy));
+              cyi                          := calc_vals(i_id_cor)(1)(cos_val_ref(wy));
               add_ay(o_id)(1)              <= add_ry(o_id)(1);
               add_by(o_id)(1)(23 downto 0) <= cyi(23 downto 0);
               add_by(o_id)(1)(24)          <= not cyi(24) when cos_sig_ref(wy) else
@@ -198,6 +207,9 @@ begin
       end if;
 
     end process sum_pro;
+
+    res(id)(0) <= std_logic_vector(re);
+    res(id)(1) <= std_logic_vector(im);
 
   end generate gen_sums;
 
