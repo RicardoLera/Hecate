@@ -60,9 +60,7 @@ archvar arctan[24] = {
         {0b0, 0x00, 0x0000},
 };
 
-
-
-int main(int argc, char *argv[]) {
+int main() {
 
     printf("Initiating simulation\n");
 
@@ -118,11 +116,11 @@ int main(int argc, char *argv[]) {
             cordic_vec(Input[N], j);
             cordic_vec(Kernel[N], j);
 
-            mask = pow(2, 23-j);
-            litA = (Input[N][0].pre << 16) + Input[N][0].post;
+            mask = 1 << (23-j);
+            litA = (uint64_t)(Input[N][0].pre << 16) + Input[N][0].post;
             At = litA & mask;
 
-            litB = (Kernel[N][0].pre << 16) + Kernel[N][0].post;
+            litB = (uint64_t)(Kernel[N][0].pre << 16) + Kernel[N][0].post;
             Bt = litB & mask;
 
             C = (C << 2);
@@ -140,8 +138,8 @@ int main(int argc, char *argv[]) {
               printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
         }
         uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
-        Product[N][0].pre = ((C >> 16) & pre_mask) >> 16;
-        Product[N][0].post = (C >> 16) & post_mask;
+        Product[N][0].pre = (uint8_t)(((C >> 16) & pre_mask) >> 16);
+        Product[N][0].post = (uint16_t)((C >> 16) & post_mask);
         Product[N][0].sign = Input[N][0].sign ^ Kernel[N][0].sign;
         Product[N][2] = archadd(Input[N][2],Kernel[N][2]);
 
@@ -158,8 +156,8 @@ int main(int argc, char *argv[]) {
     for (int N = 0; N < 9; N++) {
 
         bool x_sign = 0, y_sign = 0;
-        uint32_t angle = (Product[N][2].pre << 16) + Product[N][2].post;
-        uint32_t hex_pi = M_PI*0xffff, hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1;
+        uint32_t angle = (uint32_t)((Product[N][2].pre << 16) + Product[N][2].post);
+        uint32_t hex_pi = (uint32_t)(M_PI*0xffff), hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1;
         uint32_t mod_angle = angle % (hex_pi << 1), cor_angle = mod_angle;
         uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
 
@@ -168,8 +166,8 @@ int main(int argc, char *argv[]) {
         else if (mod_angle > hex_half_pi)     (x_sign = 1, y_sign = 0, cor_angle = hex_pi - mod_angle);
 
         Product[N][1] = zero;
-        Product[N][2].pre = (cor_angle & pre_mask) >> 16;
-        Product[N][2].post = cor_angle & post_mask;
+        Product[N][2].pre = (uint8_t)((cor_angle & pre_mask) >> 16);
+        Product[N][2].post = (uint16_t)(cor_angle & post_mask);
 
           printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
           print_archvar(Product[N][0]); printf("\t");
@@ -201,23 +199,24 @@ int main(int argc, char *argv[]) {
     archvar Y = archmul(twiddle_arr[3][0], kcon); // cos(3pi/8) * kcon
 
     for (int N = 0; N < 9; N++) {
-        idft_mul[N][0][0] = archmul(Product[N][0], V);
-        idft_mul[N][1][0] = archmul(Product[N][1], V);
+        //if (N == 0 || N%2 == 1) {
+          idft_mul[N][0][0] = archmul(Product[N][0], V);
+          idft_mul[N][1][0] = archmul(Product[N][1], V);
+        //}
+        //if (N%2 == 1) {
+          idft_mul[N][0][1] = archmul(Product[N][0], W);
+          idft_mul[N][1][1] = archmul(Product[N][1], W);
 
-        if (N%2 == 1) {
-            idft_mul[N][0][1] = archmul(Product[N][0], W);
-            idft_mul[N][1][1] = archmul(Product[N][1], W);
+          idft_mul[N][0][2] = archmul(Product[N][0], X);
+          idft_mul[N][1][2] = archmul(Product[N][1], X);
 
-            idft_mul[N][0][2] = archmul(Product[N][0], X);
-            idft_mul[N][1][2] = archmul(Product[N][1], X);
-
-            idft_mul[N][0][3] = archmul(Product[N][0], Y);
-            idft_mul[N][1][3] = archmul(Product[N][1], Y);
-        }
-        else if (N == 2 || N == 6) {
-            idft_mul[N][0][2] = archmul(Product[N][0], X);
-            idft_mul[N][1][2] = archmul(Product[N][1], X);
-        }
+          idft_mul[N][0][3] = archmul(Product[N][0], Y);
+          idft_mul[N][1][3] = archmul(Product[N][1], Y);
+        //}
+        //if (N == 2 || N == 6) {
+        //  idft_mul[N][0][2] = archmul(Product[N][0], X);
+        //  idft_mul[N][1][2] = archmul(Product[N][1], X);
+        //}
     }
 
     print_arch_con("Variable V (N * cos(0) * kcon)", idft_mul, 0);

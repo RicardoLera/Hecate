@@ -137,7 +137,7 @@ begin
         res => add_r(o_id)(1)
       );
 
-    sum_pro : process (clock) is
+    sum_pro : process (clock) is          -- Maybe make two processes, one for real one for imaginary, so they can be (more) concurrent
 
       variable i_id  : NATURAL RANGE 0 to 8;
       variable w, wi : NATURAL RANGE 0 to 15;
