@@ -110,6 +110,11 @@ int main() {
         bool At, Bt;
           
           printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
+          printf("ini\t\t");
+          print_archvar(Input[N][0]); printf("\t");
+          print_archvar(Input[N][1]); printf("\t");
+          print_archvar(Input[N][2]); printf("\t");
+          printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
         
         for (int j = 0; j < 24; j++) {
                                                 
@@ -156,18 +161,20 @@ int main() {
     for (int N = 0; N < 9; N++) {
 
         bool x_sign = 0, y_sign = 0;
+        if (Product[N][2].sign == 1) {y_sign = 1;} // Y reflection
         uint32_t angle = (uint32_t)((Product[N][2].pre << 16) + Product[N][2].post);
         uint32_t hex_pi = (uint32_t)(M_PI*0xffff), hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1;
         uint32_t mod_angle = angle % (hex_pi << 1), cor_angle = mod_angle;
         uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
 
-        if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign = 1, cor_angle = (hex_pi << 1) - mod_angle);
-        else if (mod_angle >= hex_pi)         (x_sign = 1, y_sign = 1, cor_angle = mod_angle - hex_pi);
-        else if (mod_angle > hex_half_pi)     (x_sign = 1, y_sign = 0, cor_angle = hex_pi - mod_angle);
+        if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign ^= true, cor_angle = (hex_pi << 1) - mod_angle);
+        else if (mod_angle >= hex_pi)         (x_sign = 1, y_sign ^= true, cor_angle = mod_angle - hex_pi);
+        else if (mod_angle > hex_half_pi)     (x_sign = 1, cor_angle = hex_pi - mod_angle);
 
         Product[N][1] = zero;
         Product[N][2].pre = (uint8_t)((cor_angle & pre_mask) >> 16);
         Product[N][2].post = (uint16_t)(cor_angle & post_mask);
+        Product[N][2].sign = 0; // angle is now at Q1
 
           printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
           print_archvar(Product[N][0]); printf("\t");
@@ -183,8 +190,8 @@ int main() {
               print_archvar(Product[N][2]); printf("\n");
         }
 
-        Product[N][0].sign = x_sign;
-        Product[N][1].sign = y_sign;
+        Product[N][0].sign ^= x_sign;
+        Product[N][1].sign ^= y_sign;
 
     }
 
@@ -228,16 +235,6 @@ int main() {
     p_idft(idft_mul, output);
 
     print_arch_out("output", output);
-
-
-
-
-
-
-
-
-
-
 
 
 

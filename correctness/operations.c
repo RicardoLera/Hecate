@@ -73,7 +73,7 @@ archvar archadd(archvar var1, archvar var2) {
         temp_sign = var1.sign;
     }
 
-    if (temp_res == 0x00) temp_sign = 0b0; // ensure zero has "positive" sign
+    //if (temp_res == 0x00) temp_sign = 0b0; // ensure zero has "positive" sign
     if (temp_res > 0x00ffffff) printf("\nWARNING: archadd overflow; full value: %x\n", temp_res);
 
     uint32_t mask1 = 0x00ff0000;
@@ -89,7 +89,7 @@ archvar archmul(archvar var1, archvar var2) {
     uint64_t temp_res = temp_var1 * temp_var2;
     uint8_t temp_sign = var1.sign ^ var2.sign;
 
-    if (temp_res == 0x00) temp_sign = 0b0; // ensure zero has "positive" sign
+    //if (temp_res == 0x00) temp_sign = 0b0; // ensure zero has "positive" sign
     if (temp_res > 0x00ffffffffff) printf("\nWARNING: archmul overflow; full value: %lx\n", temp_res);
 
     uint64_t mask1 = 0x000000ff00000000;
@@ -123,7 +123,7 @@ archvar archshiftR(archvar var, int s) {
 
 
 void dft(archvar in[8], archvar out[9][3]) {
-    archvar temp_in[16], zero = {0b0, 0x00, 0x0000}, one_over_four = {0b0, 0x00, 0x4000};
+    archvar temp_in[16], zero = {0b0, 0x00, 0x0000}, one_over_four = {0b0, 0x00, 0x4000}, twiddle_inv;
 
     for (int i = 0; i < 8; i++)
         temp_in[i] = in[i];
@@ -133,12 +133,14 @@ void dft(archvar in[8], archvar out[9][3]) {
 
     for (int N = 0; N < 9; N++) {
         for (int i = 0; i < 16; i++) {
+            twiddle_inv = twiddle_arr[(N*i)%16][1];
+            twiddle_inv.sign = !twiddle_inv.sign; // DFT/IDFT inversion
             out[N][0] = archadd(out[N][0], archmul(temp_in[i], twiddle_arr[(N*i)%16][0]));
-            out[N][1] = archadd(out[N][1], archmul(temp_in[i], twiddle_arr[(N*i)%16][1]));
+            out[N][1] = archadd(out[N][1], archmul(temp_in[i], twiddle_inv));
         }
     }
 
-    for (int N = 0; N < 9; N++) { // multiply by 1/sqrtN aka 1/4
+    for (int N = 0; N < 15; N++) { // multiply by 1/sqrt(N) so that convolution makes it N and no overflow happens
         out[N][0] = archmul(out[N][0], one_over_four);
         out[N][1] = archmul(out[N][1], one_over_four);
     }
@@ -188,6 +190,12 @@ void cordic_rot(archvar arr[3], int j) {
 
         arr[1] = archadd(arr[1], archshiftR(tarr, j));
 
+        // arr[0].sign = !arr[0].sign;
+        // arr[1] = archadd(arr[1], archshiftR(arr[0], j));
+        // arr[0].sign = !arr[0].sign;
+
+        // arr[0] = archadd(arr[0], archshiftR(tarr, j));
+
         tcon = arctan[j];
         tcon.sign = !tcon.sign;
         arr[2] = archadd(arr[2], tcon);
@@ -201,78 +209,108 @@ void cordic_rot(archvar arr[3], int j) {
 
         arr[0] = archadd(arr[0], archshiftR(tarr, j));
 
+        // arr[1].sign = !arr[1].sign;
+        // arr[0] = archadd(arr[0], archshiftR(arr[1], j));
+        // arr[1].sign = !arr[1].sign;
+
+        // arr[1] = archadd(arr[1], archshiftR(tarr, j));
+
         tcon = arctan[j];
         arr[2] = archadd(arr[2], tcon);
     }
 }
 
 void p_idft(archvar con[9][2][4], archvar out[16][2]) {
-    archvar zero = {0b0, 0x00, 0x0000}, tconR[2], tconI[2];
-    int C, mod_i, w, wc;
+    archvar zero = {0b0, 0x00, 0x0000}, a_wx, a_wy, b_wx, b_wy;
+    int C, w_ex, w, wc;
 
     for (int N = 0; N < 15; N++) {
         for (int i = 0; i < 16; i++) {
 
             (i <= 8) ? (C = i) : (C = i-8); // C     -> constant array identifier, corrected for Complex conjugate
-            mod_i = (i*N) % 16;             // mod_i -> exponent of w in the full unit circle (0~15)
+            w_ex = (i*N) % 16;             // w_ex -> exponent of w in the full unit circle (0~15)
 
-            // mod_i2 = (4-i*N) % 16;
-            // mod_ic = (16-(i*N)) % 16;
-
-            // if (mod_i2 < 0) mod_i2 -= mod_i2;
-
-            // if ( (mod_i >> 2) & 1 ) {   
-            //   w = (mod_i-2) % 4;
-            //   wc = (mod_i2-2) % 4;
-            // }
-            // else {
-            //   w = mod_i % 4;
-            //   wc = mod_i2 % 4;
-            // }                                     Fuck it
-
-            (mod_i == 5 || mod_i == 7 || mod_i == 13 || mod_i == 15) ? (w = (mod_i-2) % 4) : (w = mod_i % 4); // Second and fourth quadrant mirror
+            (w_ex == 5 || w_ex == 7 || w_ex == 13 || w_ex == 15) ? (w = (w_ex-2) % 4) : (w = w_ex % 4); // Second and fourth quadrant reflection
             w == 1 ? wc = 3 :
             w == 3 ? wc = 1 : (wc = w);
 
             //    N     *     w
-            // (a + bi) * (wx + wyi) = [ws_x]a*wx + [ws_x]b*wx(i) + [ws_y]a*wy(i) + [-ws_y]b*wy
+            // (a + bi) * (wx + wyi) = [ws_x]a*wx + [ws_x]b*wx(i) + [ws_y]a*wy(i) + [-ws_y]b*wy               <- so far accounts for: [N * kcon * cos(w)]
 
-            // The following values so far account for: [N * kcon * cos(w)]
-            tconR[0] = con[C][0][w];  // a*wx
-            tconR[1] = con[C][1][wc]; // b*wy
-            tconI[0] = con[C][0][wc]; // a*wy
-            tconI[1] = con[C][1][w];  // b*wx
+            bool a_sign  = con[C][0][0].sign;
+            bool b_sign  = con[C][1][0].sign;
+            bool wx_sign = twiddle_arr[w_ex][0].sign;
+            bool wy_sign = twiddle_arr[w_ex][1].sign;
 
-            // Signs and cancellations:
-            tconR[1].sign ^= true;                                                           // b*wy*i^2 inversion
-            if (twiddle_arr[mod_i][0].sign)  {tconR[0].sign ^= true; tconI[1].sign ^= true;} // wx quadrant sign
-            if (!twiddle_arr[mod_i][1].sign) {tconR[1].sign ^= true; tconI[0].sign ^= true;} // wy quadrant sign and inverse ifft rotation 
-            if (i > 8)                       {tconR[1].sign ^= true; tconI[1].sign ^= true;} // Complex conjugate inversion (b)
-            if (mod_i == 4 || mod_i == 12)   {tconR[0] = zero; tconI[1] = zero;}             // Orthogonal X cancellation
-            if (mod_i == 0 || mod_i == 8)    {tconR[1] = zero; tconI[0] = zero;}             // Orthogonal Y cancellation
+            a_wx = con[C][0][w];
+            a_wy = con[C][0][wc];
+            b_wx = con[C][1][w];
+            b_wy = con[C][1][wc];
+            
+            // Signs and cancellations
+            if (i > 8) {b_sign ^= true;} // Complex conjugate inversion (b)
+            // wy_sign ^= true; // DFT/IDFT inversion
 
-            out[N][0] = archadd(out[N][0], archadd(tconR[0], tconR[1]));
-            out[N][1] = archadd(out[N][1], archadd(tconI[0], tconI[1]));
+            a_wx.sign = a_sign ^ wx_sign;
+            a_wy.sign = a_sign ^ wy_sign;
+            b_wx.sign = b_sign ^ wx_sign;
+            b_wy.sign = !(b_sign ^ wy_sign); // i^2 inversion
 
-            if (N == 1) {
-              printf("mod_i = %d\t C = %d\t out[1][1] = ", mod_i, C);
+            if (w_ex == 4 || w_ex == 12) {a_wx = zero; b_wx = zero;} // Orthogonal wx cancellation
+            if (w_ex == 0 || w_ex == 8)  {a_wy = zero; b_wy = zero;} // Orthogonal wy cancellation
+
+            out[N][0] = archadd(out[N][0], archadd(a_wx, b_wy));
+            out[N][1] = archadd(out[N][1], archadd(a_wy, b_wx));
+
+
+
+
+
+
+            if (N <= 2) {
+              if (i==0) {printf("\n");}
+              printf("w_ex = %d\tw = %d\tC = %d\tout[%d][0] = ", w_ex, w, C, N);
+              print_archvar(out[N][0]);
+              printf("\tout[%d][0] = ", N);
               print_archvar(out[N][1]);
-              printf("\t tconI[0] = ");
-              print_archvar(tconI[0]);
-              printf("\t tconI[1] = ");
-              print_archvar(tconI[1]);
+              printf("\t R1 = ");
+              print_archvar(a_wx);
+              printf("\t R2 = ");
+              print_archvar(b_wy);
+              printf("\t I1 = ");
+              print_archvar(a_wy);
+              printf("\t I2 = ");
+              print_archvar(b_wx);
               printf("\n");
             }
+
+
+
+
+
+
+
+        }
+    }
+
+    // for (int N = 0; N < 15; N++) { // multiply by 1/N
+    //     out[N][0] = archmul(out[N][0], one_over_sixteen);
+    //     out[N][1] = archmul(out[N][1], one_over_sixteen);
+    // }
+}
+
+
+
 
 
             // somehow "works" better
             // // Signs and cancellations:
             // //tconR[1].sign ^= true;                                                          // b*wy*i^2 inversion
-            // //if (twiddle_arr[mod_i][0].sign) (tconR[0].sign ^= true, tconI[1].sign ^= true); // wx quadrant sign
-            // //if (twiddle_arr[mod_i][1].sign) (tconR[1].sign ^= true, tconI[0].sign ^= true); // wy quadrant sign
+            // //if (twiddle_arr[w_ex][0].sign) (tconR[0].sign ^= true, tconI[1].sign ^= true); // wx quadrant sign
+            // //if (twiddle_arr[w_ex][1].sign) (tconR[1].sign ^= true, tconI[0].sign ^= true); // wy quadrant sign
             // if (i > 8)                      (tconR[1].sign ^= true, tconI[1].sign ^= true, tconI[0].sign ^= true); // Complex conjugate inversion (b)             Plus no idea
-            // if (mod_i == 4 || mod_i == 12)  (tconR[0] = zero, tconI[1] = zero);             // Orthogonal X cancellation
-            // if (mod_i == 0 || mod_i == 8)   (tconR[1] = zero, tconI[0] = zero);             // Orthogonal Y cancellation
+            // if (w_ex == 4 || w_ex == 12)  (tconR[0] = zero, tconI[1] = zero);             // Orthogonal X cancellation
+            // if (w_ex == 0 || w_ex == 8)   (tconR[1] = zero, tconI[0] = zero);             // Orthogonal Y cancellation
 
 
 
@@ -282,7 +320,19 @@ void p_idft(archvar con[9][2][4], archvar out[16][2]) {
 
 
 
+            // w_ex2 = (4-i*N) % 16;
+            // w_exc = (16-(i*N)) % 16;
 
+            // if (w_ex2 < 0) w_ex2 -= w_ex2;
+
+            // if ( (w_ex >> 2) & 1 ) {   
+            //   w = (w_ex-2) % 4;
+            //   wc = (w_ex2-2) % 4;
+            // }
+            // else {
+            //   w = w_ex % 4;
+            //   wc = w_ex2 % 4;
+            // }                                     Fuck it
 
 
 
@@ -310,33 +360,31 @@ void p_idft(archvar con[9][2][4], archvar out[16][2]) {
             //uint32_t hex_pi = M_PI*0xffff, hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1;
 
             //uint32_t angle = (prod[N][2].pre << 16) + prod[N][2].post;
-            //uint32_t Q = ((mod_i*0x6488 + angle) % (hex_pi << 1)); // Find final angle within 2pi
+            //uint32_t Q = ((w_ex*0x6488 + angle) % (hex_pi << 1)); // Find final angle within 2pi
 
             //if (Q >= hex_three_halves_pi) (temp_conR.sign = 0, temp_conI.sign = 1); // Q1 ->  R ~I
             //else if (Q >= hex_pi)         (temp_conR.sign = 1, temp_conI.sign = 1); // Q2 -> ~R ~I
             //else if (Q > hex_half_pi)     (temp_conR.sign = 1, temp_conI.sign = 0); // Q3 -> ~R  I
             //else                          (temp_conR.sign = 0, temp_conI.sign = 0); // Q4 ->  R  I
 
-            //if (twiddle_arr[mod_i][0].sign) temp_conR.sign = ~temp_conR.sign;
-            //if (twiddle_arr[mod_i][1].sign) temp_conI.sign = ~temp_conI.sign;
-            //if (mod_i==4 || mod_i==12) temp_conR = zero;                 // Orthogonal X cancellation
-            //if (mod_i==0 || mod_i==8)  temp_conI = zero;                 // Orthogonal Y cancellation
+            //if (twiddle_arr[w_ex][0].sign) temp_conR.sign = !temp_conR.sign;
+            //if (twiddle_arr[w_ex][1].sign) temp_conI.sign = !temp_conI.sign;
+            //if (w_ex==4 || w_ex==12) temp_conR = zero;                 // Orthogonal X cancellation
+            //if (w_ex==0 || w_ex==8)  temp_conI = zero;                 // Orthogonal Y cancellation
 
             //bool xs = temp_conR.sign, ys = temp_conI.sign; int Q;
             //(!xs && !ys) ? (Q = 1) : ( (xs && !ys) ? (Q = 2) : (xs && ys) ? (Q = 3) : (Q = 4)); // Find quadrant
-            //Q = (Q + (mod_i >> 2) )%4 + 1; // Rotate by w
+            //Q = (Q + (w_ex >> 2) )%4 + 1; // Rotate by w
 
             //if (Q == 1)      (xs = 0, ys = 0);
             //else if (Q == 2) (xs = 1, ys = 0);
             //else if (Q == 3) (xs = 1, ys = 1);
             //else if (Q == 4) (xs = 0, ys = 1);
 
-            //if (mod_i>4 && mod_i<12)   temp_conR.sign = ~temp_conR.sign; // Quadrants 2 & 3 -> Real part negative
-            //if (mod_i>8)               temp_conI.sign = ~temp_conI.sign; // Quadrants 3 & 4 -> Imaginary part negative
+            //if (w_ex>4 && w_ex<12)   temp_conR.sign = !temp_conR.sign; // Quadrants 2 & 3 -> Real part negative
+            //if (w_ex>8)               temp_conI.sign = !temp_conI.sign; // Quadrants 3 & 4 -> Imaginary part negative
 
-            // If clockwise rotation is assumed, the third clause becomes (mod_i<8) and the answer becomes its conjugate
-        }
-    }
+            // If clockwise rotation is assumed, the third clause becomes (w_ex<8) and the answer becomes its conjugate
 
 
 
@@ -344,11 +392,12 @@ void p_idft(archvar con[9][2][4], archvar out[16][2]) {
 
 
 
-    //for (int N = 0; N < 15; N++) {
-    //    out[N][0] = archmul(out[N][0], one_over_four);
-    //    out[N][1] = archmul(out[N][1], one_over_four);
-    //}
-}
+
+            //for (int N = 0; N < 15; N++) {
+            //    out[N][0] = archmul(out[N][0], one_over_four);
+            //    out[N][1] = archmul(out[N][1], one_over_four);
+            //}
+
 
 
 

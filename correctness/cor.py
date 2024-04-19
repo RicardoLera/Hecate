@@ -5,8 +5,8 @@ from matplotlib import pyplot as plot
 plot.style.use('dark_background')
 
 # Standard Test
-img = np.array([1, 1, 1, 1, 0, 0, 0, 0], dtype=np.int8)
-ker = np.array([1, 1, 1, 1, 0, 0, 0, 0], dtype=np.int8)
+img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8)
+ker = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8)
 
 # 1D Test
 # img = np.array([1, 1, 0], dtype=np.int8)
