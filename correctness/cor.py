@@ -1,12 +1,17 @@
 import math
+import cmath
 import numpy as np
 import scipy as scp
 from matplotlib import pyplot as plot
 plot.style.use('dark_background')
+np.set_printoptions(formatter={'int':hex,'float':hex,'complex':hex})
+
+kcor = 1.6467602581210646732881021003239958776890527483399070103764969935
+#https://www.wolframalpha.com/input?i2d=true&i=Product%5BSqrt%5B1%2BPower%5B2%2C%5C%2840%29-2x%5C%2841%29%5D%5D%2C%7Bx%2C0%2C25-1%7D%5D
 
 # Standard Test
-img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8)
-ker = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8)
+img = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
+ker = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
 
 # 1D Test
 # img = np.array([1, 1, 0], dtype=np.int8)
@@ -28,10 +33,29 @@ ker = np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int8)
 
 spsize = 2**(math.ceil(math.log(np.size(img), 2))) # next power of 2
 
-IMG = np.fft.fft(img, spsize)
-KER = np.fft.fft(ker, spsize)
-HAD = IMG * KER
-had = np.fft.ifft(HAD, np.size(HAD))
+
+
+# FFT
+IMG = np.fft.fft(img, spsize) / 4
+KER = np.fft.fft(ker, spsize) / 4
+
+# CORDIC rect -> polar
+mIMG = np.abs(IMG) * kcor
+pIMG = np.angle(IMG)
+mKER = np.abs(KER) * kcor
+pKER = np.angle(KER)
+
+# Hadamard
+mHAD = mIMG * mKER
+pHAD = pIMG + pKER
+
+# CORDIC polar -> rect
+HAD = mHAD * np.exp(1j*pHAD) * kcor
+
+# IFFT
+had = np.fft.ifft(HAD, np.size(HAD)) * 16 /  pow(kcor,3)
+
+
 
 fig, axs = plot.subplots(nrows=3, ncols=2)
 
