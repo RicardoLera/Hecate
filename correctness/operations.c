@@ -227,7 +227,7 @@ void p_idft(archvar con[9][2][4], archvar out[16][2]) {
     for (int N = 0; N < 15; N++) {
         for (int i = 0; i < 16; i++) {
 
-            (i <= 8) ? (C = i) : (C = i-8); // C     -> constant array identifier, corrected for Complex conjugate
+            (i <= 8) ? (C = i) : (C = 16-i); // C     -> constant array identifier, corrected for Complex conjugate
             w_ex = (i*N) % 16;             // w_ex -> exponent of w in the full unit circle (0~15)
 
             (w_ex == 5 || w_ex == 7 || w_ex == 13 || w_ex == 15) ? (w = (w_ex-2) % 4) : (w = w_ex % 4); // Second and fourth quadrant reflection
@@ -299,6 +299,9 @@ void p_idft(archvar con[9][2][4], archvar out[16][2]) {
     // }
 }
 
+
+
+// (i <= 8) ? (C = i) : (C = i-8); // C     -> constant array identifier, corrected for Complex conjugate
 
 
 

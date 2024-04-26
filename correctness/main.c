@@ -1,3 +1,4 @@
+#include <iso646.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -67,23 +68,23 @@ int main() {
     archvar input[8] = {
             {0b0, 0x01, 0x0000},
             {0b0, 0x01, 0x0000},
+            {0b0, 0x00, 0x0000},
             {0b0, 0x01, 0x0000},
             {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000}
+            {0b0, 0x00, 0x0000},
+            {0b0, 0x00, 0x0000},
+            {0b0, 0x00, 0x0000}
     };
 
     archvar kernel[8] = {
             {0b0, 0x01, 0x0000},
             {0b0, 0x01, 0x0000},
+            {0b0, 0x00, 0x0000},
             {0b0, 0x01, 0x0000},
             {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000},
-            {0b0, 0x01, 0x0000}
+            {0b0, 0x00, 0x0000},
+            {0b0, 0x00, 0x0000},
+            {0b0, 0x00, 0x0000}
     };
 
     archvar Input[9][3] = {0};    // x / y / alpha
@@ -104,18 +105,40 @@ int main() {
     print_arch_rec_10("Input (decimal)", Input);
     print_arch_rec_10("Kernel (decimal)", Kernel);
 
+    uint32_t hex_pi = (uint32_t)(M_PI*0xffff), hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1, hex_two_pi = hex_pi << 1;
+    uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
+
     // Vectorization CORDIC and Flux Multiplier
     for (int N = 0; N < 9; N++) {
+
+        // Store quadrant and remove sign 
+        bool i_xs = Input[N][0].sign, i_ys = Input[N][1].sign;
+        bool k_xs = Kernel[N][0].sign, k_ys = Kernel[N][1].sign;
+        int i_q, k_q;
+
+        ( i_xs & !i_ys) ? (i_q = 3) :
+        (!i_xs & !i_ys) ? (i_q = 2) :
+        (!i_xs &  i_ys) ? (i_q = 1) :
+                          (i_q = 0);
+
+        ( k_xs & !k_ys) ? (k_q = 3) :
+        (!k_xs & !k_ys) ? (k_q = 2) :
+        (!k_xs &  k_ys) ? (k_q = 1) :
+                          (k_q = 0);
+        
+        Input[N][0].sign = 0; Input[N][1].sign = 0;
+        Kernel[N][0].sign = 0; Kernel[N][1].sign = 0;
+        
         uint64_t C = 0, A = 0, B = 0, mask, litA, litB;
         bool At, Bt;
-          
-          printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
-          printf("ini\t\t");
-          print_archvar(Input[N][0]); printf("\t");
-          print_archvar(Input[N][1]); printf("\t");
-          print_archvar(Input[N][2]); printf("\t");
-          printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
-        
+
+        printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
+        printf("ini\t\t");
+        print_archvar(Input[N][0]); printf("\t");
+        print_archvar(Input[N][1]); printf("\t");
+        print_archvar(Input[N][2]); printf("\t");
+        printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
+
         for (int j = 0; j < 24; j++) {
                                                 
             cordic_vec(Input[N], j);
@@ -136,26 +159,46 @@ int main() {
             A = (A << 1) + At;
             B = (B << 1) + Bt;
           
-              printf("%x\t\t",j);
-              print_archvar(Input[N][0]); printf("\t");
-              print_archvar(Input[N][1]); printf("\t");
-              print_archvar(Input[N][2]); printf("\t");
-              printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
+
+            printf("%x\t\t",j);
+            print_archvar(Input[N][0]); printf("\t");
+            print_archvar(Input[N][1]); printf("\t");
+            print_archvar(Input[N][2]); printf("\t");
+            printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
         }
-        uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
+
+        // Angle correction
+        uint32_t cor_angle = 0;
+        if      (i_q == 3) {Input[N][2].sign ^= true; cor_angle = hex_two_pi;}
+        else if (i_q == 2) {cor_angle = hex_pi;}
+        else if (i_q == 1) {Input[N][2].sign ^= true; cor_angle = hex_pi;}
+        archvar cor_angle_arch = {0b0, (uint8_t)((cor_angle & pre_mask) >> 16), (uint16_t)(cor_angle & post_mask)};
+        Input[N][2] = archadd(Input[N][2], cor_angle_arch);
+
+        cor_angle = 0;
+        if      (k_q == 3) {Kernel[N][2].sign ^= true; cor_angle = hex_two_pi;}
+        else if (k_q == 2) {cor_angle = hex_pi;}
+        else if (k_q == 1) {Kernel[N][2].sign ^= true; cor_angle = hex_pi;}
+        archvar cor_angle_arch2 = {0b0, (uint8_t)((cor_angle & pre_mask) >> 16), (uint16_t)(cor_angle & post_mask)};
+        Kernel[N][2] = archadd(Kernel[N][2], cor_angle_arch2);
+
+        // Assign Product
         Product[N][0].pre = (uint8_t)(((C >> 16) & pre_mask) >> 16);
         Product[N][0].post = (uint16_t)((C >> 16) & post_mask);
         Product[N][0].sign = Input[N][0].sign ^ Kernel[N][0].sign;
         Product[N][2] = archadd(Input[N][2],Kernel[N][2]);
 
-          printf("Product = ");
-          print_archvar(Product[N][0]);
-          printf("\n");
+
+        printf("Product = ");
+        print_archvar(Product[N][0]);
+        printf("\n");
     }
+
 
     print_arch_pol("Input (polar coordinates)", Input);
     print_arch_pol("Kernel (polar coordinates)", Kernel);
     print_arch_pol("Product (polar coordinates)", Product);
+
 
     // Rotation CORDIC
     for (int N = 0; N < 9; N++) {
@@ -163,11 +206,9 @@ int main() {
         bool x_sign = 0, y_sign = 0;
         if (Product[N][2].sign == 1) {y_sign = 1;} // Y reflection
         uint32_t angle = (uint32_t)((Product[N][2].pre << 16) + Product[N][2].post);
-        uint32_t hex_pi = (uint32_t)(M_PI*0xffff), hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1;
         uint32_t mod_angle = angle % (hex_pi << 1), cor_angle = mod_angle;
-        uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
 
-        if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign ^= true, cor_angle = (hex_pi << 1) - mod_angle);
+        if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign ^= true, cor_angle = hex_two_pi - mod_angle);
         else if (mod_angle >= hex_pi)         (x_sign = 1, y_sign ^= true, cor_angle = mod_angle - hex_pi);
         else if (mod_angle > hex_half_pi)     (x_sign = 1, cor_angle = hex_pi - mod_angle);
 
@@ -240,32 +281,35 @@ int main() {
 
 
 
-    printf("\n\nTesting Archvar Addition:\n\n");
-    archvar var1 = {0b1, 0x02, 0x1000};
-    print_archvar(var1);
-    archvar var2 = {0b0, 0x05, 0x0003};
-    print_archvar(var2);
-    archvar res = archadd(var1, var2);
-    print_archvar(res);
 
-    printf("\n\nTesting Archvar Multiplication:\n\n");
-    archvar var3 = {0b1, 0x02,0x0000};
-    print_archvar(var3);
-    archvar var4 = {0b1, 0x05, 0x0003};
-    print_archvar(var4);
-    archvar res2 = archmul(var3, var4);
-    print_archvar(res2);
 
-    printf("\n\nTesting Archvar Exponentiation:\n\n");
-    archvar var = {0b0, 0x05, 0x0003};
-    res = archpow(var, 2);
-    print_archvar(res);
 
-    printf("\n\nTesting Archvar Right Shift:\n\n");
-    archvar sh = {0b0, 0x01, 0x41c0};
-    sh = archshiftR(sh, 1);
-    print_archvar(sh);
-    printf("\n\n");
+    // printf("\n\nTesting Archvar Addition:\n\n");
+    // archvar var1 = {0b1, 0x02, 0x1000};
+    // print_archvar(var1);
+    // archvar var2 = {0b0, 0x05, 0x0003};
+    // print_archvar(var2);
+    // archvar res = archadd(var1, var2);
+    // print_archvar(res);
+
+    // printf("\n\nTesting Archvar Multiplication:\n\n");
+    // archvar var3 = {0b1, 0x02,0x0000};
+    // print_archvar(var3);
+    // archvar var4 = {0b1, 0x05, 0x0003};
+    // print_archvar(var4);
+    // archvar res2 = archmul(var3, var4);
+    // print_archvar(res2);
+
+    // printf("\n\nTesting Archvar Exponentiation:\n\n");
+    // archvar var = {0b0, 0x05, 0x0003};
+    // res = archpow(var, 2);
+    // print_archvar(res);
+
+    // printf("\n\nTesting Archvar Right Shift:\n\n");
+    // archvar sh = {0b0, 0x01, 0x41c0};
+    // sh = archshiftR(sh, 1);
+    // print_archvar(sh);
+    // printf("\n\n");
 
 
 
