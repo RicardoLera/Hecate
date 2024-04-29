@@ -23,29 +23,29 @@ void print_arch_array(char* name, int j, archvar* arr) {
   for (int i = 0; i < j; i++) (print_archvar(arr[i]), printf("\n"));
 }
 
-void print_arch_rec(char* name, archvar arr[9][3]) {
+void print_arch_rec(char* name, archvar arr[17][3]) {
   printf("\n%s:\n", name);
-  for (int i = 0; i < 9; i++) (print_archvar(arr[i][0]), print_archvar(arr[i][1]), printf("i\n"));
+  for (int i = 0; i < 17; i++) (print_archvar(arr[i][0]), print_archvar(arr[i][1]), printf("i\n"));
 }
 
-void print_arch_rec_10(char* name, archvar arr[9][3]) {
+void print_arch_rec_10(char* name, archvar arr[17][3]) {
   printf("\n%s:\n", name);
-  for (int i = 0; i < 9; i++) (print_archvar_dec(arr[i][0]), print_archvar_dec(arr[i][1]), printf("i\n"));
+  for (int i = 0; i < 17; i++) (print_archvar_dec(arr[i][0]), print_archvar_dec(arr[i][1]), printf("i\n"));
 }
 
-void print_arch_pol(char* name, archvar arr[9][3]) {
+void print_arch_pol(char* name, archvar arr[17][3]) {
   printf("\n%s:\n", name);
-  for (int i = 0; i < 9; i++) (print_archvar(arr[i][0]), printf("angle "), print_archvar(arr[i][2]), printf("\n"));
+  for (int i = 0; i < 17; i++) (print_archvar(arr[i][0]), printf("angle "), print_archvar(arr[i][2]), printf("\n"));
 }
 
-void print_arch_con(char* name, archvar arr[9][2][4], int c) {
-  printf("\n%s:\n", name);
-  for (int i = 0; i < 9; i++) (print_archvar(arr[i][0][c]), print_archvar(arr[i][1][c]), printf("i\n"));
+void print_arch_con(archvar arr[17][2][8], int c) {
+  printf("\nVariable K%d (N * cos(%d@) * kcon):\n", c, c);
+  for (int i = 0; i < 17; i++) (print_archvar(arr[i][0][c]), print_archvar(arr[i][1][c]), printf("i\n"));
 }
 
-void print_arch_out (char* name, archvar arr[16][2]) {
+void print_arch_out (char* name, archvar arr[32][2]) {
   printf("\n%s:\n", name);
-  for (int i = 0; i < 16; i++) (print_archvar(arr[i][0]), print_archvar(arr[i][1]), printf("i\n"));
+  for (int i = 0; i < 32; i++) (print_archvar(arr[i][0]), print_archvar(arr[i][1]), printf("i\n"));
 }
 
 
@@ -121,27 +121,29 @@ archvar archshiftR(archvar var, int s) {
 
 //---------------------CONVOLUTION FUNCTIONS
 
+  
+void dft(archvar in[27], archvar out[17][3]) {
+  archvar temp_in[32], zero = {0, 0x00, 0x0000};
 
-void dft(archvar in[8], archvar out[9][3]) {
-  archvar temp_in[16], zero = {0, 0x00, 0x0000}, one_over_four = {0, 0x00, 0x4000};
-
-  for (int i = 0; i < 8; i++)
+  for (int i = 0; i < 27; i++)
     temp_in[i] = in[i];
 
-  for (int i = 8; i < 16; i++)
+  for (int i = 27; i < 32; i++)
     temp_in[i] = zero;
 
-  for (int N = 0; N < 9; N++) {
-    for (int i = 0; i < 16; i++) {
-      out[N][0] = archadd(out[N][0], archmul(temp_in[i], twiddle_arr[(N*i)%16][0]));
-      out[N][1] = archadd(out[N][1], archmul(temp_in[i], twiddle_arr[(N*i)%16][1]));
+  for (int N = 0; N < 17; N++) {
+    for (int i = 0; i < 32; i++) {
+      out[N][0] = archadd(out[N][0], archmul(temp_in[i], twiddle_arr[(N*i)%32][0]));
+      out[N][1] = archadd(out[N][1], archmul(temp_in[i], twiddle_arr[(N*i)%32][1]));
     }
   }
 
-  for (int N = 0; N < 15; N++) { // multiply by 1/sqrt(N) so that convolution makes it N and no overflow happens
-    out[N][0] = archmul(out[N][0], one_over_four);
-    out[N][1] = archmul(out[N][1], one_over_four);
-  }
+  // for (int N = 0; N < 17; N++) { // multiply by 1/sqrt(N) so that convolution makes it N and no overflow happens
+  //   out[N][0] = archmul(out[N][0], one_over_sqrt32);
+  //   out[N][1] = archmul(out[N][1], one_over_sqrt32);
+  // }
+
+  // 8*8*pow(1.646760258121064673288,2) = ad.8e73 -> no overflow at N = 32
 }
 
 void cordic_vec(archvar arr[3], int j) {
@@ -206,12 +208,12 @@ void cordic_rot(archvar arr[3], int j) {
   }
 }
 
-void p_idft(archvar con[9][2][4], archvar out[16][2]) {
+void p_idft(archvar con[17][2][8], archvar out[32][2]) {
   archvar zero = {0, 0x00, 0x0000}, a_wx, a_wy, b_wx, b_wy;
   int C, w_ex, w, wc;
 
-  for (int N = 0; N < 15; N++) {
-    for (int i = 0; i < 16; i++) {
+  for (int N = 0; N < 32; N++) {
+    for (int i = 0; i < 32; i++) {
 
       (i <= 8) ? (C = i) : (C = 16-i); // C    -> constant array identifier, corrected for Hermitian Symmetry
       w_ex = (i*N) % 16;               // w_ex -> exponent of w in the full unit circle (0~15)

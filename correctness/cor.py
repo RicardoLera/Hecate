@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from matplotlib import pyplot as plot
-plot.style.use('dark_background')
+# plot.style.use('dark_background')
 
 def toHex(value:float): # Credit to user8234870 at StackOverflow
   result = ""
@@ -43,12 +43,12 @@ arrToHex = np.vectorize(toHex)
 # ker = np.array([1, 1, 0], dtype=np.int8)
 
 # 2D Test
-img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
-ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
+# img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
+# ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
 
 # 3D Test
-# img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
-# ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
+img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
+ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
 
 # Random array test
 # img = np.random.rand(8)
