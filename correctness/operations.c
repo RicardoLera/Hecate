@@ -215,12 +215,12 @@ void p_idft(archvar con[17][2][8], archvar out[32][2]) {
   for (int N = 0; N < 32; N++) {
     for (int i = 0; i < 32; i++) {
 
-      (i <= 8) ? (C = i) : (C = 16-i); // C    -> constant array identifier, corrected for Hermitian Symmetry
-      w_ex = (i*N) % 16;               // w_ex -> exponent of w in the full unit circle (0~15)
+      (i <= 16) ? (C = i) : (C = 32-i); // C    -> constant array identifier, corrected for Hermitian Symmetry
+      w_ex = (i*N) % 32;                // w_ex -> exponent of w in the full unit circle (0~15)
 
-      (w_ex == 5 || w_ex == 7 || w_ex == 13 || w_ex == 15) ? (w = (w_ex-2) % 4) : (w = w_ex % 4); // Second and fourth quadrant reflection
-      w == 1 ? wc = 3 :
-      w == 3 ? wc = 1 : (wc = w);
+      ((w_ex > 8 && w_ex <= 16) || (w_ex > 24 && w_ex <= 31)) ? (w = 8 - (w_ex % 8)) : (w = w_ex % 8); // Second and fourth quadrant reflections
+      
+      (w == 0 || w == 4) ? (wc = w) : (wc = 8 - w); // cos/sin pairs
 
       //    N     *     w
       // (a + bi) * (wx + wyi) = [ws_x]a*wx + [ws_x]b*wx(i) + [ws_y]a*wy(i) + [-ws_y]b*wy
@@ -236,23 +236,23 @@ void p_idft(archvar con[17][2][8], archvar out[32][2]) {
       b_wy = con[C][1][wc];
 
       // Signs and cancellations
-      if (i > 8) {b_sign ^= true;} // Complex conjugate inversion (b)
-      wy_sign ^= true; // DFT/IDFT inversion
+      if (i > 16) {b_sign ^= true;} // Complex conjugate inversion (b)
+      wy_sign ^= true;              // DFT/IDFT inversion
 
       a_wx.sign = a_sign ^ wx_sign;
       a_wy.sign = a_sign ^ wy_sign;
       b_wx.sign = b_sign ^ wx_sign;
       b_wy.sign = !(b_sign ^ wy_sign); // i^2 inversion
 
-      if (w_ex == 4 || w_ex == 12) {a_wx = zero; b_wx = zero;} // Orthogonal wx cancellation
-      if (w_ex == 0 || w_ex == 8)  {a_wy = zero; b_wy = zero;} // Orthogonal wy cancellation
+      if (w_ex == 8 || w_ex == 24) {a_wx = zero; b_wx = zero;} // Orthogonal wx cancellation
+      if (w_ex == 0 || w_ex == 16) {a_wy = zero; b_wy = zero;} // Orthogonal wy cancellation
 
       out[N][0] = archadd(out[N][0], archadd(a_wx, b_wy));
       out[N][1] = archadd(out[N][1], archadd(a_wy, b_wx));
 
       if (N <= 2) {
         if (i==0) {printf("\n");}
-        printf("w_ex = %d\tw = %d\tC = %d\tout[%d][0] = ", w_ex, w, C, N);
+        printf("w_ex = %d\tw = %d\twc = %d\tC = %d\tout[%d][0] = ", w_ex, w, wc, C, N);
         print_archvar(out[N][0]);
         printf("\tout[%d][1] = ", N);
         print_archvar(out[N][1]);

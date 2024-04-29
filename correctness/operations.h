@@ -16,7 +16,7 @@
     archvar archpow(archvar var, int p);
     archvar archshiftR(archvar var, int s);
 
-    void dft(archvar in[16], archvar out[17][3]);
+    void dft(archvar in[27], archvar out[17][3]);
     void cordic_vec(archvar arr[3], int j);
     void cordic_rot(archvar arr[3], int j);
     void p_idft(archvar con[17][2][8], archvar out[32][2]);
