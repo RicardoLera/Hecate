@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from matplotlib import pyplot as plot
-# plot.style.use('dark_background')
+plot.style.use('dark_background')
 
 def toHex(value:float): # Credit to user8234870 at StackOverflow
   result = ""
@@ -64,8 +64,8 @@ spsize =2**(math.ceil(math.log(np.size(img), 2))) # next power of 2
 
 
 # FFT
-IMG = np.fft.fft(img, spsize) / 4
-KER = np.fft.fft(ker, spsize) / 4
+IMG = np.fft.fft(img, spsize)
+KER = np.fft.fft(ker, spsize)
 
 # CORDIC rect -> polar
 mIMG = np.abs(IMG) * kcor
@@ -74,14 +74,14 @@ mKER = np.abs(KER) * kcor
 pKER = np.angle(KER)
 
 # Hadamard
-mHAD = mIMG * mKER
+mHAD = mIMG * mKER / 32
 pHAD = pIMG + pKER
 
 # CORDIC polar -> rect
 HAD = mHAD * np.exp(1j*pHAD) * kcor
 
 # IFFT
-had = np.fft.ifft(HAD, np.size(HAD)) * 16 /  pow(kcor,3)
+had = np.fft.ifft(HAD, np.size(HAD)) * 32 /  pow(kcor,3)
 
 
 

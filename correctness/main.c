@@ -6,6 +6,7 @@
 #include "operations.h"
 
 // We'll make N = 32 because that's the lowest power of two necessary to define 3d convolution
+// Current error up to last 7 bits on worst case
 
 // WARNING: doesn't compile with clang for some reason, only gcc
 
@@ -200,14 +201,14 @@ int main() {
     bool k_xs = Kernel[N][0].sign, k_ys = Kernel[N][1].sign;
     int i_q, k_q;
 
-    ( i_xs & !i_ys) ? (i_q = 3) :
-    (!i_xs & !i_ys) ? (i_q = 2) :
-    (!i_xs &  i_ys) ? (i_q = 1) :
+    (!i_xs &  i_ys) ? (i_q = 3) :
+    ( i_xs &  i_ys) ? (i_q = 2) :
+    ( i_xs & !i_ys) ? (i_q = 1) :
                       (i_q = 0);
 
-    ( k_xs & !k_ys) ? (k_q = 3) :
-    (!k_xs & !k_ys) ? (k_q = 2) :
-    (!k_xs &  k_ys) ? (k_q = 1) :
+    (!k_xs &  k_ys) ? (k_q = 3) :
+    ( k_xs &  k_ys) ? (k_q = 2) :
+    ( k_xs & !k_ys) ? (k_q = 1) :
                       (k_q = 0);
 
     Input[N][0].sign = 0; Input[N][1].sign = 0;
@@ -216,14 +217,14 @@ int main() {
     uint64_t C = 0, A = 0, B = 0, mask, litA, litB;
     bool At, Bt;
 
-    printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N);
+    printf("\n\tN = %d\ti_q = %d\tk_q = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N, i_q, k_q);
     printf("ini\t\t");
     print_archvar(Input[N][0]); printf("\t");
     print_archvar(Input[N][1]); printf("\t");
     print_archvar(Input[N][2]); printf("\t");
     printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
 
-    for (int j = 0; j < 24; j++) {            // NOTE: Can we change this to 13 too?
+    for (int j = 0; j < 24; j++) {            // NOTE: 24 works, upto 32 can be done
 
       cordic_vec(Input[N], j);
       cordic_vec(Kernel[N], j);
@@ -287,13 +288,13 @@ int main() {
   for (int N = 0; N < 17; N++) {
 
     bool x_sign = 0, y_sign = 0;
-    if (Product[N][2].sign == 1) {y_sign = 1;} // Y reflection
+    //if (Product[N][2].sign == 1) {y_sign = 1;} // Y reflection
     uint32_t angle = (uint32_t)((Product[N][2].pre << 16) + Product[N][2].post);
     uint32_t mod_angle = angle % (hex_pi << 1), cor_angle = mod_angle;
 
-    if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign ^= true, cor_angle = hex_two_pi - mod_angle);
-    else if (mod_angle >= hex_pi)         (x_sign = 1, y_sign ^= true, cor_angle = mod_angle - hex_pi);
-    else if (mod_angle > hex_half_pi)     (x_sign = 1, cor_angle = hex_pi - mod_angle);
+    if (mod_angle >= hex_three_halves_pi) (x_sign = 0, y_sign = 1, cor_angle = hex_two_pi - mod_angle);
+    else if (mod_angle >= hex_pi)         (x_sign = 1, y_sign = 1, cor_angle = mod_angle - hex_pi);
+    else if (mod_angle > hex_half_pi)     (x_sign = 1, y_sign = 0, cor_angle = hex_pi - mod_angle);
 
     Product[N][1] = zero;
     Product[N][2].pre = (uint8_t)((cor_angle & pre_mask) >> 16);
@@ -305,7 +306,7 @@ int main() {
     print_archvar(Product[N][1]); printf("\t");
     print_archvar(Product[N][2]); printf("\n");
 
-    for (int j = 0; j < 13; j++) {    // NOTE: previously at 24, experiment showed (max j = 12) gets better results
+    for (int j = 0; j < 17; j++) {    // NOTE: previously at 24, experiment showed max j ~ 0x10 gets better results
       cordic_rot(Product[N], j);
 
       printf("%x\t\t",j);
@@ -327,7 +328,7 @@ int main() {
   for (int N = 0; N < 17; N++) {
     for (int K = 0; K < 8; K++) {
       idft_mul[N][0][K] = archmul(Product[N][0], archmul(twiddle_arr[K][0], kcon));
-      idft_mul[N][1][K] = archmul(Product[N][1], archmul(twiddle_arr[K][1], kcon));
+      idft_mul[N][1][K] = archmul(Product[N][1], archmul(twiddle_arr[K][0], kcon)); // this twiddle_arr call is correct
     }
   }
 
@@ -345,14 +346,6 @@ int main() {
 
 
 
-  // archvar K0 = archmul(twiddle_arr[0][0], kcon); // cos(0@) * kcon
-  // archvar K1 = archmul(twiddle_arr[1][0], kcon); // cos(1@) * kcon
-  // archvar K2 = archmul(twiddle_arr[2][0], kcon); // cos(2@) * kcon
-  // archvar K3 = archmul(twiddle_arr[3][0], kcon); // cos(3@) * kcon
-  // archvar K4 = archmul(twiddle_arr[4][0], kcon); // cos(4@) * kcon
-  // archvar K5 = archmul(twiddle_arr[5][0], kcon); // cos(5@) * kcon
-  // archvar K6 = archmul(twiddle_arr[6][0], kcon); // cos(6@) * kcon
-  // archvar K7 = archmul(twiddle_arr[7][0], kcon); // cos(7@) * kcon
 
 
 
