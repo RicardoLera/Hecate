@@ -14,14 +14,18 @@ end package b25_types;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+  use ieee.math_real.all;
 
 library work;
   use work.b25_types.all;
 
 entity fft_8 is
+  generic(
+    n : natural range 8 to 32 = 32
+  )
   port (
-    i       : in    real_array(0 to 7);
-    o       : out   complex_array(0 to 8);
+    i       : in    real_array(0 to (n/2)-1);
+    o       : out   complex_array(0 to n/2);
     clock   : in    std_logic;
     start   : in    std_logic;
     reset   : in    std_logic;
@@ -56,68 +60,80 @@ architecture arch of fft_8 is
   -- cos 45    -  1011010100000100    2
   -- cos 67,5  -  0110000111110111    3
 
-  type t_cos_val_ref is ARRAY(0 to 15) OF NATURAL RANGE 0 to 4;
+  type t_cos_val_ref is ARRAY(0 to (n/2)-1) OF NATURAL RANGE 0 to n/4;
 
-  type t_cos_sig_ref is ARRAY(0 to 15) OF BOOLEAN;
+  type t_cos_sig_ref is ARRAY(0 to (n/2)-1) OF BOOLEAN;
 
-  constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1);
-  constant cos_sig_ref : t_cos_sig_ref := (FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE);
+  --constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1);
+  --constant cos_sig_ref : t_cos_sig_ref := (FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE);
 
-  type t_calc_vals is ARRAY(0 to 3) OF std_logic_vector(24 downto 0);
+  type t_calc_vals is ARRAY(0 to (n/4)-1) OF std_logic_vector(24 downto 0);
 
-  type t_calc_vals_arr is ARRAY(0 to 7) OF t_calc_vals;
+  type t_calc_vals_arr is ARRAY(0 to (n/2)-1) OF t_calc_vals;
 
-  signal calc_vals_arr : t_calc_vals_arr              := (OTHERS => (OTHERS => (OTHERS => '0')));
-  signal add_a         : complex_array(0 to 8)        := (OTHERS => (OTHERS => (OTHERS => '0')));
-  signal add_b         : complex_array(0 to 8)        := (OTHERS => (OTHERS => (OTHERS => '0')));
-  signal add_r         : complex_array(0 to 8)        := (OTHERS => (OTHERS => (OTHERS => '0')));
-  signal fft_ready     : std_logic_vector(8 downto 0) := (OTHERS => '0');
+  signal calc_vals_arr : t_calc_vals_arr                := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal add_a         : complex_array(0 to n/2)        := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal add_b         : complex_array(0 to n/2)        := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal add_r         : complex_array(0 to n/2)        := (OTHERS => (OTHERS => (OTHERS => '0')));
+  signal fft_ready     : std_logic_vector(n/2 downto 0) := (OTHERS => '0');
 
 begin
 
   -- Multiplication Layer
 
-  gen_calc_vals : for id IN 0 to 7 generate
+  gen_id_for : for id in 0 to (n/2)-1 generate
 
-    calc_vals_arr(id)(0) <= i(id);
+    calc_vals_arr(id)(0) <= i(id); -- no cmul necessary
 
-    gen_mul_22_67 : if (id MOD 4 = 1) or (id MOD 4 = 3) generate
+    gen_con_for : for con in 1 to (n/4)-1 generate
 
-      mul_22 : component b25_cmul
-        port map (
-          a   => i(id),
-          con => "0000000001110110010000100",
-          res => calc_vals_arr(id)(1)
-        );
+      variable  std_logic : enable_cmul := 0;
 
-      mul_45 : component b25_cmul
-        port map (
-          a   => i(id),
-          con => "0000000001011010100000101",
-          res => calc_vals_arr(id)(2)
-        );
+      gen_enable_cmul : for bits in 0 to log2(n/4)
+        enable_cmul 
+      end generate gen_enable_cmul;
 
-      mul_67 : component b25_cmul
-        port map (
-          a   => i(id),
-          con => "0000000000110000111111000",
-          res => calc_vals_arr(id)(3)
-        );
 
-    end generate gen_mul_22_67;
+      gen_cmuls : if (gen_enable)
 
-    gen_mul_45 : if (id MOD 4 = 2) generate
+        cmul : component b25_cmul
+          port map (
+            a   => i(id),
+            con => (0, b"0000_0000", to_unsigned(cos(con), 16)),
+            res => calc_vals_arr(id)(con)
+          );
 
-      mul_45 : component b25_cmul
-        port map (
-          a   => i(id),
-          con => "0000000001011010100000101",
-          res => calc_vals_arr(id)(2)
-        );
 
-    end generate gen_mul_45;
+        -- mul_22 : component b25_cmul
+        --   port map (
+        --     a   => i(id),
+        --     con => "0000000001110110010000100",
+        --     res => calc_vals_arr(id)(1)
+        --   );
 
-  end generate gen_calc_vals;
+        -- mul_45 : component b25_cmul
+        --   port map (
+        --     a   => i(id),
+        --     con => "0000000001011010100000101",
+        --     res => calc_vals_arr(id)(2)
+        --   );
+
+        -- mul_67 : component b25_cmul
+        --   port map (
+        --     a   => i(id),
+        --     con => "0000000000110000111111000",
+        --     res => calc_vals_arr(id)(3)
+        --   );
+
+      end generate gen_cmuls;
+    end generate gen_con_for;
+  end generate gen_id_for;
+
+
+  -- variable con_mask : unsigned((con mod 4)  downto 0) := to_unsigned(F, con_mask'length);
+
+
+
 
   -- Addition Layer
 
