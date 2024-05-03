@@ -36,8 +36,9 @@ architecture arch of dft is
   type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
   type padding is array(0 to 7) of natural range 0 to 32;
 
+  -- Assuming no DFT-IDFT inversion
   constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1);
-  constant cos_sig_ref : t_cos_sig_ref := (false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false);
+  constant cos_sig_ref : t_cos_sig_ref := (false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false);
   constant pad : padding := (0, 1, 3, 4, 9, 10, 12, 13);
 
   constant base : real := MATH_PI/16.0;
@@ -95,7 +96,7 @@ begin
           res => calc_vals_arr(id_pad)(6)
         );
 
-    end generate gen_v2_v6; 
+    end generate gen_v2_v6;
 
     gen_v1_v3_v5_v7 : if (id_pad /= 0 and id_pad /= 4 and id_pad /= 10 and id_pad /= 12) generate
 

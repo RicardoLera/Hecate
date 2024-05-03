@@ -4,7 +4,6 @@ library work;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std_unsigned.all;
-
   use std.env.stop;
 
 entity dft_tb is
@@ -81,12 +80,9 @@ begin
     img_in <= test_tuple(0);
     ker_in <= test_tuple(1);
     start  <= '1';
-    wait for 200 ms;
-    --wait until s_ready_i = '1' and s_ready_k = '1';
+    wait until s_ready_i = '1' and s_ready_k = '1';
     start  <= '0';
-
     stop;
-    
 
   end process test;
 
