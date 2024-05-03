@@ -1,7 +1,9 @@
+library work;
+  use work.hecate_pkg.all;
+
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  use ieee.math_real.all;
 
 entity cordic is
   generic (
@@ -26,73 +28,9 @@ end entity cordic;
 
 architecture arch of cordic is
 
-  component varshiftright is
-    generic (
-      len : natural := 8
-    );
-    port (
-      data     : in    std_logic_vector(len - 1 downto 0);
-      distance : in    std_logic_vector(INTEGER(ceil(log2(real(len)))) - 1 downto 0);
-      result   : out   std_logic_vector(len - 1 downto 0)
-    );
-  end component;
-
-  component b25_add is
-    port (
-      a   : in    std_logic_vector(24 downto 0);
-      b   : in    std_logic_vector(24 downto 0);
-      res : out   std_logic_vector(24 downto 0)
-    );
-  end component;
-
   signal shifted_x, shifted_y : std_logic_vector(coords_len - 1 downto 0);
   signal x_add,     y_add     : std_logic_vector(coords_len - 1 downto 0);
   signal z_add                : std_logic_vector(coords_len - 1 downto 0) := (others => '0');
-
-  type lut_type is ARRAY (0 to 31) OF std_logic_vector(coords_len - 2 downto 0); -- Fix later, doesn't need 31
-
-  constant lut : lut_type :=
-  (
-    24x"c910",
-    24x"76b2",
-    24x"3eb7",
-    24x"1fd6",
-
-    24x"0ffb",
-    24x"07ff",
-    24x"0400",
-    24x"0200",
-
-    24x"0100",
-    24x"0080",
-    24x"0040",
-    24x"0020",
-
-    24x"0010",
-    24x"0008",
-    24x"0004",
-    24x"0002",
-
-    24x"0001",
-    24x"0000",
-    24x"0000",
-    24x"0000",
-
-    24x"0000",
-    24x"0000",
-    24x"0000",
-    24x"0000",
-
-    24x"0000",
-    24x"0000",
-    24x"0000",
-    24x"0000",
-
-    24x"0000",
-    24x"0000",
-    24x"0000",
-    24x"0000"
-  );
 
 begin
 
@@ -146,8 +84,8 @@ begin
     not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others; -- y-s_x when others;
 
   with sigma_in select z_add <=
-    '1' & std_logic_vector(lut(to_integer(unsigned(j)))) when '0',    -- z-lut when '0'
-    '0' & std_logic_vector(lut(to_integer(unsigned(j)))) when others; -- z+lut when others;
+    '1' & std_logic_vector(arctan_lut(to_integer(unsigned(j)))) when '0',    -- z-lut when '0'
+    '0' & std_logic_vector(arctan_lut(to_integer(unsigned(j)))) when others; -- z+lut when others;
 
   with rotation select sigma_out <=
     z_out(z_out'length - 1) when '1',

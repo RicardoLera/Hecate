@@ -30,25 +30,7 @@ end entity dft;
 
 architecture arch of dft is
 
-  type t_cos_val_ref is array(0 to 31) of natural range 0 to 8;
-  type t_cos_sig_ref is array(0 to 31) of boolean;
-  --type t_calc_vals is array(0 to 7) of std_logic_vector(24 downto 0);
   type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
-  type padding is array(0 to 7) of natural range 0 to 32;
-
-  -- Assuming no DFT-IDFT inversion
-  constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1);
-  constant cos_sig_ref : t_cos_sig_ref := (false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false);
-  constant pad : padding := (0, 1, 3, 4, 9, 10, 12, 13);
-
-  constant base : real := MATH_PI/16.0;
-  constant c1   : unsigned := to_unsigned(natural(65536.0*cos(1.0 * base)), 17);
-  constant c2   : unsigned := to_unsigned(natural(65536.0*cos(2.0 * base)), 17);
-  constant c3   : unsigned := to_unsigned(natural(65536.0*cos(3.0 * base)), 17);
-  constant c4   : unsigned := to_unsigned(natural(65536.0*cos(4.0 * base)), 17);
-  constant c5   : unsigned := to_unsigned(natural(65536.0*cos(5.0 * base)), 17);
-  constant c6   : unsigned := to_unsigned(natural(65536.0*cos(6.0 * base)), 17);
-  constant c7   : unsigned := to_unsigned(natural(65536.0*cos(7.0 * base)), 17);
 
   signal calc_vals_arr : t_calc_vals_arr               := (others => (others => (others => '0')));
   signal add_a         : b25_complex_array(0 to 16)    := (others => (others => (others => '0')));
@@ -63,7 +45,7 @@ begin
 
   gen_mul_layer : for id in 0 to 7 generate
     
-    constant id_pad : natural range 0 to 32 := pad(id);
+    constant id_pad : natural range 0 to 32 := pad3d(id);
 
   begin
 
@@ -74,7 +56,7 @@ begin
       cmul_v4 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c4)),
+          con => ('0', "0000000", std_logic_vector(w_cos4)),
           res => calc_vals_arr(id_pad)(4)
         );
 
@@ -85,14 +67,14 @@ begin
       cmul_v2 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c2)),
+          con => ('0', "0000000", std_logic_vector(w_cos2)),
           res => calc_vals_arr(id_pad)(2)
         );
     
       cmul_v6 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c6)),
+          con => ('0', "0000000", std_logic_vector(w_cos6)),
           res => calc_vals_arr(id_pad)(6)
         );
 
@@ -103,28 +85,28 @@ begin
       cmul_v1 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c1)),
+          con => ('0', "0000000", std_logic_vector(w_cos1)),
           res => calc_vals_arr(id_pad)(1)
         );
     
       cmul_v3 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c3)),
+          con => ('0', "0000000", std_logic_vector(w_cos3)),
           res => calc_vals_arr(id_pad)(3)
         );
 
       cmul_v5 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c5)),
+          con => ('0', "0000000", std_logic_vector(w_cos5)),
           res => calc_vals_arr(id_pad)(5)
         );
       
       cmul_v7 : component b25_cmul
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(c7)),
+          con => ('0', "0000000", std_logic_vector(w_cos7)),
           res => calc_vals_arr(id_pad)(7)
         );
     

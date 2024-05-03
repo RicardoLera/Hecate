@@ -1,10 +1,12 @@
+library work;
+  use work.hecate_pkg.all;
+
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
 entity hadamard is
   generic (
-    logn  : natural range 1 to 3 := 3;
     n_idx : natural range 0 to 8 := 0
   );
   port (
@@ -15,80 +17,13 @@ entity hadamard is
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
     y_k       : in    std_logic_vector(24 downto 0);
-    p_coefs_x : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-    p_coefs_y : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+    p_coefs_x : out   std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+    p_coefs_y : out   std_logic_vector(((7 + 1) * 25) - 1 downto 0);
     ready     : buffer std_logic
   );
 end entity hadamard;
 
 architecture arch of hadamard is
-
-  component flux_multiplier is
-    generic (
-      size      : natural              := 25;
-      frac_size : natural              := 16;
-      logn      : natural range 1 to 3 := 3;
-      n_idx     : natural range 0 to 8 := 0
-    );
-    port (
-      clock   : in    std_logic;
-      reset   : in    std_logic;
-      run     : in    std_logic;
-      a       : in    std_logic_vector(size - 1 downto 0);
-      b       : in    std_logic_vector(size - 1 downto 0);
-      a_nex   : in    std_logic_vector(size - 1 downto 0);
-      b_nex   : in    std_logic_vector(size - 1 downto 0);
-      lut     : in    std_logic_vector(((logn + 1) * size) - 1 downto 0);
-      coefs_x : out   std_logic_vector(((logn + 1) * size) - 1 downto 0);
-      coefs_y : out   std_logic_vector(((logn + 1) * size) - 1 downto 0);
-      p       : out   std_logic_vector(size - 1 downto 0);
-      ready   : out   std_logic
-    );
-  end component;
-
-  component hadamard_uc is
-    port (
-      clock           : in    std_logic;
-      start           : in    std_logic;
-      reset           : in    std_logic;
-      mul_ready       : in    std_logic;
-      j_end           : in    std_logic;
-      load_change     : out   std_logic;
-      cordic_feedback : out   std_logic;
-      flux_to_cordic  : out   std_logic;
-      freeze_terms    : out   std_logic;
-      mul_xy          : out   std_logic;
-      cordic_rotation : out   std_logic;
-      ready           : buffer std_logic
-    );
-  end component;
-
-  component cordic is
-    generic (
-      j_len      : natural := 5;
-      coords_len : natural := 25
-    );
-    port (
-      sigma_in  : in    std_logic;
-      rotation  : in    std_logic;
-      j         : in    std_logic_vector(j_len - 1 downto 0);
-      x_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      y_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      z_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      x_out     : out   std_logic_vector(coords_len - 1 downto 0);
-      y_out     : out   std_logic_vector(coords_len - 1 downto 0);
-      z_out     : out   std_logic_vector(coords_len - 1 downto 0);
-      sigma_out : out   std_logic
-    );
-  end component;
-
-  component b25_add is
-    port (
-      a   : in    std_logic_vector(24 downto 0);
-      b   : in    std_logic_vector(24 downto 0);
-      res : out   std_logic_vector(24 downto 0)
-    );
-  end component;
 
   -- Control unit signals
   signal mul_ready,  j_end : std_logic;
@@ -167,24 +102,16 @@ architecture arch of hadamard is
   signal mul_b           : std_logic_vector(24 downto 0);
   signal mul_b_nex       : std_logic_vector(24 downto 0);
   signal mul_b_nex_sel   : std_logic_vector(24 downto 0);
-  signal mul_coefs_x     : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-  signal mul_coefs_y     : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-  signal neg_mul_coefs_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-  signal neg_mul_coefs_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+  signal mul_coefs_x     : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+  signal mul_coefs_y     : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+  signal neg_mul_coefs_x : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+  signal neg_mul_coefs_y : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
 
   -- Output
-  signal p_coefs_nex_x : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_nex_y : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_x_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_y_s   : std_logic_vector(((logn + 1) * 25) - 1 downto 0) := (others => '0');
-
-  -- Lookup Table
-  constant lut : std_logic_vector(((logn + 1) * 25) - 1 downto 0) :=
-    "0000000000001010111101111000000000001010001000100000000000000110100111101100000000000011100101010011";    -- Make generic
-  -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
-  -- lut(49 downto 25) <= "0000000000011010011110110"; -- 0x34f6
-  -- lut(74 downto 50) <= "0000000000010100010001000"; -- 0x2888
-  -- lut(99 downto 75) <= "0000000000001010111101111"; -- 0x15ef
+  signal p_coefs_nex_x : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_nex_y : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_x_s   : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_y_s   : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
 
 begin
 
@@ -453,7 +380,7 @@ begin
   -- OBS (from prev): check if run can be left at high
   flux_mul : component flux_multiplier
     generic map (
-      size => 25, frac_size=> 16, logn=> 3, n_idx=> n_idx
+      size => 25, frac_size=> 16, n_idx=> n_idx
     )
     port map (
       clock   => clock,
@@ -463,7 +390,6 @@ begin
       b       => mul_b,
       a_nex   => mul_a_nex,
       b_nex   => mul_b_nex,
-      lut     => lut,
       coefs_x => mul_coefs_x,
       coefs_y => mul_coefs_y,
       p       => prod_mod,
@@ -486,7 +412,7 @@ begin
 
   -- Change processing at output
 
-  gen_mul_negs : for i IN 0 to logn generate
+  gen_mul_negs : for i IN 0 to 7 generate
     neg_mul_coefs_x(25 * (i + 1) - 1 downto 25 * i) <= std_logic_vector(unsigned(not mul_coefs_x(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
     neg_mul_coefs_y(25 * (i + 1) - 1 downto 25 * i) <= std_logic_vector(unsigned(not mul_coefs_y(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
   end generate gen_mul_negs;
@@ -510,14 +436,22 @@ begin
       if (ready = '0') then
 
         with rot_x_invert select p_coefs_x_s <= 
-          (99 => not p_coefs_nex_x(99), 98 downto 75 => p_coefs_nex_x(98 downto 75),
+          (199 => not p_coefs_nex_x(99), 198 downto 175 => p_coefs_nex_x(198 downto 175),
+           174 => not p_coefs_nex_x(74), 173 downto 150 => p_coefs_nex_x(173 downto 150),
+           149 => not p_coefs_nex_x(49), 148 downto 125 => p_coefs_nex_x(148 downto 125),
+           124 => not p_coefs_nex_x(99), 123 downto 100 => p_coefs_nex_x(123 downto 100),
+           99 => not p_coefs_nex_x(99), 98 downto 75 => p_coefs_nex_x(98 downto 75),
            74 => not p_coefs_nex_x(74), 73 downto 50 => p_coefs_nex_x(73 downto 50),
            49 => not p_coefs_nex_x(49), 48 downto 25 => p_coefs_nex_x(48 downto 25),
            24 => not p_coefs_nex_x(24), 23 downto 0  => p_coefs_nex_x(23 downto 0)) when '1',
            p_coefs_nex_x when others;
           
         with rot_y_invert select p_coefs_y_s <= 
-          (99 => not p_coefs_nex_y(99), 98 downto 75 => p_coefs_nex_y(98 downto 75),
+          (199 => not p_coefs_nex_y(99), 198 downto 175 => p_coefs_nex_y(198 downto 175),
+          174 => not p_coefs_nex_y(74), 173 downto 150 => p_coefs_nex_y(173 downto 150),
+          149 => not p_coefs_nex_y(49), 148 downto 125 => p_coefs_nex_y(148 downto 125),
+          124 => not p_coefs_nex_y(99), 123 downto 100 => p_coefs_nex_y(123 downto 100),
+          99 => not p_coefs_nex_y(99), 98 downto 75 => p_coefs_nex_y(98 downto 75),
           74 => not p_coefs_nex_y(74), 73 downto 50 => p_coefs_nex_y(73 downto 50),
           49 => not p_coefs_nex_y(49), 48 downto 25 => p_coefs_nex_y(48 downto 25),
           24 => not p_coefs_nex_y(24), 23 downto 0  => p_coefs_nex_y(23 downto 0)) when '1',

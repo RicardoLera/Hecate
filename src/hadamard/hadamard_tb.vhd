@@ -1,63 +1,45 @@
+library work;
+  use work.hecate_pkg.all;
+
 library ieee;
   use ieee.std_logic_1164.all;
-  use ieee.math_real.all;
   use ieee.numeric_std.all;
-  use std.textio.all;
+  use ieee.math_real.all;
 
 entity hadamard_tb is
 end entity hadamard_tb;
 
 architecture rtl of hadamard_tb is
 
-  component hadamard is
-    generic (
-      logn  : natural range 1 to 3 := 3;
-      n_idx : natural range 0 to 7 := 0
-    );
-    port (
-      clock     : in    std_logic;
-      reset     : in    std_logic;
-      start     : in    std_logic;
-      x_i       : in    std_logic_vector(24 downto 0);
-      y_i       : in    std_logic_vector(24 downto 0);
-      x_k       : in    std_logic_vector(24 downto 0);
-      y_k       : in    std_logic_vector(24 downto 0);
-      p_coefs_x : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-      p_coefs_y : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-      ready     : buffer std_logic
-    );
-  end component;
-
   signal reset, start : std_logic;
   signal x_i          : std_logic_vector(24 downto 0);
   signal y_i          : std_logic_vector(24 downto 0);
   signal x_k          : std_logic_vector(24 downto 0);
   signal y_k          : std_logic_vector(24 downto 0);
-  signal lut          : std_logic_vector((4 * 25) - 1 downto 0);
-  signal p_coefs_x    : std_logic_vector((4 * 25) - 1 downto 0);
-  signal p_coefs_y    : std_logic_vector((4 * 25) - 1 downto 0);
+  signal lut          : std_logic_vector((8 * 25) - 1 downto 0);
+  signal p_coefs_x    : std_logic_vector((8 * 25) - 1 downto 0);
+  signal p_coefs_y    : std_logic_vector((8 * 25) - 1 downto 0);
   signal ready        : std_logic;
 
   signal   clk             : std_logic := '0';
   signal   keep_simulating : std_logic := '0';
   constant clockperiod     : TIME      := 1 ms;
 
-  signal p_coefs_x_0 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_x_1 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_x_2 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_x_3 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_y_0 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_y_1 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_y_2 : std_logic_vector(25 - 1 downto 0);
-  signal p_coefs_y_3 : std_logic_vector(25 - 1 downto 0);
+  signal p_coefs_x_0 : std_logic_vector(24 downto 0);
+  signal p_coefs_x_1 : std_logic_vector(24 downto 0);
+  signal p_coefs_x_2 : std_logic_vector(24 downto 0);
+  signal p_coefs_x_3 : std_logic_vector(24 downto 0);
+  signal p_coefs_y_0 : std_logic_vector(24 downto 0);
+  signal p_coefs_y_1 : std_logic_vector(24 downto 0);
+  signal p_coefs_y_2 : std_logic_vector(24 downto 0);
+  signal p_coefs_y_3 : std_logic_vector(24 downto 0);
 
 begin
 
-  clk <= (NOT clk) and keep_simulating AFTER clockperiod / 2;
+  clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hadamard
     generic map (
-      logn  => 3,
       n_idx => 1
     )
     port map (
