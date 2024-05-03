@@ -32,7 +32,7 @@ architecture rtl of hecate_tb is
   signal   keep_simulating : std_logic := '0';
   constant clockperiod     : time      := 1 ms;
 
-  type test_tuple_t is array(0 to 1) OF real_array(7 downto 0);
+  type test_tuple_t is array(0 to 1) of real_array(7 downto 0);
   constant test_tuple0 : test_tuple_t :=
   (
     (

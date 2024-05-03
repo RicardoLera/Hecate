@@ -1,18 +1,19 @@
+-- 3D Version -> N = 32
 library work;
   use work.b25_types.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
+  use ieee.numeric_std_unsigned.all;
 
 entity hecate is
   port (
-    img     : in    real_array(0 to 7);
+    img     : in    real_array(0 to 7);  -- 2x2x2 non-padded
     ker     : in    real_array(0 to 7);
     clock   : in    std_logic;
     reset   : in    std_logic;
     start   : in    std_logic;
-    res     : out   complex_array(0 to 15);
+    res     : out   real_array(0 to 26); -- 3x3x3
     o_ready : out   std_logic
   );
 end entity hecate;
@@ -21,8 +22,7 @@ architecture arch of hecate is
 
   component hadamard is
     generic (
-      logn  : natural range 1 to 3 := 3;
-      n_idx : natural range 0 to 8 := 0
+      n_idx : natural range 0 to 16 := 0
     );
     port (
       clock     : in    std_logic;
@@ -32,16 +32,16 @@ architecture arch of hecate is
       y_i       : in    std_logic_vector(24 downto 0);
       x_k       : in    std_logic_vector(24 downto 0);
       y_k       : in    std_logic_vector(24 downto 0);
-      p_coefs_x : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
-      p_coefs_y : out   std_logic_vector(((logn + 1) * 25) - 1 downto 0);
+      p_coefs_x : out   std_logic_vector((8 * 25) - 1 downto 0);
+      p_coefs_y : out   std_logic_vector((8 * 25) - 1 downto 0);
       ready     : buffer std_logic
     );
   end component;
 
-  component fft_8 is
+  component dft_32 is
     port (
-      i       : in    real_array(0 to 7);
-      o       : out   complex_array(0 to 8);
+      i       : in    real_array(0 to 31);
+      o       : out   complex_array(0 to 16);
       clock   : in    std_logic;
       start   : in    std_logic;
       reset   : in    std_logic;
@@ -57,51 +57,55 @@ architecture arch of hecate is
     );
   end component;
 
-  signal img_transf, ker_transf : complex_array(0 to 8);
+  signal img_pad, ker_pad : real_array (0 to 31);
+  signal img_transf, ker_transf : complex_array(0 to 16);
 
-  type t_calc_vals_c_aux is array (0 to 1) OF std_logic_vector(99 downto 0);
-  type t_calc_vals_aux is array (0 to 8) OF t_calc_vals_c_aux;
+  type t_calc_vals_c_aux is array (0 to 1) of std_logic_vector((8 * 25) downto 0);
+  type t_calc_vals_aux is array (0 to 8) of t_calc_vals_c_aux;
   signal calc_vals_aux : t_calc_vals_aux := (others => (others => (others => '0')));
 
-  type t_calc_vals is array(0 to 3) OF std_logic_vector(24 downto 0);
-  type t_calc_vals_c is array(0 to 1) OF t_calc_vals;
-  type t_calc_vals_c_arr is array (0 to 8) OF t_calc_vals_c;
+  type t_calc_vals is array(0 to 3) of std_logic_vector(24 downto 0);
+  type t_calc_vals_c is array(0 to 1) of t_calc_vals;
+  type t_calc_vals_c_arr is array (0 to 8) of t_calc_vals_c;
   signal calc_vals : t_calc_vals_c_arr := (others => (others => (others => (others => '0'))));
 
-  signal ready_fft : std_logic_vector(0 to 1);
-  signal ready_had : std_logic_vector(0 to 8);
-  signal ffts_ready, hads_ready, s_ready : std_logic := '0';
+  signal ready_dft : std_logic_vector(0 to 1);
+  signal ready_had : std_logic_vector(0 to 16);
+  signal dfts_ready, hads_ready, s_ready : std_logic := '0';
 
   signal add_a, add_b, add_r : complex_array(0 to 15) := (others => (others => (others => '0')));
 
-  type t_cos_val_ref is array(0 to 15) OF natural range 0 to 4;
-  type t_cos_sig_ref is array(0 to 15) OF boolean;
+  type t_cos_val_ref is array(0 to 15) of natural range 0 to 4;
+  type t_cos_sig_ref is array(0 to 15) of boolean;
   constant cos_val_ref         : t_cos_val_ref := (0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1);
-  constant cos_sig_ref         : t_cos_sig_ref := (FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE);
+  constant cos_sig_ref         : t_cos_sig_ref := (false, false, false, false, false, true, true, true, true, true, true, true, false, false, false, false);
   
 begin
 
-  fft_in_img : component fft_8
+  img_pad <= (0 to 1 => img(0 to 1), 3 to 4 => img(2 to 3), 9 to 10 => img(4 to 5), 12 to 13 => img(6 to 7), (others => (others => '0')));
+  ker_pad <= (0 to 1 => ker(0 to 1), 3 to 4 => ker(2 to 3), 9 to 10 => ker(4 to 5), 12 to 13 => ker(6 to 7), (others => (others => '0')));
+
+  dft_in_img : component dft_32
   port map (
-    i       => img,
+    i       => img_pad,
     o       => img_transf,
     clock   => clock,
     start   => start,
     reset   => reset,
-    s_ready => ready_fft(0)
+    s_ready => ready_dft(0)
   );
 
-  fft_in_ker : component fft_8
+  dft_in_ker : component dft_32
   port map (
-    i       => ker,
+    i       => ker_pad,
     o       => ker_transf,
     clock   => clock,
     start   => start,
     reset   => reset,
-    s_ready => ready_fft(1)
+    s_ready => ready_dft(1)
   );
 
-  ffts_ready <= and(ready_fft);
+  dfts_ready <= and(ready_dft);
 
   -- gen_hads_read : process (ready_had) is
   --   variable rd : std_logic := '1';
@@ -140,7 +144,7 @@ begin
       port map (
         clock     => clock,
         reset     => reset,
-        start     => ffts_ready,
+        start     => dfts_ready,
         x_i       => img_transf(id)(0),
         y_i       => img_transf(id)(1),
         x_k       => ker_transf(id)(0),
@@ -190,7 +194,7 @@ begin
             else
               i_id_cor := i_id;
             end if;
-                                                        -- this is a complex multiplication by w. And now its input is also complex. you'll have to change this a lot more.
+                                                        -- this is a complex multiplication by w. and now its input is also complex. you'll have to change this a lot more.
             w   := (i_id_cor * o_id) mod 16;
             wi  := (4 - i_id_cor * o_id) mod 16;
 
@@ -210,14 +214,14 @@ begin
 
             i_id := i_id + 1;
           else
-            -- fft_ready(o_id) <= '1';
+            -- dft_ready(o_id) <= '1';
           end if;
         end if;
       end if;
 
     end process sum_pro;
 
-    res(o_id)(0) <= add_r(o_id)(0)(24) & "00" & add_r(o_id)(0)(23 downto 2); -- "Divide" by sqrt(16)
+    res(o_id)(0) <= add_r(o_id)(0)(24) & "00" & add_r(o_id)(0)(23 downto 2); -- "divide" by sqrt(16)
     res(o_id)(1) <= add_r(o_id)(1)(24) & "00" & add_r(o_id)(1)(23 downto 2);
 
   end generate gen_sums;
@@ -291,7 +295,7 @@ end architecture arch;
 --   else
 --     i_id_cor := i_id;
 --   end if;
---                                               -- this is a complex multiplication by w. And now its input is also complex. you'll have to change this a lot more.
+--                                               -- this is a complex multiplication by w. and now its input is also complex. you'll have to change this a lot more.
 --   wx  := (i_id_cor * o_id) mod 16;
 --   wy := (4 - i_id_cor * o_id) mod 16;
 
@@ -324,5 +328,5 @@ end architecture arch;
 --   end if;
 --   i_id := i_id + 1;
 -- else
---   -- fft_ready(o_id) <= '1';
+--   -- dft_ready(o_id) <= '1';
 -- end if;
