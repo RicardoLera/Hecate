@@ -1,7 +1,7 @@
 library ieee;
   use ieee.std_logic_1164.all;
-  use ieee.math_real.all;
   use ieee.numeric_std.all;
+  use ieee.math_real.all;
 
 entity varshiftright is
   generic (
@@ -9,7 +9,7 @@ entity varshiftright is
   );
   port (
     data     : in    std_logic_vector(len - 1 downto 0);
-    distance : in    std_logic_vector(INTEGER(ceil(log2(real(len)))) - 1 downto 0);
+    distance : in    std_logic_vector(integer(ceil(log2(real(len)))) - 1 downto 0);
     result   : out   std_logic_vector(len - 1 downto 0)
   );
 end entity varshiftright;

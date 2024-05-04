@@ -30,7 +30,7 @@ architecture synth of flux_inverter is
   signal compared_or        : std_logic_vector(size - 2 downto 0);
   signal s_ready,   s_error : std_logic;
 
-  constant m_0              : std_logic_vector(size - 1 downto 0) := (0 => '1', OTHERS => '0');
+  constant m_0              : std_logic_vector(size - 1 downto 0) := (0 => '1', others => '0');
   signal   m                : std_logic_vector(size - 1 downto 0) := m_0;
   signal   inp_inv, nex_inv : std_logic_vector(size - 2 downto 0);
 
@@ -38,14 +38,14 @@ begin
 
   b(size - 2) <= m(size - 1);
 
-  gen_b : for i IN size - 3 downto 0 generate
+  gen_b : for i in size - 3 downto 0 generate
     b(i) <= b(i + 1) or m(i + 1);
   end generate gen_b;
 
   filtered <= not b and m(size - 2 downto 0) and inp_inv;
   compared <= ((inp_inv xor nex_inv) and (b or m(size - 2 downto 0)));
 
-  gen_inv : for i IN size - 2 downto 0 generate
+  gen_inv : for i in size - 2 downto 0 generate
     inp_inv(i) <= inp(size - 2 - i);
     nex_inv(i) <= nex(size - 2 - i);
 
@@ -54,7 +54,7 @@ begin
   filtered_or(0) <= filtered(0);
   compared_or(0) <= compared(0);
 
-  gen_or : for i IN 1 to size - 2 generate
+  gen_or : for i in 1 to size - 2 generate
     filtered_or(i) <= filtered_or(i - 1) or filtered(i);
     compared_or(i) <= compared_or(i - 1) or compared(i);
   end generate gen_or;
@@ -86,6 +86,6 @@ begin
       end if;
     end if;
 
-  end process proc; -- proc
+  end process proc;
 
-end architecture synth; -- synth
+end architecture synth;

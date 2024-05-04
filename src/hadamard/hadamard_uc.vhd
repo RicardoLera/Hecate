@@ -27,10 +27,8 @@ architecture fsm of hadamard_uc is
 
 begin
 
-  -- memoria de estado
   process (clock) is
   begin
-
     if rising_edge(clock) then
       if (reset = '1') then
         e_cur <= initial;
@@ -38,7 +36,6 @@ begin
         e_cur <= e_nex;
       end if;
     end if;
-
   end process;
 
   e_nex <= vectorization when e_cur = initial and start = '1' else
