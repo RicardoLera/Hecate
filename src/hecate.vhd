@@ -1,64 +1,26 @@
 -- 3D Version -> N = 32
 library work;
-  use work.b25_types.all;
+  use work.hecate_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
-  use ieee.numeric_std_unsigned.all;
+  use ieee.numeric_std.all;
 
 entity hecate is
   port (
-    img     : in    real_array(0 to 7);  -- 2x2x2 non-padded
-    ker     : in    real_array(0 to 7);
+    img     : in    b25_real_array(0 to 7);  -- 2x2x2 non-padded
+    ker     : in    b25_real_array(0 to 7);
     clock   : in    std_logic;
     reset   : in    std_logic;
     start   : in    std_logic;
-    res     : out   real_array(0 to 26); -- 3x3x3
+    res     : out   b25_real_array(0 to 26); -- 3x3x3
     o_ready : out   std_logic
   );
 end entity hecate;
 
 architecture arch of hecate is
 
-  component hadamard is
-    generic (
-      n_idx : natural range 0 to 16 := 0
-    );
-    port (
-      clock     : in    std_logic;
-      reset     : in    std_logic;
-      start     : in    std_logic;
-      x_i       : in    std_logic_vector(24 downto 0);
-      y_i       : in    std_logic_vector(24 downto 0);
-      x_k       : in    std_logic_vector(24 downto 0);
-      y_k       : in    std_logic_vector(24 downto 0);
-      p_coefs_x : out   std_logic_vector((8 * 25) - 1 downto 0);
-      p_coefs_y : out   std_logic_vector((8 * 25) - 1 downto 0);
-      ready     : buffer std_logic
-    );
-  end component;
-
-  component dft_32 is
-    port (
-      i       : in    real_array(0 to 31);
-      o       : out   complex_array(0 to 16);
-      clock   : in    std_logic;
-      start   : in    std_logic;
-      reset   : in    std_logic;
-      s_ready : out   std_logic
-    );
-  end component;
-
-  component b25_add is
-    port (
-      a   : in    std_logic_vector(24 downto 0);
-      b   : in    std_logic_vector(24 downto 0);
-      res : out   std_logic_vector(24 downto 0)
-    );
-  end component;
-
-  signal img_pad, ker_pad : real_array (0 to 31);
-  signal img_transf, ker_transf : complex_array(0 to 16);
+  signal img_transf, ker_transf : b25_complex_array(0 to 16);
 
   type t_calc_vals_c_aux is array (0 to 1) of std_logic_vector((8 * 25) downto 0);
   type t_calc_vals_aux is array (0 to 8) of t_calc_vals_c_aux;
@@ -73,7 +35,7 @@ architecture arch of hecate is
   signal ready_had : std_logic_vector(0 to 16);
   signal dfts_ready, hads_ready, s_ready : std_logic := '0';
 
-  signal add_a, add_b, add_r : complex_array(0 to 15) := (others => (others => (others => '0')));
+  signal add_a, add_b, add_r : b25_complex_array(0 to 15) := (others => (others => (others => '0')));
 
   type t_cos_val_ref is array(0 to 15) of natural range 0 to 4;
   type t_cos_sig_ref is array(0 to 15) of boolean;
@@ -82,12 +44,9 @@ architecture arch of hecate is
   
 begin
 
-  img_pad <= (0 to 1 => img(0 to 1), 3 to 4 => img(2 to 3), 9 to 10 => img(4 to 5), 12 to 13 => img(6 to 7), (others => (others => '0')));
-  ker_pad <= (0 to 1 => ker(0 to 1), 3 to 4 => ker(2 to 3), 9 to 10 => ker(4 to 5), 12 to 13 => ker(6 to 7), (others => (others => '0')));
-
-  dft_in_img : component dft_32
+  dft_in_img : component dft
   port map (
-    i       => img_pad,
+    i       => img,
     o       => img_transf,
     clock   => clock,
     start   => start,
@@ -95,9 +54,9 @@ begin
     s_ready => ready_dft(0)
   );
 
-  dft_in_ker : component dft_32
+  dft_in_ker : component dft
   port map (
-    i       => ker_pad,
+    i       => ker,
     o       => ker_transf,
     clock   => clock,
     start   => start,
@@ -138,7 +97,6 @@ begin
 
     had : component hadamard
       generic map (
-        logn  => 3,
         n_idx => id
       )
       port map (

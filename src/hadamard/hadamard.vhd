@@ -17,8 +17,8 @@ entity hadamard is
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
     y_k       : in    std_logic_vector(24 downto 0);
-    p_coefs_x : out   std_logic_vector(((7 + 1) * 25) - 1 downto 0);
-    p_coefs_y : out   std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+    p_coefs_x : out   std_logic_vector((8 * 25) - 1 downto 0);
+    p_coefs_y : out   std_logic_vector((8 * 25) - 1 downto 0);
     ready     : buffer std_logic
   );
 end entity hadamard;
@@ -102,16 +102,16 @@ architecture arch of hadamard is
   signal mul_b           : std_logic_vector(24 downto 0);
   signal mul_b_nex       : std_logic_vector(24 downto 0);
   signal mul_b_nex_sel   : std_logic_vector(24 downto 0);
-  signal mul_coefs_x     : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
-  signal mul_coefs_y     : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
-  signal neg_mul_coefs_x : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
-  signal neg_mul_coefs_y : std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+  signal mul_coefs_x     : std_logic_vector((8 * 25) - 1 downto 0);
+  signal mul_coefs_y     : std_logic_vector((8 * 25) - 1 downto 0);
+  signal neg_mul_coefs_x : std_logic_vector((8 * 25) - 1 downto 0);
+  signal neg_mul_coefs_y : std_logic_vector((8 * 25) - 1 downto 0);
 
   -- Output
-  signal p_coefs_nex_x : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_nex_y : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_x_s   : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_y_s   : std_logic_vector(((7 + 1) * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_nex_x : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_nex_y : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_x_s   : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_y_s   : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
 
 begin
 

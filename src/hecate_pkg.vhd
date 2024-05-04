@@ -14,6 +14,9 @@ package hecate_pkg is
   type padding is array(0 to 7) of natural range 0 to 32;
   constant pad3d : padding := (0, 1, 3, 4, 9, 10, 12, 13);
 
+  -- DFT multiplication coeficient array
+  type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
+
   -- DFT rotation reference
   type t_cos_val_ref is array(0 to 31) of natural range 0 to 8;
   type t_cos_sig_ref is array(0 to 31) of boolean;  
@@ -30,17 +33,21 @@ package hecate_pkg is
   constant w_cos6 : unsigned := to_unsigned(natural(65536.0*cos(6.0 * c_base)), 17);
   constant w_cos7 : unsigned := to_unsigned(natural(65536.0*cos(7.0 * c_base)), 17);
 
+  -- Hadamard coeficient array generic type
+  type t_coefs_arr is array(0 to 7) of b25_real_array;
+
   -- Flux Mul omega LUT
   constant kcon   : real := 0.2239282404699562528386872156786372562;
-  constant kw_lut : std_logic_vector((8 * 25) - 1 downto 0) :=
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 17)) &
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 17));
+  constant kw_lut : t_coefs_arr := (
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 17)),
+    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 17))
+  );
 
   --"0000000000001010111101111000000000001010001000100000000000000110100111101100000000000011100101010011";    -- Make generic
   -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
@@ -49,9 +56,8 @@ package hecate_pkg is
   -- lut(99 downto 75) <= "0000000000001010111101111"; -- 0x15ef
 
   -- CORDIC arctangent LUT
-  type lut_type is array (0 to 31) of std_logic_vector(23 downto 0); -- Fix later, doesn't need 31
-  constant arctan_lut : lut_type :=
-  (
+  type t_arctan_lut is array (0 to 31) of std_logic_vector(23 downto 0); -- Fix later, doesn't need 31
+  constant arctan_lut : t_arctan_lut := (
     24x"c910",
     24x"76b2",
     24x"3eb7",

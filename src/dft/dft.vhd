@@ -30,8 +30,6 @@ end entity dft;
 
 architecture arch of dft is
 
-  type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
-
   signal calc_vals_arr : t_calc_vals_arr               := (others => (others => (others => '0')));
   signal add_a         : b25_complex_array(0 to 16)    := (others => (others => (others => '0')));
   signal add_b         : b25_complex_array(0 to 16)    := (others => (others => (others => '0')));
