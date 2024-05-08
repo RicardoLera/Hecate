@@ -4,7 +4,6 @@ library work;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  use ieee.math_real.all;
 
 entity hadamard_tb is
 end entity hadamard_tb;
@@ -16,9 +15,9 @@ architecture rtl of hadamard_tb is
   signal y_i          : std_logic_vector(24 downto 0);
   signal x_k          : std_logic_vector(24 downto 0);
   signal y_k          : std_logic_vector(24 downto 0);
-  signal lut          : std_logic_vector((8 * 25) - 1 downto 0);
-  signal p_coefs_x    : std_logic_vector((8 * 25) - 1 downto 0);
-  signal p_coefs_y    : std_logic_vector((8 * 25) - 1 downto 0);
+  signal lut          : b25_real_array(0 to 7);
+  signal p_coefs_x    : b25_real_array(0 to 7);
+  signal p_coefs_y    : b25_real_array(0 to 7);
   signal ready        : std_logic;
 
   signal   clk             : std_logic := '0';
@@ -55,15 +54,16 @@ begin
       ready     => ready
     );
 
-  p_coefs_x_0 <= p_coefs_x(24 downto 0);
-  p_coefs_x_1 <= p_coefs_x(49 downto 25);
-  p_coefs_x_2 <= p_coefs_x(74 downto 50);
-  p_coefs_x_3 <= p_coefs_x(99 downto 75);
+  -- For gtkwave
+  p_coefs_x_0 <= p_coefs_x(0);
+  p_coefs_x_1 <= p_coefs_x(1);
+  p_coefs_x_2 <= p_coefs_x(2);
+  p_coefs_x_3 <= p_coefs_x(3);
 
-  p_coefs_y_0 <= p_coefs_y(24 downto 0);
-  p_coefs_y_1 <= p_coefs_y(49 downto 25);
-  p_coefs_y_2 <= p_coefs_y(74 downto 50);
-  p_coefs_y_3 <= p_coefs_y(99 downto 75);
+  p_coefs_y_0 <= p_coefs_y(0);
+  p_coefs_y_1 <= p_coefs_y(1);
+  p_coefs_y_2 <= p_coefs_y(2);
+  p_coefs_y_3 <= p_coefs_y(3);
 
   -- x_i <= "0000000100000000000000000"; -- 0x2     -- remember to change n_idx to 0
   -- y_i <= "0000000000000000000000000"; -- 0x0

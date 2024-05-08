@@ -17,8 +17,8 @@ entity hadamard is
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
     y_k       : in    std_logic_vector(24 downto 0);
-    p_coefs_x : out   std_logic_vector((8 * 25) - 1 downto 0);
-    p_coefs_y : out   std_logic_vector((8 * 25) - 1 downto 0);
+    p_coefs_x : out   b25_real_array(0 to 7);
+    p_coefs_y : out   b25_real_array(0 to 7);
     ready     : buffer std_logic
   );
 end entity hadamard;
@@ -102,16 +102,16 @@ architecture arch of hadamard is
   signal mul_b           : std_logic_vector(24 downto 0);
   signal mul_b_nex       : std_logic_vector(24 downto 0);
   signal mul_b_nex_sel   : std_logic_vector(24 downto 0);
-  signal mul_coefs_x     : std_logic_vector((8 * 25) - 1 downto 0);
-  signal mul_coefs_y     : std_logic_vector((8 * 25) - 1 downto 0);
-  signal neg_mul_coefs_x : std_logic_vector((8 * 25) - 1 downto 0);
-  signal neg_mul_coefs_y : std_logic_vector((8 * 25) - 1 downto 0);
+  signal mul_coefs_x     : b25_real_array(0 to 7);
+  signal mul_coefs_y     : b25_real_array(0 to 7);
+  signal neg_mul_coefs_x : b25_real_array(0 to 7);
+  signal neg_mul_coefs_y : b25_real_array(0 to 7);
 
   -- Output
-  signal p_coefs_nex_x : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_nex_y : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_x_s   : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
-  signal p_coefs_y_s   : std_logic_vector((8 * 25) - 1 downto 0) := (others => '0');
+  signal p_coefs_nex_x : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal p_coefs_nex_y : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal p_coefs_x_s   : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal p_coefs_y_s   : b25_real_array(0 to 7) := (others => (others => '0'));
 
 begin
 
@@ -350,7 +350,7 @@ begin
       res => prod_z_norm
     );
 
-  prod_quadrant <= "00" when prod_z(23 downto 0) <= half_pi else          -- Make generic
+  prod_quadrant <= "00" when prod_z(23 downto 0) <= half_pi else
                     "01" when prod_z(23 downto 0) <= pi else
                     "10" when prod_z(23 downto 0) <= three_half_pi else
                     "11";
@@ -380,7 +380,7 @@ begin
   -- OBS (from prev): check if run can be left at high
   flux_mul : component flux_multiplier
     generic map (
-      size => 25, frac_size=> 16, n_idx=> n_idx
+      n_idx=> n_idx
     )
     port map (
       clock   => clock,
@@ -412,9 +412,9 @@ begin
 
   -- Change processing at output
 
-  gen_mul_negs : for i IN 0 to 7 generate
-    neg_mul_coefs_x(25 * (i + 1) - 1 downto 25 * i) <= std_logic_vector(unsigned(not mul_coefs_x(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
-    neg_mul_coefs_y(25 * (i + 1) - 1 downto 25 * i) <= std_logic_vector(unsigned(not mul_coefs_y(25 * (i + 1) - 1 downto 25 * i)) + to_unsigned(1, 25));
+  gen_mul_negs : for i in 0 to 7 generate
+    neg_mul_coefs_x(i) <= std_logic_vector(unsigned(not mul_coefs_x(i)) + to_unsigned(1, 25));
+    neg_mul_coefs_y(i) <= std_logic_vector(unsigned(not mul_coefs_y(i)) + to_unsigned(1, 25));
   end generate gen_mul_negs;
 
   with cur_change select p_coefs_nex_x <=
@@ -435,32 +435,32 @@ begin
     if rising_edge(clock) then
       if (ready = '0') then
 
-        with rot_x_invert select p_coefs_x_s <= 
-          (199 => not p_coefs_nex_x(99), 198 downto 175 => p_coefs_nex_x(198 downto 175),
-           174 => not p_coefs_nex_x(74), 173 downto 150 => p_coefs_nex_x(173 downto 150),
-           149 => not p_coefs_nex_x(49), 148 downto 125 => p_coefs_nex_x(148 downto 125),
-           124 => not p_coefs_nex_x(99), 123 downto 100 => p_coefs_nex_x(123 downto 100),
-           99 => not p_coefs_nex_x(99), 98 downto 75 => p_coefs_nex_x(98 downto 75),
-           74 => not p_coefs_nex_x(74), 73 downto 50 => p_coefs_nex_x(73 downto 50),
-           49 => not p_coefs_nex_x(49), 48 downto 25 => p_coefs_nex_x(48 downto 25),
-           24 => not p_coefs_nex_x(24), 23 downto 0  => p_coefs_nex_x(23 downto 0)) when '1',
-           p_coefs_nex_x when others;
-          
-        with rot_y_invert select p_coefs_y_s <= 
-          (199 => not p_coefs_nex_y(99), 198 downto 175 => p_coefs_nex_y(198 downto 175),
-          174 => not p_coefs_nex_y(74), 173 downto 150 => p_coefs_nex_y(173 downto 150),
-          149 => not p_coefs_nex_y(49), 148 downto 125 => p_coefs_nex_y(148 downto 125),
-          124 => not p_coefs_nex_y(99), 123 downto 100 => p_coefs_nex_y(123 downto 100),
-          99 => not p_coefs_nex_y(99), 98 downto 75 => p_coefs_nex_y(98 downto 75),
-          74 => not p_coefs_nex_y(74), 73 downto 50 => p_coefs_nex_y(73 downto 50),
-          49 => not p_coefs_nex_y(49), 48 downto 25 => p_coefs_nex_y(48 downto 25),
-          24 => not p_coefs_nex_y(24), 23 downto 0  => p_coefs_nex_y(23 downto 0)) when '1',
-          p_coefs_nex_y when others;
-          
+        if rot_x_invert then
+          for loop_i in 0 to 7 loop
+            p_coefs_x_s(loop_i)(24) <= not p_coefs_nex_x(loop_i)(24);
+            p_coefs_x_s(loop_i)(23 downto 0) <= p_coefs_nex_x(loop_i)(23 downto 0);
+          end loop;
+        else
+          for loop_i in 0 to 7 loop
+            p_coefs_x_s(loop_i)(24 downto 0) <= p_coefs_nex_x(loop_i)(24 downto 0);
+          end loop;
+        end if;
+
+        if rot_y_invert then
+          for loop_j in 0 to 7 loop
+            p_coefs_y_s(loop_j)(24) <= not p_coefs_nex_y(loop_j)(24);
+            p_coefs_y_s(loop_j)(23 downto 0) <= p_coefs_nex_y(loop_j)(23 downto 0);
+          end loop;
+        else
+          for loop_j in 0 to 7 loop
+            p_coefs_y_s(loop_j)(24 downto 0) <= p_coefs_nex_y(loop_j)(24 downto 0);
+          end loop;
+        end if;
+
       end if;
     end if;
 
-  end process outp_reg; -- outp_reg
+  end process outp_reg;
 
   p_coefs_x <= p_coefs_x_s;
   p_coefs_y <= p_coefs_y_s;

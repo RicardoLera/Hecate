@@ -3,14 +3,11 @@ library ieee;
   use ieee.numeric_std.all;
 
 entity adder_carry is
-  generic (
-    size : natural := 32
-  );
   port (
-    a   : in    std_logic_vector(size - 1 downto 0);
-    b   : in    std_logic_vector(size - 1 downto 0);
+    a   : in    std_logic_vector(49 downto 0);
+    b   : in    std_logic_vector(49 downto 0);
     cin : in    std_logic;
-    o   : out   std_logic_vector(size - 1 downto 0)
+    o   : out   std_logic_vector(49 downto 0)
   );
 end entity adder_carry;
 
@@ -24,4 +21,4 @@ begin
            to_unsigned(0, 1);
   o     <= std_logic_vector(unsigned(a) + unsigned(b) + cin_u);
 
-end architecture synth_simm; -- synth
+end architecture synth_simm;

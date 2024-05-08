@@ -5,8 +5,9 @@ library ieee;
 
 package hecate_pkg is
 
-  -- 25-bit variables
+  -- 25-bit types (and doubles)
   type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);  -- later make these into records
+  type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
   type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
   type b25_complex_array is array (natural range <>) of b25_complex;
 
@@ -33,23 +34,19 @@ package hecate_pkg is
   constant w_cos6 : unsigned := to_unsigned(natural(65536.0*cos(6.0 * c_base)), 17);
   constant w_cos7 : unsigned := to_unsigned(natural(65536.0*cos(7.0 * c_base)), 17);
 
-  -- Hadamard coeficient array generic type
-  type t_coefs_arr is array(0 to 7) of b25_real_array;
-
   -- Flux Mul omega LUT
   constant kcon   : real := 0.2239282404699562528386872156786372562;
-  constant kw_lut : t_coefs_arr := (
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 17)),
-    "00000000" & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 17))
+  constant kw_lut : b25_real_array(0 to 7) := (
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 23)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 23))
   );
 
-  --"0000000000001010111101111000000000001010001000100000000000000110100111101100000000000011100101010011";    -- Make generic
   -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
   -- lut(49 downto 25) <= "0000000000011010011110110"; -- 0x34f6
   -- lut(74 downto 50) <= "0000000000010100010001000"; -- 0x2888
@@ -140,14 +137,11 @@ package hecate_pkg is
   end component;
 
   component adder_carry is
-    generic (
-      size : natural := 32
-    );
     port (
-      a   : in    std_logic_vector(size - 1 downto 0);
-      b   : in    std_logic_vector(size - 1 downto 0);
+      a   : in    std_logic_vector(49 downto 0);
+      b   : in    std_logic_vector(49 downto 0);
       cin : in    std_logic;
-      o   : out   std_logic_vector(size - 1 downto 0)
+      o   : out   std_logic_vector(49 downto 0)
     );
   end component;
 
@@ -171,17 +165,14 @@ package hecate_pkg is
   end component;
 
   component flux_inverter is
-    generic (
-      size : natural := 25
-    );
     port (
       clock    : in    std_logic;
       reset_s  : in    std_logic;
       reset_as : in    std_logic;
       load     : in    std_logic;
-      inp      : in    std_logic_vector(size - 2 downto 0);
-      nex      : in    std_logic_vector(size - 2 downto 0);
-      outp     : out   std_logic_vector(size - 2 downto 0);
+      inp      : in    std_logic_vector(23 downto 0);
+      nex      : in    std_logic_vector(23 downto 0);
+      outp     : out   std_logic_vector(23 downto 0);
       new_bit  : out   std_logic;
       ready    : out   std_logic;
       erro     : out   std_logic
@@ -190,21 +181,19 @@ package hecate_pkg is
 
   component flux_multiplier is
     generic (
-      size      : natural              := 25;
-      frac_size : natural              := 16;
       n_idx     : natural range 0 to 8 := 0
     );
     port (
       clock   : in    std_logic;
       reset   : in    std_logic;
       run     : in    std_logic;
-      a       : in    std_logic_vector(size - 1 downto 0);
-      b       : in    std_logic_vector(size - 1 downto 0);
-      a_nex   : in    std_logic_vector(size - 1 downto 0);
-      b_nex   : in    std_logic_vector(size - 1 downto 0);
-      coefs_x : out   std_logic_vector(((7 + 1) * size) - 1 downto 0);
-      coefs_y : out   std_logic_vector(((7 + 1) * size) - 1 downto 0);
-      p       : out   std_logic_vector(size - 1 downto 0);
+      a       : in    std_logic_vector(24 downto 0);
+      b       : in    std_logic_vector(24 downto 0);
+      a_nex   : in    std_logic_vector(24 downto 0);
+      b_nex   : in    std_logic_vector(24 downto 0);
+      coefs_x : out   b25_real_array(0 to 7);
+      coefs_y : out   b25_real_array(0 to 7);
+      p       : out   std_logic_vector(24 downto 0);
       ready   : out   std_logic
     );
   end component;
@@ -228,7 +217,7 @@ package hecate_pkg is
 
   component hadamard is
     generic (
-      n_idx : natural range 0 to 7 := 0
+      n_idx : natural range 0 to 8 := 0
     );
     port (
       clock     : in    std_logic;
@@ -238,8 +227,8 @@ package hecate_pkg is
       y_i       : in    std_logic_vector(24 downto 0);
       x_k       : in    std_logic_vector(24 downto 0);
       y_k       : in    std_logic_vector(24 downto 0);
-      p_coefs_x : out   std_logic_vector(((7 + 1) * 25) - 1 downto 0);
-      p_coefs_y : out   std_logic_vector(((7 + 1) * 25) - 1 downto 0);
+      p_coefs_x : out   b25_real_array(0 to 7);
+      p_coefs_y : out   b25_real_array(0 to 7);
       ready     : buffer std_logic
     );
   end component;
