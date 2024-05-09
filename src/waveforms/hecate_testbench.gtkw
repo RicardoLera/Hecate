@@ -1,22 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Thu May  9 20:13:56 2024
+[*] Thu May  9 22:19:54 2024
 [*]
-[dumpfile] "/home/ricardo/git/Hecate/src/waveforms/hecate.ghw"
-[dumpfile_mtime] "Thu May  9 20:08:53 2024"
-[dumpfile_size] 2349101
-[savefile] "/home/ricardo/git/Hecate/src/waveforms/hecate_testbench.gtkw"
-[timestart] 0
-[size] 3840 2111
+[dumpfile] "/home/seth/git/Hecate/src/waveforms/hecate.ghw"
+[dumpfile_mtime] "Thu May  9 22:13:58 2024"
+[dumpfile_size] 2355241
+[savefile] "/home/seth/git/Hecate/src/waveforms/hecate_testbench.gtkw"
+[timestart] 93450000000000
+[size] 1366 719
 [pos] -1 -1
-*-43.000000 119970000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-42.695122 117650000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.hecate_tb.
+[treeopen] top.hecate_tb.dut.
+[treeopen] top.hecate_tb.dut.add_r.
 [treeopen] top.hecate_tb.dut.gen_calc_vals[1].
-[sst_width] 279
-[signals_width] 277
+[sst_width] 208
+[signals_width] 263
 [sst_expanded] 1
-[sst_vpaned_height] 1577
+[sst_vpaned_height] 421
 @c00200
 -input
 @22
@@ -483,12 +485,41 @@ top.hecate_tb.dut.hads_ready
 #{top.hecate_tb.dut.calc_vals_y[16][7][24:0]} top.hecate_tb.dut.calc_vals_y[16][7][24] top.hecate_tb.dut.calc_vals_y[16][7][23] top.hecate_tb.dut.calc_vals_y[16][7][22] top.hecate_tb.dut.calc_vals_y[16][7][21] top.hecate_tb.dut.calc_vals_y[16][7][20] top.hecate_tb.dut.calc_vals_y[16][7][19] top.hecate_tb.dut.calc_vals_y[16][7][18] top.hecate_tb.dut.calc_vals_y[16][7][17] top.hecate_tb.dut.calc_vals_y[16][7][16] top.hecate_tb.dut.calc_vals_y[16][7][15] top.hecate_tb.dut.calc_vals_y[16][7][14] top.hecate_tb.dut.calc_vals_y[16][7][13] top.hecate_tb.dut.calc_vals_y[16][7][12] top.hecate_tb.dut.calc_vals_y[16][7][11] top.hecate_tb.dut.calc_vals_y[16][7][10] top.hecate_tb.dut.calc_vals_y[16][7][9] top.hecate_tb.dut.calc_vals_y[16][7][8] top.hecate_tb.dut.calc_vals_y[16][7][7] top.hecate_tb.dut.calc_vals_y[16][7][6] top.hecate_tb.dut.calc_vals_y[16][7][5] top.hecate_tb.dut.calc_vals_y[16][7][4] top.hecate_tb.dut.calc_vals_y[16][7][3] top.hecate_tb.dut.calc_vals_y[16][7][2] top.hecate_tb.dut.calc_vals_y[16][7][1] top.hecate_tb.dut.calc_vals_y[16][7][0]
 @1401200
 -calc_vals_y
-@201
+@200
 -
 @800200
 -output
-@22
+@c00022
 #{top.hecate_tb.res[0][24:0]} top.hecate_tb.res[0][24] top.hecate_tb.res[0][23] top.hecate_tb.res[0][22] top.hecate_tb.res[0][21] top.hecate_tb.res[0][20] top.hecate_tb.res[0][19] top.hecate_tb.res[0][18] top.hecate_tb.res[0][17] top.hecate_tb.res[0][16] top.hecate_tb.res[0][15] top.hecate_tb.res[0][14] top.hecate_tb.res[0][13] top.hecate_tb.res[0][12] top.hecate_tb.res[0][11] top.hecate_tb.res[0][10] top.hecate_tb.res[0][9] top.hecate_tb.res[0][8] top.hecate_tb.res[0][7] top.hecate_tb.res[0][6] top.hecate_tb.res[0][5] top.hecate_tb.res[0][4] top.hecate_tb.res[0][3] top.hecate_tb.res[0][2] top.hecate_tb.res[0][1] top.hecate_tb.res[0][0]
+@28
+top.hecate_tb.res[0][24]
+top.hecate_tb.res[0][23]
+top.hecate_tb.res[0][22]
+top.hecate_tb.res[0][21]
+top.hecate_tb.res[0][20]
+top.hecate_tb.res[0][19]
+top.hecate_tb.res[0][18]
+top.hecate_tb.res[0][17]
+top.hecate_tb.res[0][16]
+top.hecate_tb.res[0][15]
+top.hecate_tb.res[0][14]
+top.hecate_tb.res[0][13]
+top.hecate_tb.res[0][12]
+top.hecate_tb.res[0][11]
+top.hecate_tb.res[0][10]
+top.hecate_tb.res[0][9]
+top.hecate_tb.res[0][8]
+top.hecate_tb.res[0][7]
+top.hecate_tb.res[0][6]
+top.hecate_tb.res[0][5]
+top.hecate_tb.res[0][4]
+top.hecate_tb.res[0][3]
+top.hecate_tb.res[0][2]
+top.hecate_tb.res[0][1]
+top.hecate_tb.res[0][0]
+@1401200
+-group_end
+@22
 #{top.hecate_tb.res[1][24:0]} top.hecate_tb.res[1][24] top.hecate_tb.res[1][23] top.hecate_tb.res[1][22] top.hecate_tb.res[1][21] top.hecate_tb.res[1][20] top.hecate_tb.res[1][19] top.hecate_tb.res[1][18] top.hecate_tb.res[1][17] top.hecate_tb.res[1][16] top.hecate_tb.res[1][15] top.hecate_tb.res[1][14] top.hecate_tb.res[1][13] top.hecate_tb.res[1][12] top.hecate_tb.res[1][11] top.hecate_tb.res[1][10] top.hecate_tb.res[1][9] top.hecate_tb.res[1][8] top.hecate_tb.res[1][7] top.hecate_tb.res[1][6] top.hecate_tb.res[1][5] top.hecate_tb.res[1][4] top.hecate_tb.res[1][3] top.hecate_tb.res[1][2] top.hecate_tb.res[1][1] top.hecate_tb.res[1][0]
 #{top.hecate_tb.res[2][24:0]} top.hecate_tb.res[2][24] top.hecate_tb.res[2][23] top.hecate_tb.res[2][22] top.hecate_tb.res[2][21] top.hecate_tb.res[2][20] top.hecate_tb.res[2][19] top.hecate_tb.res[2][18] top.hecate_tb.res[2][17] top.hecate_tb.res[2][16] top.hecate_tb.res[2][15] top.hecate_tb.res[2][14] top.hecate_tb.res[2][13] top.hecate_tb.res[2][12] top.hecate_tb.res[2][11] top.hecate_tb.res[2][10] top.hecate_tb.res[2][9] top.hecate_tb.res[2][8] top.hecate_tb.res[2][7] top.hecate_tb.res[2][6] top.hecate_tb.res[2][5] top.hecate_tb.res[2][4] top.hecate_tb.res[2][3] top.hecate_tb.res[2][2] top.hecate_tb.res[2][1] top.hecate_tb.res[2][0]
 #{top.hecate_tb.res[3][24:0]} top.hecate_tb.res[3][24] top.hecate_tb.res[3][23] top.hecate_tb.res[3][22] top.hecate_tb.res[3][21] top.hecate_tb.res[3][20] top.hecate_tb.res[3][19] top.hecate_tb.res[3][18] top.hecate_tb.res[3][17] top.hecate_tb.res[3][16] top.hecate_tb.res[3][15] top.hecate_tb.res[3][14] top.hecate_tb.res[3][13] top.hecate_tb.res[3][12] top.hecate_tb.res[3][11] top.hecate_tb.res[3][10] top.hecate_tb.res[3][9] top.hecate_tb.res[3][8] top.hecate_tb.res[3][7] top.hecate_tb.res[3][6] top.hecate_tb.res[3][5] top.hecate_tb.res[3][4] top.hecate_tb.res[3][3] top.hecate_tb.res[3][2] top.hecate_tb.res[3][1] top.hecate_tb.res[3][0]

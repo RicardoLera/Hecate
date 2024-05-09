@@ -188,7 +188,17 @@ begin
             add_b(o_id)(1)(24) <= b_sign xor wx_sign;
             add_b(o_id)(0)(24) <= not (b_sign xor wy_sign);   -- i^2 inversion
 
-            -- Orthogonal cancellations -> done in hadamard
+            -- Orthogonal cancellations -> represent it multiplying by 0, prehaps?
+            if cos_val_ref(w_ex) = 8 then -- cancel wx
+              add_a(o_id)(0) <= (others => '0');
+              add_b(o_id)(1) <= (others => '0');
+            end if;
+            if cos_val_ref(w_exc) = 8 then -- cancel wy
+              add_a(o_id)(1) <= (others => '0');
+              add_b(o_id)(0) <= (others => '0');
+            end if;
+            
+            acc(o_id) <= res(o_id);
 
             i_id := i_id + 1;
 
