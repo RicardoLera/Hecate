@@ -150,14 +150,14 @@ begin
               c                           := calc_vals_arr(i_id)(cos_val_ref(w));
               add_a(o_id)(0)              <= add_r(o_id)(0);
               add_b(o_id)(0)(23 downto 0) <= c(23 downto 0);
-              add_b(o_id)(0)(24)          <= not c(24) when cos_sig_ref(w) else c(24);
+              add_b(o_id)(0)(24)          <= not c(24) when cos_sig_ref(w)=1 else c(24);
             end if;
 
             if (cos_val_ref(wi) /= 8) then                                         -- if the exponent of w is not 0
               ci                          := calc_vals_arr(i_id)(cos_val_ref(wi));
               add_a(o_id)(1)              <= add_r(o_id)(1);
               add_b(o_id)(1)(23 downto 0) <= ci(23 downto 0);
-              add_b(o_id)(1)(24)          <= not ci(24) when cos_sig_ref(wi) else ci(24);
+              add_b(o_id)(1)(24)          <= not ci(24) when cos_sig_ref(wi)=1 else ci(24);
             end if;
             i_id := i_id + 1;
           else

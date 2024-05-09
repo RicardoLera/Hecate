@@ -22,7 +22,7 @@ architecture rtl of hadamard_tb is
 
   signal   clk             : std_logic := '0';
   signal   keep_simulating : std_logic := '0';
-  constant clockperiod     : TIME      := 1 ms;
+  constant clockperiod     : time      := 1 ms;
 
 begin
 

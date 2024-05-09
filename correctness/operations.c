@@ -218,7 +218,7 @@ void p_idft(archvar con[17][2][8], archvar out[32][2]) {
     for (int i = 0; i < 32; i++) {
 
       (i <= 16) ? (C = i) : (C = 32-i); // C    -> constant array identifier, corrected for Hermitian Symmetry
-      w_ex = (i*N) % 32;                // w_ex -> exponent of w in the full unit circle (0~15)
+      w_ex = (i*N) % 32;                // w_ex -> exponent of w in the full unit circle (0~31)
 
       ((w_ex > 8 && w_ex <= 16) || (w_ex > 24 && w_ex <= 31)) ? (w = (8 - (w_ex % 8)) % 8) : (w = w_ex % 8); // Second and fourth quadrant reflections
       

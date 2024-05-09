@@ -2,6 +2,5 @@
 work-obj*.cf
 *.code-workspace
 **/build
-**/waveforms
 !/.gitignore
 

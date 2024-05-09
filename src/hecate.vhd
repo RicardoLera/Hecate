@@ -22,25 +22,17 @@ architecture arch of hecate is
 
   signal img_transf, ker_transf : b25_complex_array(0 to 16);
 
-  type t_calc_vals_c_aux is array (0 to 1) of std_logic_vector((8 * 25) downto 0);
-  type t_calc_vals_aux is array (0 to 8) of t_calc_vals_c_aux;
-  signal calc_vals_aux : t_calc_vals_aux := (others => (others => (others => '0')));
+  type t_calc_matrix is array(0 to 16) of b25_real_array(0 to 7);
+  signal calc_vals_x : t_calc_matrix := (others => (others => (others => '0')));
+  signal calc_vals_y : t_calc_matrix := (others => (others => (others => '0')));
 
-  type t_calc_vals is array(0 to 3) of std_logic_vector(24 downto 0);
-  type t_calc_vals_c is array(0 to 1) of t_calc_vals;
-  type t_calc_vals_c_arr is array (0 to 8) of t_calc_vals_c;
-  signal calc_vals : t_calc_vals_c_arr := (others => (others => (others => (others => '0'))));
+  signal ready_dft  : std_logic_vector(0 to 1);
+  signal ready_had  : std_logic_vector(0 to 16);
+  signal ready_idft : std_logic_vector(0 to 26) := (others => '0');
+  signal dfts_ready, hads_ready, idfts_ready, s_ready : std_logic := '0';
 
-  signal ready_dft : std_logic_vector(0 to 1);
-  signal ready_had : std_logic_vector(0 to 16);
-  signal dfts_ready, hads_ready, s_ready : std_logic := '0';
-
-  signal add_a, add_b, add_r : b25_complex_array(0 to 15) := (others => (others => (others => '0')));
-
-  type t_cos_val_ref is array(0 to 15) of natural range 0 to 4;
-  type t_cos_sig_ref is array(0 to 15) of boolean;
-  constant cos_val_ref         : t_cos_val_ref := (0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1);
-  constant cos_sig_ref         : t_cos_sig_ref := (false, false, false, false, false, true, true, true, true, true, true, true, false, false, false, false);
+  signal add_a, add_b, add_r : b25_complex_array(0 to 26) := (others => (others => (others => '0')));
+  signal acc : b25_real_array(0 to 26) := (others => (others => '0'));
   
 begin
 
@@ -64,8 +56,6 @@ begin
     s_ready => ready_dft(1)
   );
 
-  dfts_ready <= and(ready_dft);
-
   -- gen_hads_read : process (ready_had) is
   --   variable rd : std_logic := '1';
   -- begin
@@ -76,7 +66,9 @@ begin
   --   hads_ready <= rd;
   -- end process gen_hads_read;
 
-  hads_ready <= and(ready_had);
+  dfts_ready  <= and(ready_dft);
+  hads_ready  <= and(ready_had);
+  idfts_ready <= and(ready_idft);
 
   sync_ready : process (clock) is
   begin
@@ -84,7 +76,7 @@ begin
       if (reset = '1') then
         s_ready <= '0';
       else
-        if (hads_ready = '1') then
+        if (idfts_ready = '1') then
           s_ready <= '1';
         end if;
       end if;
@@ -93,7 +85,7 @@ begin
 
   o_ready <= s_ready;
 
-  gen_calc_vals : for id in 0 to 8 generate
+  gen_calc_vals : for id in 0 to 16 generate
 
     had : component hadamard
       generic map (
@@ -107,19 +99,14 @@ begin
         y_i       => img_transf(id)(1),
         x_k       => ker_transf(id)(0),
         y_k       => ker_transf(id)(1),
-        p_coefs_x => calc_vals_aux(id)(0),
-        p_coefs_y => calc_vals_aux(id)(1),
+        p_coefs_x => calc_vals_x(id),
+        p_coefs_y => calc_vals_y(id),
         ready     => ready_had(id)
       );
 
-    unroll_calc_vals : for j in 0 to 3 generate
-      calc_vals(id)(0)(j) <= calc_vals_aux(id)(0)((25 * (j + 1)) - 1 downto (25 * j));
-      calc_vals(id)(1)(j) <= calc_vals_aux(id)(1)((25 * (j + 1)) - 1 downto (25 * j));
-    end generate unroll_calc_vals;
-
   end generate gen_calc_vals;
 
-  gen_sums : for o_id in 0 to 15 generate       -- correct for hermitian symmetry
+  gen_sums : for o_id in 0 to 26 generate
 
     sum_r : component b25_add
       port map (
@@ -128,63 +115,141 @@ begin
         res => add_r(o_id)(0)
       );
 
-    sum_i : component b25_add
+    sum_i : component b25_add   -- for debugging
       port map (
         a   => add_a(o_id)(1),
         b   => add_b(o_id)(1),
         res => add_r(o_id)(1)
       );
+    
+    sum_out : component b25_add
+      port map (
+        a   => add_r(o_id)(0),
+        b   => acc(o_id),
+        res => res(o_id)
+      );
 
     sum_pro : process (clock) is
 
-      variable i_id, w, wi: natural range 0 to 15;
-      variable i_id_cor : natural range 0 to 8;  
-      variable c, ci : std_logic_vector(24 downto 0);
+      variable i_id, w_ex, w_exc, w, wc: natural range 0 to 32 := 0;
+      variable i_id_cor : natural range 0 to 16;
+      variable a_sign, b_sign, wx_sign, wy_sign : std_logic;
 
     begin
-
       if rising_edge(clock) then
         if (reset = '0' and hads_ready = '1') then
-          if (i_id < 15) then
-
-            if (i_id > 8) then      -- correct
-              i_id_cor := i_id - 8;
+          
+          -- Each output sees all inputs
+          if (i_id < 32) then  
+            
+            -- Hermitian symmetry
+            if (i_id > 16) then
+              i_id_cor := 32 - i_id;  
             else
               i_id_cor := i_id;
             end if;
-                                                        -- this is a complex multiplication by w. and now its input is also complex. you'll have to change this a lot more.
-            w   := (i_id_cor * o_id) mod 16;
-            wi  := (4 - i_id_cor * o_id) mod 16;
 
-            if (cos_val_ref(w) /= 4) then
-              c                           := calc_vals(i_id_cor)(0)(cos_val_ref(w));
-              add_a(o_id)(0)              <= add_r(o_id)(0);
-              add_b(o_id)(0)(23 downto 0) <= c(23 downto 0);
-              add_b(o_id)(0)(24)          <= not c(24) when cos_sig_ref(w) else c(24);
+            -- Exponent of w in full unit circle
+            w_ex := (i_id_cor * o_id) mod 32;
+            w_exc := (8 - i_id_cor * o_id) mod 32;
+            
+            -- Second and fourth quadrant reflections
+            if ((w_ex > 8) and (w_ex <= 16)) or (w_ex > 24 and w_ex <= 31) then
+              w := (8 - (w_ex mod 8)) mod 8;
+            else
+              w := w_ex mod 8;
             end if;
 
-            if (cos_val_ref(wi) /= 4) then
-              ci                          := calc_vals(i_id_cor)(1)(cos_val_ref(wi));
-              add_a(o_id)(1)              <= add_r(o_id)(1);
-              add_b(o_id)(1)(23 downto 0) <= ci(23 downto 0);
-              add_b(o_id)(1)(24)          <= not ci(24) when cos_sig_ref(wi) else ci(24);
+            -- cos/sin pairs
+            if w = 0 then
+              wc := w;
+            else
+              wc := 8 - w;
             end if;
+
+            -- (a + bi) * (wx + wyi) = [ws_x]a*wx + [ws_x]b*wx(i) + [ws_y]a*wy(i) + [-ws_y]b*wy
+            -- add_a(0) = a_wx    add_b(0) = b_wy    add_a(1) = a_wy    add_b(1) = b_wx
+
+            a_sign := calc_vals_x(i_id_cor)(0)(24);
+            b_sign := calc_vals_y(i_id_cor)(0)(24);
+            wx_sign := '1' when cos_sig_ref(w_ex)=1 else '0';
+            wy_sign := '1' when cos_sig_ref(w_exc)=1 else '0';
+
+            add_a(o_id)(0) <= calc_vals_x(i_id_cor)(w);  -- a_wx
+            add_a(o_id)(1) <= calc_vals_x(i_id_cor)(wc); -- a_wy
+            add_b(o_id)(1) <= calc_vals_y(i_id_cor)(w);  -- b_wx
+            add_b(o_id)(0) <= calc_vals_y(i_id_cor)(wc); -- b_wy
+
+            if (i_id > 16) then b_sign := not b_sign; end if; -- Complex conjugate inversion (b)
+            wy_sign := not wy_sign;                           -- DFT/IDFT inversion
+
+            add_a(o_id)(0)(24) <= a_sign xor wx_sign;
+            add_a(o_id)(1)(24) <= a_sign xor wy_sign;
+            add_b(o_id)(1)(24) <= b_sign xor wx_sign;
+            add_b(o_id)(0)(24) <= not (b_sign xor wy_sign);   -- i^2 inversion
+
+            -- Orthogonal cancellations -> done in hadamard
 
             i_id := i_id + 1;
+
           else
-            -- dft_ready(o_id) <= '1';
+            ready_idft(o_id) <= '1';   
           end if;
+
         end if;
       end if;
-
     end process sum_pro;
-
-    res(o_id)(0) <= add_r(o_id)(0)(24) & "00" & add_r(o_id)(0)(23 downto 2); -- "divide" by sqrt(16)
-    res(o_id)(1) <= add_r(o_id)(1)(24) & "00" & add_r(o_id)(1)(23 downto 2);
 
   end generate gen_sums;
 
 end architecture arch;
+
+
+
+
+
+
+
+
+
+
+-- if rising_edge(clock) then
+--   if (reset = '0' and hads_ready = '1') then
+--     if (i_id < 32) then
+
+--       if (i_id > 16) then
+--         i_id_cor := 32 - i_id;
+--       else
+--         i_id_cor := i_id;
+--       end if;
+--                                                   -- this is a complex multiplication by w. and now its input is also complex. you'll have to change this a lot more.
+--       w   := (i_id_cor * o_id) mod 32;
+--       wi  := (8 - i_id_cor * o_id) mod 32;
+
+--       if (cos_val_ref(w) /= 8) then
+--         c                           := calc_vals_x(i_id_cor)(cos_val_ref(w));
+--         add_a(o_id)(0)              <= add_r(o_id)(0);
+--         add_b(o_id)(0)(23 downto 0) <= c(23 downto 0);
+--         add_b(o_id)(0)(24)          <= not c(24) when cos_sig_ref(w) else c(24);
+--       end if;
+
+--       if (cos_val_ref(wi) /= 8) then
+--         ci                          := calc_vals_y(i_id_cor)(cos_val_ref(wi));
+--         add_a(o_id)(1)              <= add_r(o_id)(1);
+--         add_b(o_id)(1)(23 downto 0) <= ci(23 downto 0);
+--         add_b(o_id)(1)(24)          <= not ci(24) when cos_sig_ref(wi) else ci(24);
+--       end if;
+
+--       i_id := i_id + 1;
+--     else
+--       -- dft_ready(o_id) <= '1';
+--     end if;
+--   end if;
+-- end if;
+
+
+
+
 
 
 

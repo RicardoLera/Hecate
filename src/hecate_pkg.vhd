@@ -20,9 +20,8 @@ package hecate_pkg is
 
   -- DFT rotation reference
   type t_cos_val_ref is array(0 to 31) of natural range 0 to 8;
-  type t_cos_sig_ref is array(0 to 31) of boolean;  
   constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1); -- Assuming no DFT-IDFT inversion
-  constant cos_sig_ref : t_cos_sig_ref := (false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false);
+  constant cos_sig_ref : t_cos_val_ref := (0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0);
   
   -- DFT omega constants
   constant c_base : real := MATH_PI/16.0;
@@ -181,7 +180,7 @@ package hecate_pkg is
 
   component flux_multiplier is
     generic (
-      n_idx     : natural range 0 to 8 := 0
+      n_idx     : natural range 0 to 16 := 0
     );
     port (
       clock   : in    std_logic;
@@ -217,7 +216,7 @@ package hecate_pkg is
 
   component hadamard is
     generic (
-      n_idx : natural range 0 to 8 := 0
+      n_idx : natural range 0 to 16 := 0
     );
     port (
       clock     : in    std_logic;
@@ -232,5 +231,18 @@ package hecate_pkg is
       ready     : buffer std_logic
     );
   end component;
+
+  component hecate is
+    port (
+      img     : in    b25_real_array(0 to 7);
+      ker     : in    b25_real_array(0 to 7);
+      clock   : in    std_logic;
+      reset   : in    std_logic;
+      start   : in    std_logic;
+      res     : out   b25_real_array(0 to 26);
+      o_ready : out   std_logic
+    );
+  end component;
+
 end package hecate_pkg;
 

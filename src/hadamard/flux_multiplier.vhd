@@ -7,7 +7,7 @@ library ieee;
 
 entity flux_multiplier is
   generic (
-    n_idx     : natural range 0 to 8 := 0
+    n_idx     : natural range 0 to 16 := 0
   );
   port (
     clock   : in    std_logic;
