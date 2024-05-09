@@ -63,7 +63,6 @@ begin
 
   proc : process (clock) is
   begin
-
     if rising_edge(clock) then
       if (s_reset = '1') then
         p_full <= (others => '0');
@@ -71,8 +70,7 @@ begin
         p_full <= p_full_n;
       end if;
     end if;
-
-  end process proc; -- proc
+  end process proc;
 
   s_ready <= a_ready and b_ready;
   ready   <= s_ready;
@@ -110,11 +108,11 @@ begin
 
   with b_bit select a_sel <=
     '0' & ieee.numeric_std.unsigned(a_flux) when '1',
-    x"0" when others;
+    25x"0" when others;
 
   with a_bit select b_sel <=
     '0' & ieee.numeric_std.unsigned(b_flux) when '1',
-    x"0" when others;
+    25x"0" when others;
 
   sum <= a_sel + b_sel;
 
@@ -135,7 +133,7 @@ begin
       o   => p_full_n
     );
 
-  p <= p_full(40 downto 16); -- 25 + 16 - 1 downto 16
+  p <= p_full(40 downto 16) srl 5; -- 25 + 16 - 1 downto 16 -- and then divided by 32 because DFT
 
   -- constant multipliers (kx)
 
@@ -147,7 +145,7 @@ begin
       kx_mux_x(idx)(49 downto 25) <= (others => '0');
       with a_bit select kx_mux_x(idx)(24 downto 0) <=
         kw_lut(idx) when '1',
-        x"0" when others;
+        25x"0" when others;
 
       kx_proc_x : process (clock) is
       begin
@@ -165,7 +163,7 @@ begin
       kx_add_x(idx) <= std_logic_vector(unsigned(kx_mux_x(idx)) + unsigned(kx_shift_x(idx)));
       kx_shift_x(idx)(49 downto 1) <= kx_reg_x(idx)(48 downto 0);
 
-      coefs_x(idx) <= kx_reg_x(idx)(41 downto 16);
+      coefs_x(idx) <= kx_reg_x(idx)(40 downto 16);
 
     else generate
       coefs_x(idx) <= (others => '0'); -- not sure if this makes a ton of hardware
@@ -179,9 +177,9 @@ begin
     select_gen_y : if (n_idx mod 2 = 1) or ((n_idx mod 4 = 2) and (idx mod 4 = 2)) or ((n_idx = 0) and (idx = 0)) generate
 
       kx_mux_y(idx)(49 downto 25) <= (others => '0');
-      with a_bit select kx_mux_y(idx)(24 downto 0) <=
+      with b_bit select kx_mux_y(idx)(24 downto 0) <=
         kw_lut(idx) when '1',
-        x"0" when others;
+        25x"0" when others;
 
       kx_proc_y : process (clock) is
       begin
@@ -199,7 +197,7 @@ begin
       kx_add_y(idx) <= std_logic_vector(unsigned(kx_mux_y(idx)) + unsigned(kx_shift_y(idx)));
       kx_shift_y(idx)(49 downto 1) <= kx_reg_y(idx)(48 downto 0);
 
-      coefs_y(idx) <= kx_reg_y(idx)(41 downto 16);
+      coefs_y(idx) <= kx_reg_y(idx)(40 downto 16);
 
     else generate
       coefs_y(idx) <= (others => '0');

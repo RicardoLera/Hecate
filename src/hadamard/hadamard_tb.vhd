@@ -24,15 +24,6 @@ architecture rtl of hadamard_tb is
   signal   keep_simulating : std_logic := '0';
   constant clockperiod     : TIME      := 1 ms;
 
-  signal p_coefs_x_0 : std_logic_vector(24 downto 0);
-  signal p_coefs_x_1 : std_logic_vector(24 downto 0);
-  signal p_coefs_x_2 : std_logic_vector(24 downto 0);
-  signal p_coefs_x_3 : std_logic_vector(24 downto 0);
-  signal p_coefs_y_0 : std_logic_vector(24 downto 0);
-  signal p_coefs_y_1 : std_logic_vector(24 downto 0);
-  signal p_coefs_y_2 : std_logic_vector(24 downto 0);
-  signal p_coefs_y_3 : std_logic_vector(24 downto 0);
-
 begin
 
   clk <= (not clk) and keep_simulating after clockperiod / 2;
@@ -54,26 +45,11 @@ begin
       ready     => ready
     );
 
-  -- For gtkwave
-  p_coefs_x_0 <= p_coefs_x(0);
-  p_coefs_x_1 <= p_coefs_x(1);
-  p_coefs_x_2 <= p_coefs_x(2);
-  p_coefs_x_3 <= p_coefs_x(3);
-
-  p_coefs_y_0 <= p_coefs_y(0);
-  p_coefs_y_1 <= p_coefs_y(1);
-  p_coefs_y_2 <= p_coefs_y(2);
-  p_coefs_y_3 <= p_coefs_y(3);
-
-  -- x_i <= "0000000100000000000000000"; -- 0x2     -- remember to change n_idx to 0
-  -- y_i <= "0000000000000000000000000"; -- 0x0
-  -- x_k <= "0000000100000000000000000"; -- 0x2
-  -- y_k <= "0000000000000000000000000"; -- 0x0
-
-  x_i <= "0000000000100000000000000"; -- 0x0.4
-  y_i <= "0000000010100000111000000"; -- 0x1.41c
-  x_k <= "0000000000100000000000000"; -- 0x0.4
-  y_k <= "0000000010100000111000000"; -- 0x1.41c
+  -- values going into hadamard at n_idx=1
+   x_i <= "0000000010110011100101100"; -- 0x1.672c
+   y_i <= "1000001001010000000000111"; -- 0x4.a007
+   x_k <= "0000000010110011100101100"; -- 0x1.672c
+   y_k <= "1000001001010000000000111"; -- 0x4.a007
 
   test : process is
   begin

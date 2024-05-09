@@ -37,14 +37,14 @@ package hecate_pkg is
   -- Flux Mul omega LUT
   constant kcon   : real := 0.2239282404699562528386872156786372562;
   constant kw_lut : b25_real_array(0 to 7) := (
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 23)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 23))
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 24)),
+    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 24))
   );
 
   -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
