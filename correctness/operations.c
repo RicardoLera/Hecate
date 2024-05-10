@@ -133,10 +133,10 @@ void dft(archvar in[27], archvar out[17][3]) {
 
   for (int N = 0; N < 17; N++) {
     for (int i = 0; i < 32; i++) {
-      archvar temp_twiddle = twiddle_arr[(N*i)%32][1];    // DFT/IFFT inversion
-      temp_twiddle.sign ^= true;
+      // archvar temp_twiddle = twiddle_arr[(N*i)%32][1];    // DFT/IFFT inversion
+      // temp_twiddle.sign ^= true;
       out[N][0] = archadd(out[N][0], archmul(temp_in[i], twiddle_arr[(N*i)%32][0]));
-      out[N][1] = archadd(out[N][1], archmul(temp_in[i], temp_twiddle));
+      out[N][1] = archadd(out[N][1], archmul(temp_in[i], twiddle_arr[(N*i)%32][1]));
     }
   }
 
@@ -239,7 +239,7 @@ void p_idft(archvar con[17][2][8], archvar out[32][2]) {
 
       // Signs and cancellations
       if (i > 16) {b_sign ^= true;} // Complex conjugate inversion (b)
-      // wy_sign ^= true;           // DFT/IDFT inversion
+      wy_sign ^= true;              // DFT/IDFT inversion
 
       a_wx.sign = a_sign ^ wx_sign;
       a_wy.sign = a_sign ^ wy_sign;
@@ -252,8 +252,8 @@ void p_idft(archvar con[17][2][8], archvar out[32][2]) {
       out[N][0] = archadd(out[N][0], archadd(a_wx, b_wy));
       out[N][1] = archadd(out[N][1], archadd(a_wy, b_wx));
 
-      if (N <= 2) {
-        if (i==0) {printf("\n");}
+      if (N <= 18) {
+        //if (i==0) {printf("\n");}
         printf("w_ex = %d\tw = %d\twc = %d\tC = %d\tout[%d][0] = ", w_ex, w, wc, C, N);
         print_archvar(out[N][0]);
         printf("\tout[%d][1] = ", N);

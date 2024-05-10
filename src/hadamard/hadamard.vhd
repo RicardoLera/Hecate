@@ -34,22 +34,17 @@ architecture arch of hadamard is
   signal mul_xy            : std_logic;
   signal cordic_rotation   : std_logic;
 
-  -- Change and signal treatment signals
-  signal increment_change : std_logic;
-  signal in_change_img    : std_logic_vector(1 downto 0);
-  signal in_change_ker    : std_logic_vector(1 downto 0);
-  signal in_change_sum    : std_logic_vector(1 downto 0);
-  signal inc_change       : std_logic_vector(1 downto 0);
-  signal next_change      : std_logic_vector(1 downto 0);
-  signal cur_change       : std_logic_vector(1 downto 0) := (others => '0');
-  signal x_i_abs          : std_logic_vector(24 downto 0);
-  signal y_i_abs          : std_logic_vector(24 downto 0);
-  signal x_k_abs          : std_logic_vector(24 downto 0);
-  signal y_k_abs          : std_logic_vector(24 downto 0);
-  signal x_i_n            : std_logic_vector(24 downto 0);
-  signal y_i_n            : std_logic_vector(24 downto 0);
-  signal x_k_n            : std_logic_vector(24 downto 0);
-  signal y_k_n            : std_logic_vector(24 downto 0);
+  -- Quadrant and signal treatment signals
+  signal expected_x         : std_logic;
+  signal expected_y         : std_logic;
+  signal prod_x             : std_logic;
+  signal prod_y             : std_logic;
+  signal quadrant           : std_logic_vector(1 downto 0);
+  signal cur_quadrant       : std_logic_vector(1 downto 0) := (others => '0');
+  signal x_i_abs            : std_logic_vector(24 downto 0);
+  signal y_i_abs            : std_logic_vector(24 downto 0);
+  signal x_k_abs            : std_logic_vector(24 downto 0);
+  signal y_k_abs            : std_logic_vector(24 downto 0);
 
   -- Secondary CORDIC
   signal sc_x_cur,   sc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
@@ -189,57 +184,50 @@ begin
 
 
 
-  -- Remove sign and generate 'change' circuit
+  -- Remove sign and store quadrant
 
   x_i_abs <= '0' & x_i(23 downto 0);
   y_i_abs <= '0' & y_i(23 downto 0);
-
-  in_change_img(0) <= x_i(24) xor y_i(24);
-  in_change_img(1) <= y_i(24);
-
-  -- with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select x_i_n <=     wat?
-  --   y_i_abs when '1',
-  --   x_i_abs when others;
-
-  -- with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select y_i_n <=
-  --   x_i_abs when '1',
-  --   y_i_abs when others;
-
-  in_change_ker(0) <= x_k(24) xor y_k(24);
-  in_change_ker(1) <= y_k(24);
-
   x_k_abs <= '0' & x_k(23 downto 0);
   y_k_abs <= '0' & y_k(23 downto 0);
 
-  -- with (x_k(x_k'length - 1) xor y_k(y_k'length - 1)) select x_k_n <=
-  --   y_k_abs when '1',
-  --   x_k_abs when others;
+  expected_x <= x_i(24) xor x_k(24);
+  expected_y <= y_i(24) xor y_k(24);
 
-  -- with (x_k(x_k'length - 1) xor y_k(y_k'length - 1)) select y_k_n <=
-  --   x_k_abs when '1',
-  --   y_k_abs when others;
+  process (prod_z) is   -- save into register
+  begin
+    prod_quadrant <=
+    "00" when prod_z(23 downto 0) <= half_pi else
+    "01" when prod_z(23 downto 0) <= pi else
+    "10" when prod_z(23 downto 0) <= three_half_pi else
+    "11";
+  end process;
 
-  in_change_sum <= std_logic_vector(unsigned(in_change_img) + unsigned(in_change_ker));
-  increment_change <= prod_z(24);
+  with prod_quadrant select prod_x <=
+    '0' when "00",
+    '1' when "01",
+    '1' when "10",
+    '0' when others;
 
-  with flux_to_cordic select next_change <=
-    inc_change when '1',
-    in_change_sum when others;
+  with prod_quadrant select prod_y <=
+    '0' when "00",
+    '0' when "01",
+    '1' when "10",
+    '1' when others;
 
-  with increment_change select inc_change <=
-    std_logic_vector(unsigned(cur_change) + to_unsigned(1, 2)) when '1',
-    cur_change when others;
+  quadrant(0) <= (expected_x xor prod_x) xor (expected_y xor prod_y);
+  quadrant(1) <= expected_y xor prod_y;
 
-  change_process : process (clock) is
+  quadrant_process : process (clock) is
   begin
     if rising_edge(clock) then
       if (reset = '1') then
-        cur_change <= (others => '0');
-      elsif (load_change = '1') then
-        cur_change <= next_change;
+        cur_quadrant <= (others => '0');
+      elsif (load_change = '1') then  -- read from register at pre-rotation
+        cur_quadrant <= quadrant;
       end if;
     end if;
-  end process change_process;
+  end process quadrant_process;
 
 
 
@@ -301,7 +289,7 @@ begin
   with flux_to_cordic select pc_z_nex <=
     pc_z_sel when '0',
     prod_z_norm when others;
-  pc_sig_nex <= pc_sig_sel; -- for consistency        re-check this later, many branches up
+  pc_sig_nex <= pc_sig_sel;
 
 
 
@@ -354,12 +342,6 @@ begin
       b   => z_pi,
       res => prod_z_norm
     );
-
-  prod_quadrant <=
-    "00" when prod_z(23 downto 0) <= half_pi else
-    "01" when prod_z(23 downto 0) <= pi else
-    "10" when prod_z(23 downto 0) <= three_half_pi else
-    "11";
   
   with prod_quadrant select z_pi <=
     (24 => '1', others => '0') when "00",
@@ -367,13 +349,13 @@ begin
     '1' & pi when "10",
     '0' & two_pi when others;
 
-  -- pc_cor_correct : process (clock) is                    -- commenting for now, let's see if 'change' works
+  -- pc_cor_correct : process (clock) is
   -- begin
   --   if rising_edge(clock) then
 
   --     if (load_change = '1' and cordic_rotation = '1' and flux_to_cordic = '1') then -- pre_rotation
 
-  --       rot_x_invert <= ( (not prod_quadrant(1) and prod_quadrant(0)) or (prod_quadrant(1) and not prod_quadrant(0)) ) xor prod_z(24); -- QTL QBL and invert again for Z
+  --       rot_x_invert <= ( (not prod_quadrant(1) and prod_quadrant(0)) or (prod_quadrant(1) and prod_quadrant(0)) ) xor prod_z(24); -- QTL QBL and invert again for Z
         
   --       rot_y_invert <= prod_quadrant(1); -- QBL QBR
 
@@ -401,33 +383,31 @@ begin
 
 
   
-  -- Process output using 'change'
+  -- Apply quadrant to output
 
   gen_mul_negs : for i in 0 to 7 generate
     neg_mul_coefs_x(i) <= not mul_coefs_x(i)(24) & mul_coefs_x(i)(23 downto 0);
     neg_mul_coefs_y(i) <= not mul_coefs_y(i)(24) & mul_coefs_y(i)(23 downto 0);
   end generate gen_mul_negs;
 
-  with cur_change select p_coefs_nex_x <=
+  with cur_quadrant select p_coefs_nex_x <=
     mul_coefs_x when "00",
-    mul_coefs_y when "01",
-    neg_mul_coefs_x when "10",
-    neg_mul_coefs_y when others;
-
-  with cur_change select p_coefs_nex_y <=
-    mul_coefs_y when "00",
     neg_mul_coefs_x when "01",
-    neg_mul_coefs_y when "10",
+    neg_mul_coefs_x when "10",
     mul_coefs_x when others;
+
+  with cur_quadrant select p_coefs_nex_y <=
+    mul_coefs_y when "00",
+    mul_coefs_y when "01",
+    neg_mul_coefs_y when "10",
+    neg_mul_coefs_y when others;
 
   outp_reg : process (clock) is
   begin
     if rising_edge(clock) then
       if (ready = '0') then
-        for loop_i in 0 to 7 loop
-          p_coefs_x_s(loop_i) <= p_coefs_nex_x(loop_i);
-          p_coefs_y_s(loop_i) <= p_coefs_nex_y(loop_i);
-        end loop;
+          p_coefs_x_s <= p_coefs_nex_x;
+          p_coefs_y_s <= p_coefs_nex_y;
       end if;
     end if;
   end process outp_reg;
@@ -436,3 +416,12 @@ begin
   p_coefs_y <= p_coefs_y_s;
 
 end architecture arch;
+
+
+  -- with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select x_i_n <=     wat?
+  --   y_i_abs when '1',
+  --   x_i_abs when others;
+
+  -- with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select y_i_n <=
+  --   x_i_abs when '1',
+  --   y_i_abs when others;

@@ -217,12 +217,12 @@ int main() {
     uint64_t C = 0, A = 0, B = 0, mask, litA, litB;
     bool At, Bt;
 
-    printf("\n\tN = %d\ti_q = %d\tk_q = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N, i_q, k_q);
-    printf("ini\t\t");
-    print_archvar(Input[N][0]); printf("\t");
-    print_archvar(Input[N][1]); printf("\t");
-    print_archvar(Input[N][2]); printf("\t");
-    printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
+    // printf("\n\tN = %d\ti_q = %d\tk_q = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N, i_q, k_q);
+    // printf("ini\t\t");
+    // print_archvar(Input[N][0]); printf("\t");
+    // print_archvar(Input[N][1]); printf("\t");
+    // print_archvar(Input[N][2]); printf("\t");
+    // printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
 
     for (int j = 0; j < 24; j++) {            // NOTE: 24 works, upto 32 can be done
 
@@ -245,11 +245,11 @@ int main() {
       B = (B << 1) + Bt;
 
 
-      printf("%x\t\t",j);
-      print_archvar(Input[N][0]); printf("\t");
-      print_archvar(Input[N][1]); printf("\t");
-      print_archvar(Input[N][2]); printf("\t");
-      printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
+      // printf("%x\t\t",j);
+      // print_archvar(Input[N][0]); printf("\t");
+      // print_archvar(Input[N][1]); printf("\t");
+      // print_archvar(Input[N][2]); printf("\t");
+      // printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
     }
 
     // Angle correction
@@ -274,9 +274,9 @@ int main() {
     Product[N][0].sign = Input[N][0].sign ^ Kernel[N][0].sign;
     Product[N][2] = archadd(Input[N][2],Kernel[N][2]);
 
-    printf("Product = ");
-    print_archvar(Product[N][0]);
-    printf("\n");
+    // printf("Product = ");
+    // print_archvar(Product[N][0]);
+    // printf("\n");
   }
 
   print_arch_pol("Input (polar coordinates)", Input);
@@ -301,18 +301,18 @@ int main() {
     Product[N][2].post = (uint16_t)(cor_angle & post_mask);
     Product[N][2].sign = 0; // angle is now at Q1
 
-    printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
-    print_archvar(Product[N][0]); printf("\t");
-    print_archvar(Product[N][1]); printf("\t");
-    print_archvar(Product[N][2]); printf("\n");
+    // printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
+    // print_archvar(Product[N][0]); printf("\t");
+    // print_archvar(Product[N][1]); printf("\t");
+    // print_archvar(Product[N][2]); printf("\n");
 
     for (int j = 0; j < 17; j++) {    // NOTE: previously at 24, experiment showed max j ~ 0x10 gets better results
       cordic_rot(Product[N], j);
 
-      printf("%x\t\t",j);
-      print_archvar(Product[N][0]); printf("\t");
-      print_archvar(Product[N][1]); printf("\t");
-      print_archvar(Product[N][2]); printf("\n");
+      // printf("%x\t\t",j);
+      // print_archvar(Product[N][0]); printf("\t");
+      // print_archvar(Product[N][1]); printf("\t");
+      // print_archvar(Product[N][2]); printf("\n");
     }
 
     Product[N][0].sign ^= x_sign;

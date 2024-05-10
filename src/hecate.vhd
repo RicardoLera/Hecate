@@ -151,7 +151,6 @@ begin
 
             -- Exponent of w in full unit circle
             w_ex := (i_id_cor * o_id) mod 32;
-            w_exc := (8 - i_id_cor * o_id) mod 32;
             
             -- Second and fourth quadrant reflections
             if ((w_ex > 8) and (w_ex <= 16)) or (w_ex > 24 and w_ex <= 31) then
@@ -173,7 +172,7 @@ begin
             a_sign := calc_vals_x(i_id_cor)(0)(24);
             b_sign := calc_vals_y(i_id_cor)(0)(24);
             wx_sign := '1' when cos_sig_ref(w_ex)=1 else '0';
-            wy_sign := '1' when cos_sig_ref(w_exc)=1 else '0';
+            wy_sign := '1' when sin_sig_ref(w_ex)=1 else '0';
 
             add_a(o_id)(0) <= calc_vals_x(i_id_cor)(w);  -- a_wx
             add_a(o_id)(1) <= calc_vals_x(i_id_cor)(wc); -- a_wy
@@ -188,12 +187,12 @@ begin
             add_b(o_id)(1)(24) <= b_sign xor wx_sign;
             add_b(o_id)(0)(24) <= not (b_sign xor wy_sign);   -- i^2 inversion
 
-            -- Orthogonal cancellations -> represent it multiplying by 0, prehaps?
-            if cos_val_ref(w_ex) = 8 then -- cancel wx
+            -- Orthogonal cancellations -> something is still leaking through, making this necessary
+            if (w_ex=8 or w_ex=24) then -- cancel wx
               add_a(o_id)(0) <= (others => '0');
               add_b(o_id)(1) <= (others => '0');
             end if;
-            if cos_val_ref(w_exc) = 8 then -- cancel wy
+            if (w_ex=0 or w_ex=16) then -- cancel wy
               add_a(o_id)(1) <= (others => '0');
               add_b(o_id)(0) <= (others => '0');
             end if;

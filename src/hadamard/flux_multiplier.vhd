@@ -56,9 +56,6 @@ architecture synth of flux_multiplier is
   signal kx_reg_y   : b25_double_array(0 to 7) := (others => (others => '0'));
   signal kx_shift_y : b25_double_array(0 to 7) := (others => (others => '0'));
 
--- signal p_full_shifted_u, shift_sum_u : unsigned((2 * size) - 1 downto 0);
--- signal bit_prod_u : unsigned((2*size)-1 downto 0);
-
 begin
 
   proc : process (clock) is
@@ -140,7 +137,12 @@ begin
   kx_x : for idx in 0 to 7 generate
   begin
 
-    select_gen_x : if (n_idx mod 2 = 1) or ((n_idx mod 4 = 2) and (idx mod 4 = 2)) or ((n_idx = 0) and (idx = 0)) generate
+    select_gen_x : if (
+      (  idx = 0 ) or                              -- for V0
+      (  n_idx mod 2 = 1) or                       -- for Vall
+      ( (n_idx mod 4 = 2) and (idx mod 2 = 0) ) or -- for V2 V4 V6
+      ( (n_idx mod 8 = 4) and (idx = 4))           -- for V4
+    ) generate
 
       kx_mux_x(idx)(49 downto 25) <= (others => '0');
       with a_bit select kx_mux_x(idx)(24 downto 0) <=
@@ -174,7 +176,12 @@ begin
   kx_y : for idx in 0 to 7 generate
   begin
 
-    select_gen_y : if (n_idx mod 2 = 1) or ((n_idx mod 4 = 2) and (idx mod 4 = 2)) or ((n_idx = 0) and (idx = 0)) generate
+    select_gen_y : if (
+      (  idx = 0 ) or                              -- for V0
+      (  n_idx mod 2 = 1) or                       -- for Vall
+      ( (n_idx mod 4 = 2) and (idx mod 2 = 0) ) or -- for V2 V4 V6
+      ( (n_idx mod 8 = 4) and (idx = 4))           -- for V4
+    ) generate
 
       kx_mux_y(idx)(49 downto 25) <= (others => '0');
       with b_bit select kx_mux_y(idx)(24 downto 0) <=
