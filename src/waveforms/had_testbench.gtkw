@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Thu May  9 17:37:44 2024
 [*]
-[dumpfile] "/home/ricardo/git/Hecate/src/waveforms/had.ghw"
+[dumpfile] "had.ghw"
 [dumpfile_mtime] "Thu May  9 17:29:56 2024"
 [dumpfile_size] 161364
-[savefile] "/home/ricardo/git/Hecate/src/waveforms/had_testbench.gtkw"
+[savefile] "had_testbench.gtkw"
 [timestart] 0
 [size] 1918 2110
 [pos] -1 -1
