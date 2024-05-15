@@ -34,17 +34,15 @@ architecture arch of hadamard is
   signal mul_xy            : std_logic;
   signal cordic_rotation   : std_logic;
 
-  -- Quadrant and signal treatment signals
-  signal expected_x         : std_logic;
-  signal expected_y         : std_logic;
+  -- Sign treatment signals
+  signal x_i_abs,  y_i_abs  : std_logic_vector(24 downto 0);
+  signal x_k_abs,  y_k_abs  : std_logic_vector(24 downto 0);
+  signal img_z,  ker_z      : std_logic_vector(24 downto 0);
+  signal img_pi, ker_pi     : std_logic_vector(24 downto 0);
+  signal img_z_norm         : std_logic_vector(24 downto 0);
+  signal ker_z_norm         : std_logic_vector(24 downto 0);
   signal prod_x             : std_logic;
   signal prod_y             : std_logic;
-  signal quadrant           : std_logic_vector(1 downto 0);
-  signal cur_quadrant       : std_logic_vector(1 downto 0) := (others => '0');
-  signal x_i_abs            : std_logic_vector(24 downto 0);
-  signal y_i_abs            : std_logic_vector(24 downto 0);
-  signal x_k_abs            : std_logic_vector(24 downto 0);
-  signal y_k_abs            : std_logic_vector(24 downto 0);
 
   -- Secondary CORDIC
   signal sc_x_cur,   sc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
@@ -184,50 +182,40 @@ begin
 
 
 
-  -- Remove sign and store quadrant
+  -- Remove signs and normalize
 
   x_i_abs <= '0' & x_i(23 downto 0);
   y_i_abs <= '0' & y_i(23 downto 0);
   x_k_abs <= '0' & x_k(23 downto 0);
   y_k_abs <= '0' & y_k(23 downto 0);
 
-  expected_x <= x_i(24) xor x_k(24);
-  expected_y <= y_i(24) xor y_k(24);
+  with std_logic_vector'(x_i(24) & y_i(24)) select img_pi <=
+    '1' & 24b"0" when "00",   -- QTR
+    '0' & pi     when "10",   -- QTL
+    '1' & pi     when "11",   -- QBL
+    '0' & two_pi when others; -- QBR
+  
+  img_z <= pc_z_cur; -- change to register on pre-rotation once, for all of them
+  img_correction : component b25_add
+    port map (
+      a   => not img_pi(24) & img_z(23 downto 0),
+      b   => img_pi,
+      res => img_z_norm
+    );
+  
+  with std_logic_vector'(x_k(24) & y_k(24)) select ker_pi <=
+    '1' & 24b"0" when "00",   -- QTR
+    '0' & pi     when "10",   -- QTL
+    '1' & pi     when "11",   -- QBL
+    '0' & two_pi when others; -- QBR
 
-  process (prod_z) is   -- save into register
-  begin
-    prod_quadrant <=
-    "00" when prod_z(23 downto 0) <= half_pi else
-    "01" when prod_z(23 downto 0) <= pi else
-    "10" when prod_z(23 downto 0) <= three_half_pi else
-    "11";
-  end process;
-
-  with prod_quadrant select prod_x <=
-    '0' when "00",
-    '1' when "01",
-    '1' when "10",
-    '0' when others;
-
-  with prod_quadrant select prod_y <=
-    '0' when "00",
-    '0' when "01",
-    '1' when "10",
-    '1' when others;
-
-  quadrant(0) <= (expected_x xor prod_x) xor (expected_y xor prod_y);
-  quadrant(1) <= expected_y xor prod_y;
-
-  quadrant_process : process (clock) is
-  begin
-    if rising_edge(clock) then
-      if (reset = '1') then
-        cur_quadrant <= (others => '0');
-      elsif (load_change = '1') then  -- read from register at pre-rotation
-        cur_quadrant <= quadrant;
-      end if;
-    end if;
-  end process quadrant_process;
+  ker_z <= sc_z_cur;
+  ker_correction : component b25_add
+    port map (
+      a   => not ker_pi(24) & ker_z(23 downto 0),
+      b   => ker_pi,
+      res => ker_z_norm
+    );
 
 
 
@@ -327,14 +315,26 @@ begin
 
 
 
-  -- Polar Multiplication
+  -- Polar Multiplication (angle)
 
   z_addition : component b25_add
     port map (
-      a   => pc_z_cur,
-      b   => sc_z_cur,
+      a   => img_z_norm,
+      b   => ker_z_norm,
       res => prod_z
     );
+
+  prod_quadrant <=
+    "00" when unsigned(prod_z(23 downto 0)) <= unsigned(pi)              else
+    "01" when unsigned(prod_z(23 downto 0)) <= unsigned(pi24)            else
+    "10" when unsigned(prod_z(23 downto 0)) <= unsigned(three_half_pi24) else
+    "11";
+  
+  with prod_quadrant select z_pi <=
+    '1' & 24b"0" when "00",
+    '0' & pi when "01",
+    '1' & pi when "10",
+    '0' & two_pi when others;
 
   z_correction : component b25_add
     port map (
@@ -343,25 +343,21 @@ begin
       res => prod_z_norm
     );
   
-  with prod_quadrant select z_pi <=
-    (24 => '1', others => '0') when "00",
-    '0' & pi when "01",
-    '1' & pi when "10",
-    '0' & two_pi when others;
+  with prod_quadrant select prod_x <=
+    '0' when "00",
+    '1' when "01",
+    '1' when "10",
+    '0' when others;
 
-  -- pc_cor_correct : process (clock) is
-  -- begin
-  --   if rising_edge(clock) then
+  with prod_quadrant select prod_y <=
+    '0' when "00",
+    '0' when "01",
+    '1' when "10",
+    '1' when others;
 
-  --     if (load_change = '1' and cordic_rotation = '1' and flux_to_cordic = '1') then -- pre_rotation
 
-  --       rot_x_invert <= ( (not prod_quadrant(1) and prod_quadrant(0)) or (prod_quadrant(1) and prod_quadrant(0)) ) xor prod_z(24); -- QTL QBL and invert again for Z
-        
-  --       rot_y_invert <= prod_quadrant(1); -- QBL QBR
 
-  --     end if;
-  --   end if;
-  -- end process pc_cor_correct;
+  -- Polar Multiplication (abs)
 
   mul_a <= pc_x_cur;
 
@@ -383,23 +379,19 @@ begin
 
 
   
-  -- Apply quadrant to output
+  -- Apply normalization to output
 
   gen_mul_negs : for i in 0 to 7 generate
     neg_mul_coefs_x(i) <= not mul_coefs_x(i)(24) & mul_coefs_x(i)(23 downto 0);
     neg_mul_coefs_y(i) <= not mul_coefs_y(i)(24) & mul_coefs_y(i)(23 downto 0);
   end generate gen_mul_negs;
 
-  with cur_quadrant select p_coefs_nex_x <=
-    mul_coefs_x when "00",
-    neg_mul_coefs_x when "01",
-    neg_mul_coefs_x when "10",
-    mul_coefs_x when others;
+  with prod_x select p_coefs_nex_x <=
+    mul_coefs_x when '0',
+    neg_mul_coefs_x when others;
 
-  with cur_quadrant select p_coefs_nex_y <=
-    mul_coefs_y when "00",
-    mul_coefs_y when "01",
-    neg_mul_coefs_y when "10",
+  with prod_y select p_coefs_nex_y <=
+    mul_coefs_y when '0',
     neg_mul_coefs_y when others;
 
   outp_reg : process (clock) is

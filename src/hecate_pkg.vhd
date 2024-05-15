@@ -47,6 +47,12 @@ package hecate_pkg is
     '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 24))
   );
 
+  -- Unsigned pi constants for hadamard angle normalization
+  constant two_pi24        : unsigned(23 downto 0) := to_unsigned(natural((2.0**16)*2.0*MATH_PI),24);
+  constant half_pi24       : unsigned(23 downto 0) := to_unsigned(natural((2.0**15)*MATH_PI)    ,24);
+  constant pi24            : unsigned(23 downto 0) := to_unsigned(natural((2.0**16)*MATH_PI)    ,24);
+  constant three_half_pi24 : unsigned(23 downto 0) := to_unsigned(natural((2.0**15)*3.0*MATH_PI),24);
+
   -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
   -- lut(49 downto 25) <= "0000000000011010011110110"; -- 0x34f6
   -- lut(74 downto 50) <= "0000000000010100010001000"; -- 0x2888
