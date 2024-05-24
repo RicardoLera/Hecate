@@ -10,17 +10,18 @@ entity flux_multiplier is
     n_idx     : natural range 0 to 16 := 0
   );
   port (
-    clock   : in    std_logic;
-    reset   : in    std_logic;
-    run     : in    std_logic;
-    a       : in    std_logic_vector(24 downto 0);
-    b       : in    std_logic_vector(24 downto 0);
-    a_nex   : in    std_logic_vector(24 downto 0);
-    b_nex   : in    std_logic_vector(24 downto 0);
-    coefs_x : out   b25_real_array(0 to 7);
-    coefs_y : out   b25_real_array(0 to 7);
-    p       : out   std_logic_vector(24 downto 0);
-    ready   : out   std_logic
+    clock     : in    std_logic;
+    reset     : in    std_logic;
+    run       : in    std_logic;
+    run_coefs : in    std_logic;
+    a         : in    std_logic_vector(24 downto 0);
+    b         : in    std_logic_vector(24 downto 0);
+    a_nex     : in    std_logic_vector(24 downto 0);
+    b_nex     : in    std_logic_vector(24 downto 0);
+    coefs_x   : out   b25_real_array(0 to 7);
+    coefs_y   : out   b25_real_array(0 to 7);
+    p         : out   std_logic_vector(24 downto 0);
+    ready     : out   std_logic
   );
 end entity flux_multiplier;
 
@@ -134,10 +135,10 @@ begin
 
   -- constant multipliers (kx)
 
-  kx_x : for idx in 0 to 7 generate
+  kx_gen : for idx in 0 to 7 generate
   begin
 
-    select_gen_x : if (
+    select_gen : if (
       (  idx = 0 ) or                              -- for V0
       (  n_idx mod 2 = 1) or                       -- for Vall
       ( (n_idx mod 4 = 2) and (idx mod 2 = 0) ) or -- for V2 V4 V6
@@ -145,71 +146,42 @@ begin
     ) generate
 
       kx_mux_x(idx)(49 downto 25) <= (others => '0');
+      kx_mux_y(idx)(49 downto 25) <= (others => '0');
+
       with a_bit select kx_mux_x(idx)(24 downto 0) <=
         kw_lut(idx) when '1',
         25x"0" when others;
-
-      kx_proc_x : process (clock) is
-      begin
-
-        if rising_edge(clock) then
-          if (s_reset = '1') then
-            kx_reg_x(idx) <= (others => '0');
-          elsif (run = '1' and s_ready = '0') then
-            kx_reg_x(idx) <= kx_add_x(idx);
-          end if;
-        end if;
-
-      end process kx_proc_x;
-
-      kx_add_x(idx) <= std_logic_vector(unsigned(kx_mux_x(idx)) + unsigned(kx_shift_x(idx)));
-      kx_shift_x(idx)(49 downto 1) <= kx_reg_x(idx)(48 downto 0);
-
-      coefs_x(idx) <= kx_reg_x(idx)(40 downto 16);
-
-    else generate
-      coefs_x(idx) <= (others => '0'); -- not sure if this makes a ton of hardware
-    end generate select_gen_x;
-
-  end generate kx_x;
-
-  kx_y : for idx in 0 to 7 generate
-  begin
-
-    select_gen_y : if (
-      (  idx = 0 ) or                              -- for V0
-      (  n_idx mod 2 = 1) or                       -- for Vall
-      ( (n_idx mod 4 = 2) and (idx mod 2 = 0) ) or -- for V2 V4 V6
-      ( (n_idx mod 8 = 4) and (idx = 4))           -- for V4
-    ) generate
-
-      kx_mux_y(idx)(49 downto 25) <= (others => '0');
       with b_bit select kx_mux_y(idx)(24 downto 0) <=
         kw_lut(idx) when '1',
         25x"0" when others;
+    
+      kx_shift_x(idx)(49 downto 1) <= kx_reg_x(idx)(48 downto 0);
+      kx_shift_y(idx)(49 downto 1) <= kx_reg_y(idx)(48 downto 0);
 
-      kx_proc_y : process (clock) is
+      kx_add_x(idx) <= std_logic_vector(unsigned(kx_mux_x(idx)) + unsigned(kx_shift_x(idx)));
+      kx_add_y(idx) <= std_logic_vector(unsigned(kx_mux_y(idx)) + unsigned(kx_shift_y(idx)));
+
+      kx_proc : process (clock) is
       begin
-
         if rising_edge(clock) then
           if (s_reset = '1') then
+            kx_reg_x(idx) <= (others => '0');
             kx_reg_y(idx) <= (others => '0');
-          elsif (run = '1' and s_ready = '0') then
+          elsif (run_coefs = '1') then
+            kx_reg_x(idx) <= kx_add_x(idx);
             kx_reg_y(idx) <= kx_add_y(idx);
           end if;
         end if;
+      end process kx_proc;
 
-      end process kx_proc_y;
-
-      kx_add_y(idx) <= std_logic_vector(unsigned(kx_mux_y(idx)) + unsigned(kx_shift_y(idx)));
-      kx_shift_y(idx)(49 downto 1) <= kx_reg_y(idx)(48 downto 0);
-
+      coefs_x(idx) <= kx_reg_x(idx)(40 downto 16);
       coefs_y(idx) <= kx_reg_y(idx)(40 downto 16);
 
     else generate
+      coefs_x(idx) <= (others => '0'); -- not sure if this makes a ton of hardware
       coefs_y(idx) <= (others => '0');
-    end generate select_gen_y;
+    end generate select_gen;
 
-  end generate kx_y;
+  end generate kx_gen;
 
 end architecture synth;

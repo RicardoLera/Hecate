@@ -1,3 +1,6 @@
+library work;
+  use work.hecate_pkg.all;
+
 library ieee;
   use ieee.std_logic_1164.all;
 
@@ -20,10 +23,8 @@ end entity hadamard_uc;
 
 architecture fsm of hadamard_uc is
 
-  type t_estado is (initial, vectorization, partialmultiplication, prerotation, rotation, finalmultiplication, finished);
-
-  signal e_cur : t_estado := initial;
-  signal e_nex : t_estado;
+  signal e_cur : t_state := initial;
+  signal e_nex : t_state;
 
 begin
 

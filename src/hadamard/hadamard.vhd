@@ -25,86 +25,51 @@ end entity hadamard;
 
 architecture arch of hadamard is
 
-  -- Control unit signals
-  signal mul_ready,  j_end : std_logic;
-  signal load_change       : std_logic;
-  signal cordic_feedback   : std_logic;
-  signal flux_to_cordic    : std_logic;
-  signal freeze_terms      : std_logic;
-  signal mul_xy            : std_logic;
-  signal cordic_rotation   : std_logic;
-
-  -- Sign treatment signals
-  signal x_i_abs,  y_i_abs  : std_logic_vector(24 downto 0);
-  signal x_k_abs,  y_k_abs  : std_logic_vector(24 downto 0);
-  signal img_z,  ker_z      : std_logic_vector(24 downto 0);
-  signal img_pi, ker_pi     : std_logic_vector(24 downto 0);
-  signal img_z_norm         : std_logic_vector(24 downto 0);
-  signal ker_z_norm         : std_logic_vector(24 downto 0);
-  signal prod_x             : std_logic;
-  signal prod_y             : std_logic;
-
-  -- Secondary CORDIC
-  signal sc_x_cur,   sc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
-  signal sc_z_cur             : std_logic_vector(24 downto 0) := (others => '0');
-  signal sc_sig_cur           : std_logic                     := '0';
-
-  signal sc_x_nex               : std_logic_vector(24 downto 0);
-  signal sc_y_nex               : std_logic_vector(24 downto 0);
-  signal sc_x_cor               : std_logic_vector(24 downto 0);
-  signal sc_y_cor               : std_logic_vector(24 downto 0);
-  signal sc_z_nex,   sc_z_cor   : std_logic_vector(24 downto 0);
-  signal sc_sig_nex, sc_sig_cor : std_logic;
+  -- Control unit
+  signal mul_ready       : std_logic;
+  signal load_change     : std_logic;
+  signal cordic_feedback : std_logic;
+  signal flux_to_cordic  : std_logic;
+  signal freeze_terms    : std_logic;
+  signal mul_xy          : std_logic;
+  signal cordic_rotation : std_logic;
 
   -- J control
-  signal j : std_logic_vector(4 downto 0) := (others => '0');
+  signal j     : std_logic_vector(4 downto 0) := (others => '0');
+  signal j_end : std_logic;
+
+  -- Sign treatment
+  signal x_i_abs, y_i_abs, x_k_abs, y_k_abs : std_logic_vector(24 downto 0);
+  signal img_z,  ker_z                      : std_logic_vector(24 downto 0) := (others => '0');
+  signal img_pi, ker_pi                     : std_logic_vector(24 downto 0);
+  signal img_z_cor, ker_z_cor               : std_logic_vector(24 downto 0);
+  signal prod_x, prod_y                     : std_logic;
 
   -- Primary CORDIC
-  signal pc_x_cur,   pc_y_cur : std_logic_vector(24 downto 0) := (others => '0');
-  signal pc_z_cur             : std_logic_vector(24 downto 0) := (others => '0');
-  signal pc_sig_cur           : std_logic                     := '0';
+  signal pc_x_cur, pc_y_cur, pc_z_cur       : std_logic_vector(24 downto 0) := (others => '0');
+  signal pc_x_nex, pc_y_nex, pc_z_nex       : std_logic_vector(24 downto 0);
+  signal pc_x_out, pc_y_out, pc_z_out       : std_logic_vector(24 downto 0);
+  signal pc_sig_cur, pc_sig_nex, pc_sig_out : std_logic;
+  signal pc_x_sel, pc_y_sel, pc_z_sel       : std_logic_vector(24 downto 0);
 
-  signal pc_x_nex   : std_logic_vector(24 downto 0);
-  signal pc_y_nex   : std_logic_vector(24 downto 0);
-  signal pc_x_cor   : std_logic_vector(24 downto 0);
-  signal pc_y_cor   : std_logic_vector(24 downto 0);
-  signal pc_x_sel   : std_logic_vector(24 downto 0);
-  signal pc_y_sel   : std_logic_vector(24 downto 0);
-  signal pc_z_nex   : std_logic_vector(24 downto 0);
-  signal pc_z_cor   : std_logic_vector(24 downto 0);
-  signal pc_z_sel   : std_logic_vector(24 downto 0);
-  signal pc_sig_nex : std_logic;
-  signal pc_sig_cor : std_logic;
-  signal pc_sig_sel : std_logic;
-
-  constant pi            : std_logic_vector(23 downto 0) := "000000110010010000111111"; -- 011.0010010000111111
-  constant two_pi        : std_logic_vector(23 downto 0) := "000001100100100001111110"; -- 110.0100100001111110
-  constant half_pi       : std_logic_vector(23 downto 0) := "000000011001001000011111"; -- 001.1001001000011111
-  constant three_half_pi : std_logic_vector(23 downto 0) := "000001001011011001011101"; -- 100.1011011001011101
+  -- Secondary CORDIC
+  signal sc_x_cur, sc_y_cur, sc_z_cur       : std_logic_vector(24 downto 0) := (others => '0');
+  signal sc_x_nex, sc_y_nex, sc_z_nex       : std_logic_vector(24 downto 0);
+  signal sc_x_out, sc_y_out, sc_z_out       : std_logic_vector(24 downto 0);
+  signal sc_sig_cur, sc_sig_nex, sc_sig_out : std_logic;
 
   -- Multiplier
-  signal prod_z          : std_logic_vector(24 downto 0);
-  signal prod_z_norm     : std_logic_vector(24 downto 0);
-  signal prod_mod        : std_logic_vector(24 downto 0);
-  signal prod_quadrant   : std_logic_vector(1 downto 0);
-  signal z_pi            : std_logic_vector(24 downto 0);
-  signal rot_x_invert    : std_logic;
-  signal rot_y_invert    : std_logic;
-  signal mul_a           : std_logic_vector(24 downto 0);
-  signal mul_a_nex       : std_logic_vector(24 downto 0);
-  signal mul_b           : std_logic_vector(24 downto 0);
-  signal mul_b_nex       : std_logic_vector(24 downto 0);
-  signal mul_b_nex_sel   : std_logic_vector(24 downto 0);
-  signal mul_coefs_x     : b25_real_array(0 to 7);
-  signal mul_coefs_y     : b25_real_array(0 to 7);
-  signal neg_mul_coefs_x : b25_real_array(0 to 7);
-  signal neg_mul_coefs_y : b25_real_array(0 to 7);
+  signal prod_r                          : std_logic_vector(24 downto 0);
+  signal prod_z, prod_pi, prod_z_cor     : std_logic_vector(24 downto 0);
+  signal prod_quadrant                   : std_logic_vector(1 downto 0);
+  signal mul_a, mul_a_nex                : std_logic_vector(24 downto 0);
+  signal mul_b, mul_b_nex, mul_b_nex_sel : std_logic_vector(24 downto 0);
+  signal coefs_x, neg_coefs_x            : b25_real_array(0 to 7);
+  signal coefs_y, neg_coefs_y            : b25_real_array(0 to 7);
 
   -- Output
-  signal p_coefs_nex_x : b25_real_array(0 to 7) := (others => (others => '0'));
-  signal p_coefs_nex_y : b25_real_array(0 to 7) := (others => (others => '0'));
-  signal p_coefs_x_s   : b25_real_array(0 to 7) := (others => (others => '0'));
-  signal p_coefs_y_s   : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal coefs_x_sel, coefs_y_sel : b25_real_array(0 to 7);
+  signal p_coefs_x_s, p_coefs_y_s : b25_real_array(0 to 7) := (others => (others => '0'));
 
 begin
 
@@ -128,20 +93,21 @@ begin
   -- Flux Multiplier
   flux_mul : component flux_multiplier
     generic map (
-      n_idx=> n_idx
+      n_idx => n_idx
     )
     port map (
-      clock   => clock,
-      reset   => reset,
-      run     => start,
-      a       => mul_a,
-      b       => mul_b,
-      a_nex   => mul_a_nex,
-      b_nex   => mul_b_nex,
-      coefs_x => mul_coefs_x,
-      coefs_y => mul_coefs_y,
-      p       => prod_mod,
-      ready   => mul_ready
+      clock     => clock,
+      reset     => reset,
+      run       => start,
+      run_coefs => mul_xy,
+      a         => mul_a,
+      b         => mul_b,
+      a_nex     => mul_a_nex,
+      b_nex     => mul_b_nex,
+      coefs_x   => coefs_x,
+      coefs_y   => coefs_y,
+      p         => prod_r,
+      ready     => mul_ready
     );
 
   -- Primary CORDIC
@@ -156,10 +122,10 @@ begin
       x_in      => pc_x_cur,
       y_in      => pc_y_cur,
       z_in      => pc_z_cur,
-      x_out     => pc_x_cor,
-      y_out     => pc_y_cor,
-      z_out     => pc_z_cor,
-      sigma_out => pc_sig_cor
+      x_out     => pc_x_out,
+      y_out     => pc_y_out,
+      z_out     => pc_z_out,
+      sigma_out => pc_sig_out
     );
   
   -- Secondary CORDIC     
@@ -174,72 +140,47 @@ begin
       x_in      => sc_x_cur,
       y_in      => sc_y_cur,
       z_in      => sc_z_cur,
-      x_out     => sc_x_cor,
-      y_out     => sc_y_cor,
-      z_out     => sc_z_cor,
-      sigma_out => sc_sig_cor
+      x_out     => sc_x_out,
+      y_out     => sc_y_out,
+      z_out     => sc_z_out,
+      sigma_out => sc_sig_out
     );
 
 
 
-  -- Remove signs and normalize
+  -- i/k normalization to Q1 (signs preserved in input)
 
   x_i_abs <= '0' & x_i(23 downto 0);
   y_i_abs <= '0' & y_i(23 downto 0);
   x_k_abs <= '0' & x_k(23 downto 0);
   y_k_abs <= '0' & y_k(23 downto 0);
 
-  with std_logic_vector'(x_i(24) & y_i(24)) select img_pi <=
-    '1' & 24b"0" when "00",   -- QTR
-    '0' & pi     when "10",   -- QTL
-    '1' & pi     when "11",   -- QBL
-    '0' & two_pi when others; -- QBR
-  
-  img_z <= pc_z_cur; -- change to register on pre-rotation once, for all of them
-  img_correction : component b25_add
-    port map (
-      a   => not img_pi(24) & img_z(23 downto 0),
-      b   => img_pi,
-      res => img_z_norm
-    );
-  
-  with std_logic_vector'(x_k(24) & y_k(24)) select ker_pi <=
-    '1' & 24b"0" when "00",   -- QTR
-    '0' & pi     when "10",   -- QTL
-    '1' & pi     when "11",   -- QBL
-    '0' & two_pi when others; -- QBR
-
-  ker_z <= sc_z_cur;
-  ker_correction : component b25_add
-    port map (
-      a   => not ker_pi(24) & ker_z(23 downto 0),
-      b   => ker_pi,
-      res => ker_z_norm
-    );
 
 
-
-  -- J control signals
+  -- J control (both CORDICs)
 
   j_control_pro : process (clock) is
   begin
     if rising_edge(clock) then
-      if (cordic_feedback = '0') then
-        j <= (others => '0');
+      if (cordic_feedback = '1') then
+        if (unsigned(j) < to_unsigned(24, 5)) then
+          j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
+        else
+          j_end <= '1';
+        end if;
       else
-        j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
+        j <= (others => '0');
+        j_end <= '0';
       end if;
     end if;
   end process j_control_pro;
-  j_end <= j(0) and j(1) and j(2) and j(3) and j(4);
 
-
+  
 
   -- Primary CORDIC process and signals
 
   pc_cor_pro : process (clock) is
   begin
-
     if rising_edge(clock) then
       if (reset = '1') then
         pc_x_cur   <= (others => '0');
@@ -253,39 +194,38 @@ begin
         pc_sig_cur <= pc_sig_nex;
       end if;
     end if;
-
   end process pc_cor_pro;
 
   with cordic_feedback select pc_x_sel <=
-    pc_x_cor when '1',
-    x_k_abs when others;
+    pc_x_out when '1',
+    x_i_abs when others;
   with cordic_feedback select pc_y_sel <=
-    pc_y_cor when '1',
-    y_k_abs when others;
+    pc_y_out when '1',
+    y_i_abs when others;
   with cordic_feedback select pc_z_sel <=
-    pc_z_cor when '1',
+    pc_z_out when '1',
     (others => '0') when others;
-  pc_sig_sel <= (cordic_feedback and pc_sig_cor) or
-		((not cordic_feedback) and (not cordic_rotation));
+  with cordic_feedback select pc_sig_nex <=
+    pc_sig_out when '1',
+    (not cordic_rotation) when others;
 
+  -- Flux_to_cordic -> Pre-rotation
   with flux_to_cordic select pc_x_nex <=
     pc_x_sel when '0',
-    prod_mod when others;
+    prod_r when others;
   with flux_to_cordic select pc_y_nex <=
     pc_y_sel when '0',
     (others => '0') when others;
   with flux_to_cordic select pc_z_nex <=
     pc_z_sel when '0',
-    prod_z_norm when others;
-  pc_sig_nex <= pc_sig_sel;
-
+    prod_z_cor when others;
+  
 
 
   -- Secondary CORDIC process and signals
 
   sc_cor_pro : process (clock) is
   begin
-
     if rising_edge(clock) then
       if (reset = '1') then
         sc_x_cur   <= (others => '0');
@@ -299,48 +239,111 @@ begin
         sc_sig_cur <= sc_sig_nex;
       end if;
     end if;
-
   end process sc_cor_pro;
 
   with cordic_feedback select sc_x_nex <=
-    sc_x_cor when '1',
-    x_i_abs when others;
+    sc_x_out when '1',
+    x_k_abs when others;
   with cordic_feedback select sc_y_nex <=
-    sc_y_cor when '1',
-    y_i_abs when others;
+    sc_y_out when '1',
+    y_k_abs when others;
   with cordic_feedback select sc_z_nex <=
-    sc_z_cor when '1',
+    sc_z_out when '1',
     (others => '0') when others;
-  sc_sig_nex <= (not cordic_feedback) or sc_sig_cor;
+  with cordic_feedback select sc_sig_nex <=
+    sc_sig_out when '1',
+    '1' when others;
 
 
 
-  -- Polar Multiplication (angle)
+  -- Flux Multiplier Signals
+
+  mul_a <= pc_x_cur;
+
+  with mul_xy select mul_b <=
+    pc_y_cur when '1',
+    sc_x_cur when others;
+
+  with freeze_terms select mul_a_nex <=
+    mul_a when '1',
+    pc_x_out when others;
+
+  with freeze_terms select mul_b_nex <=
+    mul_b when '1',
+    mul_b_nex_sel when others;
+
+  with mul_xy select mul_b_nex_sel <=
+    pc_y_nex when '1',
+    sc_x_nex when others;
+
+
+
+  -- i/k correction to Q1~4
+
+  pr_latch : process (clock) is
+  begin
+    if rising_edge(clock) then
+      if (flux_to_cordic = '1') then
+        img_z <= pc_z_cur;
+        ker_z <= sc_z_cur;
+      end if;
+    end if;
+  end process pr_latch;
+
+  with std_logic_vector'(x_i(24) & y_i(24)) select img_pi <=
+    '1' & 24b"0"   when "00",   -- QTR
+    '0' & pi24     when "10",   -- QTL
+    '1' & pi24     when "11",   -- QBL
+    '0' & two_pi24 when others; -- QBR
+
+  with std_logic_vector'(x_k(24) & y_k(24)) select ker_pi <=
+    '1' & 24b"0"   when "00",   -- QTR
+    '0' & pi24     when "10",   -- QTL
+    '1' & pi24     when "11",   -- QBL
+    '0' & two_pi24 when others; -- QBR
+
+  img_correction : component b25_add
+    port map (
+      a   => not img_pi(24) & img_z(23 downto 0),
+      b   => img_pi,
+      res => img_z_cor
+    );
+
+  ker_correction : component b25_add
+    port map (
+      a   => not ker_pi(24) & ker_z(23 downto 0),
+      b   => ker_pi,
+      res => ker_z_cor
+    );
+
+
+
+  -- Polar Multiplication (angle z) -- Normalization to Q1
 
   z_addition : component b25_add
     port map (
-      a   => img_z_norm,
-      b   => ker_z_norm,
+      a   => img_z_cor,
+      b   => ker_z_cor,
       res => prod_z
     );
 
   prod_quadrant <=
-    "00" when unsigned(prod_z(23 downto 0)) <= unsigned(pi)              else
-    "01" when unsigned(prod_z(23 downto 0)) <= unsigned(pi24)            else
-    "10" when unsigned(prod_z(23 downto 0)) <= unsigned(three_half_pi24) else
+    "00" when (unsigned(prod_z(23 downto 0)) < unsigned(half_pi24)      ) else
+    "01" when (unsigned(prod_z(23 downto 0)) < unsigned(pi24)           ) else
+    "10" when (unsigned(prod_z(23 downto 0)) < unsigned(three_half_pi24)) else
     "11";
   
-  with prod_quadrant select z_pi <=
+  with prod_quadrant select prod_pi <=
     '1' & 24b"0" when "00",
-    '0' & pi when "01",
-    '1' & pi when "10",
-    '0' & two_pi when others;
+    '0' & pi24 when "01",
+    '1' & pi24 when "10",
+    '0' & two_pi24 when others;
 
   z_correction : component b25_add
     port map (
-      a   => not z_pi(24) & prod_z(23 downto 0),
-      b   => z_pi,
-      res => prod_z_norm
+      a   => not prod_pi(24) & prod_z(23 downto 0),
+      b   => prod_pi,
+      res => prod_z_cor
     );
   
   with prod_quadrant select prod_x <=
@@ -356,50 +359,28 @@ begin
     '1' when others;
 
 
-
-  -- Polar Multiplication (abs)
-
-  mul_a <= pc_x_cur;
-
-  with freeze_terms select mul_a_nex <=
-    mul_a when '1',
-    pc_x_cor when others;
-
-  with mul_xy select mul_b <=
-    pc_y_cur when '1',
-    sc_x_cur when others;
-
-  with freeze_terms select mul_b_nex <=
-    mul_b when '1',
-    mul_b_nex_sel when others;
-
-  with mul_xy select mul_b_nex_sel <=
-    pc_y_nex when '1',
-    sc_x_nex when others;
-
-
   
   -- Apply normalization to output
 
   gen_mul_negs : for i in 0 to 7 generate
-    neg_mul_coefs_x(i) <= not mul_coefs_x(i)(24) & mul_coefs_x(i)(23 downto 0);
-    neg_mul_coefs_y(i) <= not mul_coefs_y(i)(24) & mul_coefs_y(i)(23 downto 0);
+    neg_coefs_x(i) <= not coefs_x(i)(24) & coefs_x(i)(23 downto 0);
+    neg_coefs_y(i) <= not coefs_y(i)(24) & coefs_y(i)(23 downto 0);
   end generate gen_mul_negs;
 
-  with prod_x select p_coefs_nex_x <=
-    mul_coefs_x when '0',
-    neg_mul_coefs_x when others;
+  with prod_x select coefs_x_sel <=
+    coefs_x when '0',
+    neg_coefs_x when others;
 
-  with prod_y select p_coefs_nex_y <=
-    mul_coefs_y when '0',
-    neg_mul_coefs_y when others;
+  with prod_y select coefs_y_sel <=
+    coefs_y when '0',
+    neg_coefs_y when others;
 
   outp_reg : process (clock) is
   begin
     if rising_edge(clock) then
       if (ready = '0') then
-          p_coefs_x_s <= p_coefs_nex_x;
-          p_coefs_y_s <= p_coefs_nex_y;
+          p_coefs_x_s <= coefs_x_sel;
+          p_coefs_y_s <= coefs_y_sel;
       end if;
     end if;
   end process outp_reg;

@@ -11,6 +11,9 @@ package hecate_pkg is
   type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
   type b25_complex_array is array (natural range <>) of b25_complex;
 
+  -- Hadamard state list
+  type t_state is (initial, vectorization, partialmultiplication, prerotation, rotation, finalmultiplication, finished);
+
   -- 3d padding
   type padding is array(0 to 7) of natural range 0 to 32;
   constant pad3d : padding := (0, 1, 3, 4, 9, 10, 12, 13);
@@ -47,11 +50,11 @@ package hecate_pkg is
     '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 24))
   );
 
-  -- Unsigned pi constants for hadamard angle normalization
-  constant two_pi24        : unsigned(23 downto 0) := to_unsigned(natural((2.0**16)*2.0*MATH_PI),24);
-  constant half_pi24       : unsigned(23 downto 0) := to_unsigned(natural((2.0**15)*MATH_PI)    ,24);
-  constant pi24            : unsigned(23 downto 0) := to_unsigned(natural((2.0**16)*MATH_PI)    ,24);
-  constant three_half_pi24 : unsigned(23 downto 0) := to_unsigned(natural((2.0**15)*3.0*MATH_PI),24);
+  -- Pi constants for hadamard angle normalization
+  constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
+  constant two_pi24        : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**17)*MATH_PI)    ,24));
+  constant half_pi24       : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**15)*MATH_PI)    ,24));
+  constant three_half_pi24 : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**15)*3.0*MATH_PI),24));
 
   -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
   -- lut(49 downto 25) <= "0000000000011010011110110"; -- 0x34f6
@@ -190,17 +193,18 @@ package hecate_pkg is
       n_idx     : natural range 0 to 16 := 0
     );
     port (
-      clock   : in    std_logic;
-      reset   : in    std_logic;
-      run     : in    std_logic;
-      a       : in    std_logic_vector(24 downto 0);
-      b       : in    std_logic_vector(24 downto 0);
-      a_nex   : in    std_logic_vector(24 downto 0);
-      b_nex   : in    std_logic_vector(24 downto 0);
-      coefs_x : out   b25_real_array(0 to 7);
-      coefs_y : out   b25_real_array(0 to 7);
-      p       : out   std_logic_vector(24 downto 0);
-      ready   : out   std_logic
+      clock     : in    std_logic;
+      reset     : in    std_logic;
+      run       : in    std_logic;
+      run_coefs : in    std_logic;
+      a         : in    std_logic_vector(24 downto 0);
+      b         : in    std_logic_vector(24 downto 0);
+      a_nex     : in    std_logic_vector(24 downto 0);
+      b_nex     : in    std_logic_vector(24 downto 0);
+      coefs_x   : out   b25_real_array(0 to 7);
+      coefs_y   : out   b25_real_array(0 to 7);
+      p         : out   std_logic_vector(24 downto 0);
+      ready     : out   std_logic
     );
   end component;
 
