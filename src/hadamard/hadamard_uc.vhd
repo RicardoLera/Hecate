@@ -9,14 +9,13 @@ entity hadamard_uc is
     clock           : in    std_logic;
     start           : in    std_logic;
     reset           : in    std_logic;
-    mul_ready       : in    std_logic;
     j_end           : in    std_logic;
-    load_change     : out   std_logic;
+    mul_ready       : in    std_logic;
     cordic_feedback : out   std_logic;
+    freeze_cordic   : out   std_logic;
     flux_to_cordic  : out   std_logic;
-    freeze_terms    : out   std_logic;
-    mul_xy          : out   std_logic;
     cordic_rotation : out   std_logic;
+    flux_coefs      : out   std_logic;
     ready           : buffer std_logic
   );
 end entity hadamard_uc;
@@ -39,40 +38,37 @@ begin
     end if;
   end process;
 
-  e_nex <= vectorization when e_cur = initial and start = '1' else
-           partialmultiplication when e_cur = vectorization and j_end = '1' else
-           prerotation when e_cur = partialmultiplication and mul_ready = '1' else
-           rotation when e_cur = prerotation else
-           finalmultiplication when e_cur = rotation and j_end = '1' else
-           finished when e_cur = finalmultiplication and mul_ready = '1' else
-           e_cur;
-
-  with e_cur select load_change <=
-    '1' when initial | prerotation,
-    '0' when OTHERS;
+  e_nex <=
+    vector_flux  when e_cur = initial      and start = '1'     else
+    partial_mul  when e_cur = vector_flux  and j_end = '1'     else
+    pre_rotation when e_cur = partial_mul  and mul_ready = '1' else
+    rotation     when e_cur = pre_rotation                     else
+    final_mul    when e_cur = rotation     and j_end = '1'     else
+    final        when e_cur = final_mul    and mul_ready = '1' else
+    e_cur;
 
   with e_cur select cordic_feedback <=
-    '1' when vectorization | rotation,
+    '1' when vector_flux | rotation,
     '0' when OTHERS;
 
   with e_cur select flux_to_cordic <=
-    '1' when prerotation,
+    '1' when pre_rotation,
     '0' when OTHERS;
 
-  with e_cur select freeze_terms <=
-    '1' when partialmultiplication | finalmultiplication,
+  with e_cur select freeze_cordic <=
+    '1' when partial_mul | final_mul,
     '0' when OTHERS;
 
-  with e_cur select mul_xy <=
+  with e_cur select flux_coefs <=
     '1' when rotation,
     '0' when OTHERS;
 
   with e_cur select cordic_rotation <=
-    '1' when prerotation | rotation,
+    '1' when pre_rotation | rotation,
     '0' when OTHERS;
 
   with e_cur select ready <=
-    '1' when finished,
+    '1' when final,
     '0' when OTHERS;
 
 end architecture fsm;

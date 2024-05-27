@@ -12,7 +12,7 @@ package hecate_pkg is
   type b25_complex_array is array (natural range <>) of b25_complex;
 
   -- Hadamard state list
-  type t_state is (initial, vectorization, partialmultiplication, prerotation, rotation, finalmultiplication, finished);
+  type t_state is (initial, vector_flux, partial_mul, pre_rotation, rotation, final_mul, final);
 
   -- 3d padding
   type padding is array(0 to 7) of natural range 0 to 32;
@@ -213,14 +213,13 @@ package hecate_pkg is
       clock           : in    std_logic;
       start           : in    std_logic;
       reset           : in    std_logic;
-      mul_ready       : in    std_logic;
       j_end           : in    std_logic;
-      load_change     : out   std_logic;
+      mul_ready       : in    std_logic;
       cordic_feedback : out   std_logic;
+      freeze_cordic   : out   std_logic;
       flux_to_cordic  : out   std_logic;
-      freeze_terms    : out   std_logic;
-      mul_xy          : out   std_logic;
       cordic_rotation : out   std_logic;
+      flux_coefs      : out   std_logic;
       ready           : buffer std_logic
     );
   end component;

@@ -27,12 +27,11 @@ architecture arch of hadamard is
 
   -- Control unit
   signal mul_ready       : std_logic;
-  signal load_change     : std_logic;
   signal cordic_feedback : std_logic;
+  signal freeze_cordic   : std_logic;
   signal flux_to_cordic  : std_logic;
-  signal freeze_terms    : std_logic;
-  signal mul_xy          : std_logic;
   signal cordic_rotation : std_logic;
+  signal flux_coefs      : std_logic;
 
   -- J control
   signal j     : std_logic_vector(4 downto 0) := (others => '0');
@@ -79,14 +78,13 @@ begin
       clock           => clock,
       start           => start,
       reset           => reset,
-      mul_ready       => mul_ready,
       j_end           => j_end,
-      load_change     => load_change,
+      mul_ready       => mul_ready,
       cordic_feedback => cordic_feedback,
+      freeze_cordic   => freeze_cordic,
       flux_to_cordic  => flux_to_cordic,
-      freeze_terms    => freeze_terms,
-      mul_xy          => mul_xy,
       cordic_rotation => cordic_rotation,
+      flux_coefs      => flux_coefs,
       ready           => ready
     );
 
@@ -99,7 +97,7 @@ begin
       clock     => clock,
       reset     => reset,
       run       => start,
-      run_coefs => mul_xy,
+      run_coefs => flux_coefs,
       a         => mul_a,
       b         => mul_b,
       a_nex     => mul_a_nex,
@@ -187,7 +185,7 @@ begin
         pc_y_cur   <= (others => '0');
         pc_z_cur   <= (others => '0');
         pc_sig_cur <= '0';
-      elsif (freeze_terms = '0') then
+      elsif (freeze_cordic = '0') then
         pc_x_cur   <= pc_x_nex;
         pc_y_cur   <= pc_y_nex;
         pc_z_cur   <= pc_z_nex;
@@ -232,7 +230,7 @@ begin
         sc_y_cur   <= (others => '0');
         sc_z_cur   <= (others => '0');
         sc_sig_cur <= '0';
-      elsif (freeze_terms = '0') then
+      elsif (freeze_cordic = '0') then
         sc_x_cur   <= sc_x_nex;
         sc_y_cur   <= sc_y_nex;
         sc_z_cur   <= sc_z_nex;
@@ -260,19 +258,19 @@ begin
 
   mul_a <= pc_x_cur;
 
-  with mul_xy select mul_b <=
+  with flux_coefs select mul_b <=
     pc_y_cur when '1',
     sc_x_cur when others;
 
-  with freeze_terms select mul_a_nex <=
+  with freeze_cordic select mul_a_nex <=
     mul_a when '1',
     pc_x_out when others;
 
-  with freeze_terms select mul_b_nex <=
+  with freeze_cordic select mul_b_nex <=
     mul_b when '1',
     mul_b_nex_sel when others;
 
-  with mul_xy select mul_b_nex_sel <=
+  with flux_coefs select mul_b_nex_sel <=
     pc_y_nex when '1',
     sc_x_nex when others;
 
