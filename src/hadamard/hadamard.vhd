@@ -95,7 +95,7 @@ begin
     )
     port map (
       clock     => clock,
-      reset     => reset,
+      reset     => (mul_ready and j_end) or reset,
       run       => start,
       run_coefs => flux_coefs,
       a         => mul_a,
@@ -161,9 +161,10 @@ begin
   begin
     if rising_edge(clock) then
       if (cordic_feedback = '1') then
-        if (unsigned(j) < to_unsigned(24, 5)) then
+        if (unsigned(j) < to_unsigned(24 +2, 5)) then  -- modifier to sync kx
           j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
         else
+          j <= (others => '0');
           j_end <= '1';
         end if;
       else
@@ -278,15 +279,15 @@ begin
 
   -- i/k correction to Q1~4
 
-  pr_latch : process (clock) is
+  pm_latch : process (j_end) is
   begin
-    if rising_edge(clock) then
-      if (flux_to_cordic = '1') then
+    if rising_edge(j_end) then
+      if (cordic_rotation = '0') then
         img_z <= pc_z_cur;
         ker_z <= sc_z_cur;
       end if;
     end if;
-  end process pr_latch;
+  end process pm_latch;
 
   with std_logic_vector'(x_i(24) & y_i(24)) select img_pi <=
     '1' & 24b"0"   when "00",   -- QTR

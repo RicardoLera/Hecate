@@ -301,18 +301,18 @@ int main() {
     Product[N][2].post = (uint16_t)(cor_angle & post_mask);
     Product[N][2].sign = 0; // angle is now at Q1
 
-    // printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
-    // print_archvar(Product[N][0]); printf("\t");
-    // print_archvar(Product[N][1]); printf("\t");
-    // print_archvar(Product[N][2]); printf("\n");
+    printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
+    print_archvar(Product[N][0]); printf("\t");
+    print_archvar(Product[N][1]); printf("\t");
+    print_archvar(Product[N][2]); printf("\n");
 
     for (int j = 0; j < 17; j++) {    // NOTE: previously at 24, experiment showed max j ~ 0x10 gets better results
       cordic_rot(Product[N], j);
 
-      // printf("%x\t\t",j);
-      // print_archvar(Product[N][0]); printf("\t");
-      // print_archvar(Product[N][1]); printf("\t");
-      // print_archvar(Product[N][2]); printf("\n");
+      printf("%x\t\t",j);
+      print_archvar(Product[N][0]); printf("\t");
+      print_archvar(Product[N][1]); printf("\t");
+      print_archvar(Product[N][2]); printf("\n");
     }
 
     Product[N][0].sign ^= x_sign;

@@ -164,10 +164,10 @@ begin
       kx_proc : process (clock) is
       begin
         if rising_edge(clock) then
-          if (s_reset = '1') then
-            kx_reg_x(idx) <= (others => '0');
-            kx_reg_y(idx) <= (others => '0');
-          elsif (run_coefs = '1') then
+          -- if (s_reset) then
+          --   kx_reg_x(idx) <= (others => '0');
+          --   kx_reg_y(idx) <= (others => '0');
+          if (run and run_coefs) then
             kx_reg_x(idx) <= kx_add_x(idx);
             kx_reg_y(idx) <= kx_add_y(idx);
           end if;
