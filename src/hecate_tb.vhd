@@ -59,8 +59,7 @@ begin
       o_ready => o_ready
     );
 
-  test : process is
-  begin
+  test : process begin
 
     img <= test_tuple(0);
     ker <= test_tuple(1);

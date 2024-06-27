@@ -21,7 +21,7 @@ architecture synth of flux_inverter is
 
   signal m_n                : std_logic_vector(24 downto 0);
   signal b                  : std_logic_vector(23 downto 0);
-  signal filtered           : std_logic_vector(23 downto 0);
+  signal filtered           : std_logic_vector(23 downto 0) := (others => '0');
   signal filtered_or        : std_logic_vector(23 downto 0);
   signal compared           : std_logic_vector(23 downto 0);
   signal compared_or        : std_logic_vector(23 downto 0);
@@ -68,19 +68,20 @@ begin
 
   outp <= m(23 downto 0) and b(23 downto 0);
 
-  proc : process (reset_as, clock, s_error) is
-  begin
+  proc : process (reset_as, clock, s_error) begin
 
-    if (reset_as = '1' and load = '1') then
+    if (reset_as) then
       m <= m_0;
     elsif rising_edge(clock) then
-      if ((reset_s or s_error) = '1') then
+
+      if (reset_s or s_error) then
         m <= m_0;
       elsif (s_ready = '1' or load = '0') then
         m <= m;
       else
         m <= m_n;
       end if;
+
     end if;
 
   end process proc;

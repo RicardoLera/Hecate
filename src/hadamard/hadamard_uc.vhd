@@ -6,17 +6,11 @@ library ieee;
 
 entity hadamard_uc is
   port (
-    clock           : in    std_logic;
-    start           : in    std_logic;
-    reset           : in    std_logic;
-    j_end           : in    std_logic;
-    mul_ready       : in    std_logic;
-    cordic_feedback : out   std_logic;
-    freeze_cordic   : out   std_logic;
-    flux_to_cordic  : out   std_logic;
-    cordic_rotation : out   std_logic;
-    flux_coefs      : out   std_logic;
-    ready           : buffer std_logic
+    clock, start, reset    : in     std_logic;
+    j_end, mul_ready       : in     std_logic;
+    cordic_mode, flux_mode : out    std_logic_vector(1 downto 0);
+    rotation               : out    std_logic;
+    ready                  : buffer std_logic
   );
 end entity hadamard_uc;
 
@@ -27,10 +21,9 @@ architecture fsm of hadamard_uc is
 
 begin
 
-  process (clock) is
-  begin
+  process (clock) begin
     if rising_edge(clock) then
-      if (reset = '1') then
+      if (reset) then
         e_cur <= initial;
       else
         e_cur <= e_nex;
@@ -39,36 +32,30 @@ begin
   end process;
 
   e_nex <=
-    vector_flux  when e_cur = initial      and start = '1'     else
-    partial_mul  when e_cur = vector_flux  and j_end = '1'     else
-    pre_rotation when e_cur = partial_mul  and mul_ready = '1' else
-    rotation     when e_cur = pre_rotation                     else
-    final_mul    when e_cur = rotation     and j_end = '1'     else
-    final        when e_cur = final_mul    and mul_ready = '1' else
+    vector_flux when e_cur = initial     and start = '1'     else
+    pre_rot     when e_cur = vector_flux and j_end = '1'     else
+    rot_coef    when e_cur = pre_rot                         else
+    final       when e_cur = rot_coef    and mul_ready = '1' else
     e_cur;
 
-  with e_cur select cordic_feedback <=
-    '1' when vector_flux | rotation,
-    '0' when OTHERS;
+  with e_cur select cordic_mode <=
+    "01" when initial,                -- Set initials
+    "10" when vector_flux | rot_coef, -- Feedback
+    "11" when pre_rot,                -- Set product
+    "00" when others;                 -- off
 
-  with e_cur select flux_to_cordic <=
-    '1' when pre_rotation,
-    '0' when OTHERS;
+  with e_cur select flux_mode <=
+    "00" when initial,                -- Set zero
+    "01" when vector_flux,            -- Polar mul
+    "10" when rot_coef,               -- Coefs mul
+    "11" when others;                 -- copy
 
-  with e_cur select freeze_cordic <=
-    '1' when partial_mul | final_mul,
-    '0' when OTHERS;
-
-  with e_cur select flux_coefs <=
-    '1' when rotation,
-    '0' when OTHERS;
-
-  with e_cur select cordic_rotation <=
-    '1' when pre_rotation | rotation,
-    '0' when OTHERS;
+  with e_cur select rotation <=
+    '1' when pre_rot | rot_coef,
+    '0' when others;
 
   with e_cur select ready <=
     '1' when final,
-    '0' when OTHERS;
+    '0' when others;
 
 end architecture fsm;

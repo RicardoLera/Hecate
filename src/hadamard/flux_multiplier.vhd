@@ -59,20 +59,6 @@ architecture synth of flux_multiplier is
 
 begin
 
-  proc : process (clock) is
-  begin
-    if rising_edge(clock) then
-      if (s_reset = '1') then
-        p_full <= (others => '0');
-      elsif (run = '1' and s_ready = '0') then
-        p_full <= p_full_n;
-      end if;
-    end if;
-  end process proc;
-
-  s_ready <= a_ready and b_ready;
-  ready   <= s_ready;
-
   a_flux_inv : component flux_inverter
     port map (
       clock    => clock,
@@ -100,6 +86,19 @@ begin
       ready    => b_ready,
       erro     => b_error
     );
+
+  proc : process (clock) begin
+    if rising_edge(clock) then
+      if (reset or s_reset) then
+        p_full <= (others => '0');
+      elsif (run and not ready) then
+        p_full <= p_full_n;
+      end if;
+    end if;
+  end process proc;
+
+  s_ready <= a_ready and b_ready;
+  ready   <= s_ready;
 
   s_error <= a_error or b_error;
   s_reset <= s_error or reset;
@@ -136,7 +135,6 @@ begin
   -- constant multipliers (kx)
 
   kx_gen : for idx in 0 to 7 generate
-  begin
 
     select_gen : if (
       (  idx = 0 ) or                              -- for V0
@@ -144,6 +142,18 @@ begin
       ( (n_idx mod 4 = 2) and (idx mod 2 = 0) ) or -- for V2 V4 V6
       ( (n_idx mod 8 = 4) and (idx = 4))           -- for V4
     ) generate
+
+      kx_proc : process (clock) begin
+        if rising_edge(clock) then
+          if (reset or s_reset) then
+            kx_reg_x(idx) <= (others => '0');
+            kx_reg_y(idx) <= (others => '0');
+          elsif (run_coefs) then
+            kx_reg_x(idx) <= kx_add_x(idx);
+            kx_reg_y(idx) <= kx_add_y(idx);
+          end if;
+        end if;
+      end process kx_proc;
 
       kx_mux_x(idx)(49 downto 25) <= (others => '0');
       kx_mux_y(idx)(49 downto 25) <= (others => '0');
@@ -160,19 +170,6 @@ begin
 
       kx_add_x(idx) <= std_logic_vector(unsigned(kx_mux_x(idx)) + unsigned(kx_shift_x(idx)));
       kx_add_y(idx) <= std_logic_vector(unsigned(kx_mux_y(idx)) + unsigned(kx_shift_y(idx)));
-
-      kx_proc : process (clock) is
-      begin
-        if rising_edge(clock) then
-          -- if (s_reset) then
-          --   kx_reg_x(idx) <= (others => '0');
-          --   kx_reg_y(idx) <= (others => '0');
-          if (run and run_coefs) then
-            kx_reg_x(idx) <= kx_add_x(idx);
-            kx_reg_y(idx) <= kx_add_y(idx);
-          end if;
-        end if;
-      end process kx_proc;
 
       coefs_x(idx) <= kx_reg_x(idx)(40 downto 16);
       coefs_y(idx) <= kx_reg_y(idx)(40 downto 16);

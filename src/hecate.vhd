@@ -70,15 +70,12 @@ begin
   hads_ready  <= and(ready_had);
   idfts_ready <= and(ready_idft);
 
-  sync_ready : process (clock) is
-  begin
+  sync_ready : process (clock) begin
     if rising_edge(clock) then
       if (reset = '1') then
         s_ready <= '0';
-      else
-        if (idfts_ready = '1') then
-          s_ready <= '1';
-        end if;
+      elsif (idfts_ready = '1') then
+        s_ready <= '1';
       end if;
     end if;
   end process sync_ready;
