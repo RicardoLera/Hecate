@@ -33,7 +33,7 @@ begin
 
   e_nex <=
     vector_flux when e_cur = initial     and start = '1'     else
-    pre_rot     when e_cur = vector_flux and j_end = '1'     else
+    pre_rot     when e_cur = vector_flux and mul_ready = '1' else
     rot_coef    when e_cur = pre_rot                         else
     final       when e_cur = rot_coef    and mul_ready = '1' else
     e_cur;

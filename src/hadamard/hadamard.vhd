@@ -28,7 +28,7 @@ architecture arch of hadamard is
   -- Control unit
   signal j_end, mul_ready, rotation : std_logic;
   signal cordic_mode, flux_mode     : std_logic_vector(1 downto 0);
-  signal run_coefs                  : std_logic;
+  signal run_flux, run_coefs        : std_logic;
 
   -- J control
   signal j : std_logic_vector(4 downto 0) := (others => '0');
@@ -52,8 +52,10 @@ architecture arch of hadamard is
   signal sc_sig_in, sc_sig_out        : std_logic;
 
   -- Multiplier
-  signal prod_r                      : std_logic_vector(24 downto 0);
-  signal prod_z, prod_pi, prod_z_cor : std_logic_vector(24 downto 0);
+  signal prod_r, prod_r_l            : std_logic_vector(24 downto 0);
+  signal prod_z, prod_pi             : std_logic_vector(24 downto 0);
+  signal prod_z_mod, prod_z_mux      : std_logic_vector(24 downto 0);
+  signal prod_z_cor, prod_z_cor_l    : std_logic_vector(24 downto 0);
   signal mul_a, mul_a_nex            : std_logic_vector(24 downto 0);
   signal mul_b, mul_b_nex            : std_logic_vector(24 downto 0);
   signal coefs_x, neg_coefs_x        : b25_real_array(0 to 7);
@@ -88,7 +90,7 @@ begin
     port map (
       clock     => clock,
       reset     => (mul_ready and j_end) or reset,
-      run       => start,
+      run       => run_flux,
       run_coefs => run_coefs,
       a         => mul_a,
       b         => mul_b,
@@ -152,14 +154,17 @@ begin
   j_control_pro : process (clock) begin
     if rising_edge(clock) then
       case cordic_mode is
+        when "10" =>
+          if (unsigned(j) < to_unsigned(24, 5)) then
+            j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
+          end if;
         when "01" or "11" => j <= 5x"0";
-        when "10"         => j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
         when others       => j <= j;
       end case;
     end if;
   end process j_control_pro;
 
-  j_end <= '1' when j >= std_logic_vector(to_unsigned(22, 5)) else '0';
+  j_end <= '1' when j >= std_logic_vector(to_unsigned(24, 5)) else '0';
 
 
 
@@ -167,6 +172,12 @@ begin
 
   pc_cor_pro : process (clock) begin
     if rising_edge(clock) then
+
+      if (mul_ready) then -- latch
+        prod_r_l <= prod_r;
+        prod_z_cor_l <= prod_z_cor;
+      end if;
+
       case cordic_mode is
         when "01" =>
           pc_x_in   <= x_i_abs;
@@ -181,9 +192,9 @@ begin
           pc_sig_in <= pc_sig_out;
 
         when "11" =>
-          pc_x_in   <= prod_r;
+          pc_x_in   <= prod_r_l;
           pc_y_in   <= 25x"0";
-          pc_z_in   <= prod_z_cor;
+          pc_z_in   <= prod_z_cor_l;
           pc_sig_in <= not rotation;
 
         when others =>
@@ -195,30 +206,6 @@ begin
     end if;
   end process pc_cor_pro;
 
-  -- with cordic_feedback select pc_x_sel <=
-  --   pc_x_out when '1',
-  --   x_i_abs when others;
-  -- with cordic_feedback select pc_y_sel <=
-  --   pc_y_out when '1',
-  --   y_i_abs when others;
-  -- with cordic_feedback select pc_z_sel <=
-  --   pc_z_out when '1',
-  --   (others => '0') when others;
-  -- with cordic_feedback select pc_sig_nex <=
-  --   pc_sig_out when '1',
-  --   (not cordic_rotation) when others;
-
-  -- -- Flux_to_cordic -> Pre-rotation
-  -- with flux_to_cordic select pc_x_nex <=
-  --   pc_x_sel when '0',
-  --   prod_r when others;
-  -- with flux_to_cordic select pc_y_nex <=
-  --   pc_y_sel when '0',
-  --   (others => '0') when others;
-  -- with flux_to_cordic select pc_z_nex <=
-  --   pc_z_sel when '0',
-  --   prod_z_cor when others;
-  
 
 
   -- Secondary CORDIC process and signals
@@ -253,30 +240,18 @@ begin
     end if;
   end process sc_cor_pro;
 
-  -- with cordic_feedback select sc_x_nex <=
-  --   sc_x_out when '1',
-  --   x_k_abs when others;
-  -- with cordic_feedback select sc_y_nex <=
-  --   sc_y_out when '1',
-  --   y_k_abs when others;
-  -- with cordic_feedback select sc_z_nex <=
-  --   sc_z_out when '1',
-  --   (others => '0') when others;
-  -- with cordic_feedback select sc_sig_nex <=
-  --   sc_sig_out when '1',
-  --   '1' when others;
-
 
 
   -- Flux Multiplier Signals
 
-  flux_pro : process (all) begin    
+  flux_pro : process (all) begin
     case flux_mode is
       when "00" =>
         mul_a     <= 25x"0";
         mul_b     <= 25x"0";
         mul_a_nex <= 25x"0";
         mul_b_nex <= 25x"0";
+        run_flux  <= '1';
         run_coefs <= '0';
 
       when "01" =>
@@ -284,6 +259,7 @@ begin
         mul_b     <= sc_x_in;
         mul_a_nex <= pc_x_out;
         mul_b_nex <= sc_x_out;
+        run_flux  <= '1';
         run_coefs <= '0';
 
       when "10" =>
@@ -291,6 +267,7 @@ begin
         mul_b     <= pc_y_in;
         mul_a_nex <= pc_x_out;
         mul_b_nex <= pc_y_out;
+        run_flux  <= '1';
         run_coefs <= '1';
 
       when others =>
@@ -298,27 +275,10 @@ begin
         mul_b     <= mul_b;
         mul_a_nex <= mul_a_nex;
         mul_b_nex <= mul_b_nex;
+        run_flux  <= '1';
         run_coefs <= '0';
     end case;
   end process flux_pro;
-
-  -- mul_a <= pc_x_in;
-
-  -- with flux_coefs select mul_b <=
-  --   pc_y_in when '1',
-  --   sc_x_in when others;
-
-  -- with freeze_cordic select mul_a_nex <=
-  --   mul_a when '1',
-  --   pc_x_out when others;
-
-  -- with freeze_cordic select mul_b_nex <=
-  --   mul_b when '1',
-  --   mul_b_nex_sel when others;
-
-  -- with flux_coefs select mul_b_nex_sel <=
-  --   pc_y_nex when '1',
-  --   sc_x_nex when others;
 
 
 
@@ -327,34 +287,46 @@ begin
   corr_latch : process (j_end) begin
     if rising_edge(j_end) then
       if (rotation = '0') then
-        img_z <= pc_z_in;
-        ker_z <= sc_z_in;
+        img_z(23 downto 0) <= pc_z_in(23 downto 0);
+        ker_z(23 downto 0) <= sc_z_in(23 downto 0);
       end if;
     end if;
   end process corr_latch;
 
+  with std_logic_vector'(x_i(24) & y_i(24)) select img_z(24) <=
+    '0' when "00",   -- QTR
+    '1' when "10",   -- QTL
+    '0' when "11",   -- QBL
+    '1' when others; -- QBR
+
+  with std_logic_vector'(x_i(24) & y_i(24)) select ker_z(24) <=
+    '0' when "00",   -- QTR
+    '1' when "10",   -- QTL
+    '0' when "11",   -- QBL
+    '1' when others; -- QBR
+
   with std_logic_vector'(x_i(24) & y_i(24)) select img_pi <=
-    '1' & 24b"0"   when "00",   -- QTR
+    '0' & 24b"0"   when "00",   -- QTR
     '0' & pi24     when "10",   -- QTL
-    '1' & pi24     when "11",   -- QBL
+    '0' & pi24     when "11",   -- QBL
     '0' & two_pi24 when others; -- QBR
 
   with std_logic_vector'(x_k(24) & y_k(24)) select ker_pi <=
-    '1' & 24b"0"   when "00",   -- QTR
+    '0' & 24b"0"   when "00",   -- QTR
     '0' & pi24     when "10",   -- QTL
-    '1' & pi24     when "11",   -- QBL
+    '0' & pi24     when "11",   -- QBL
     '0' & two_pi24 when others; -- QBR
 
   img_correction : component b25_add
     port map (
-      a   => not img_pi(24) & img_z(23 downto 0),
+      a   => img_z,
       b   => img_pi,
       res => img_z_cor
     );
 
   ker_correction : component b25_add
     port map (
-      a   => not ker_pi(24) & ker_z(23 downto 0),
+      a   => ker_z,
       b   => ker_pi,
       res => ker_z_cor
     );
@@ -369,22 +341,37 @@ begin
       b   => ker_z_cor,
       res => prod_z
     );
+  
+  z_mod : component b25_add
+    port map (
+      a   => prod_z,
+      b   => '1' & two_pi24(23 downto 0),
+      res => prod_z_mod
+    );
+
+  prod_z_mux(23 downto 0) <= prod_z_mod(23 downto 0) when (unsigned(prod_z(23 downto 0)) > unsigned(two_pi24)) else prod_z(23 downto 0);
 
   prod_quadrant <=
-    "00" when (unsigned(prod_z(23 downto 0)) < unsigned(half_pi24)      ) else
-    "01" when (unsigned(prod_z(23 downto 0)) < unsigned(pi24)           ) else
-    "10" when (unsigned(prod_z(23 downto 0)) < unsigned(three_half_pi24)) else
+    "00" when (unsigned(prod_z_mux(23 downto 0)) < unsigned(half_pi24)      ) else
+    "01" when (unsigned(prod_z_mux(23 downto 0)) < unsigned(pi24)           ) else
+    "10" when (unsigned(prod_z_mux(23 downto 0)) < unsigned(three_half_pi24)) else
     "11";
   
+  with prod_quadrant select prod_z_mux(24) <=
+    '0' when "00",
+    '1' when "01",
+    '0' when "10",
+    '1' when others;
+  
   with prod_quadrant select prod_pi <=
-    '1' & 24b"0" when "00",
-    '0' & pi24 when "01",
-    '1' & pi24 when "10",
+    '0' & 24b"0"   when "00",
+    '0' & pi24     when "01",
+    '1' & pi24     when "10",
     '0' & two_pi24 when others;
 
   z_correction : component b25_add
     port map (
-      a   => not prod_pi(24) & prod_z(23 downto 0),
+      a   => prod_z_mux,
       b   => prod_pi,
       res => prod_z_cor
     );
@@ -418,12 +405,11 @@ begin
     coefs_y when '0',
     neg_coefs_y when others;
 
-  outp_reg : process (clock) is
-  begin
+  outp_reg : process (clock) begin
     if rising_edge(clock) then
       if (ready = '0') then
-          p_coefs_x_s <= coefs_x_sel;
-          p_coefs_y_s <= coefs_y_sel;
+        p_coefs_x_s <= coefs_x_sel;
+        p_coefs_y_s <= coefs_y_sel;
       end if;
     end if;
   end process outp_reg;
@@ -432,12 +418,3 @@ begin
   p_coefs_y <= p_coefs_y_s;
 
 end architecture arch;
-
-
-  -- with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select x_i_n <=     wat?
-  --   y_i_abs when '1',
-  --   x_i_abs when others;
-
-  -- with (x_i(x_i'length - 1) xor y_i(y_i'length - 1)) select y_i_n <=
-  --   x_i_abs when '1',
-  --   y_i_abs when others;
