@@ -56,16 +56,6 @@ begin
     s_ready => ready_dft(1)
   );
 
-  -- gen_hads_read : process (ready_had) is
-  --   variable rd : std_logic := '1';
-  -- begin
-  --   rd := '1';
-  --   for id in 0 to 15 loop
-  --     rd := rd and ready_had(id);
-  --   end loop;
-  --   hads_ready <= rd;
-  -- end process gen_hads_read;
-
   dfts_ready  <= and(ready_dft);
   hads_ready  <= and(ready_had);
   idfts_ready <= and(ready_idft);
@@ -168,7 +158,7 @@ begin
             add_a(o_id) <= calc_vals_x(i_id_cor)(w);  -- a_wx
             add_b(o_id) <= calc_vals_y(i_id_cor)(wc); -- b_wy
 
-            --if (i_id > 16) then b_sign := not b_sign; end if; -- Complex conjugate inversion (b)
+            if (i_id > 16) then b_sign := not b_sign; end if; -- Complex conjugate inversion (b)
             wy_sign := not wy_sign;                           -- DFT/IDFT inversion
 
             add_a(o_id)(24) <= a_sign xor wx_sign;
@@ -197,153 +187,3 @@ begin
   end generate gen_sums;
 
 end architecture arch;
-
-
-
-
-
-
-
-
-
-
--- if rising_edge(clock) then
---   if (reset = '0' and hads_ready = '1') then
---     if (i_id < 32) then
-
---       if (i_id > 16) then
---         i_id_cor := 32 - i_id;
---       else
---         i_id_cor := i_id;
---       end if;
---                                                   -- this is a complex multiplication by w. and now its input is also complex. you'll have to change this a lot more.
---       w   := (i_id_cor * o_id) mod 32;
---       wi  := (8 - i_id_cor * o_id) mod 32;
-
---       if (cos_val_ref(w) /= 8) then
---         c                           := calc_vals_x(i_id_cor)(cos_val_ref(w));
---         add_a(o_id)(0)              <= add_r(o_id)(0);
---         add_b(o_id)(0)(23 downto 0) <= c(23 downto 0);
---         add_b(o_id)(0)(24)          <= not c(24) when cos_sig_ref(w) else c(24);
---       end if;
-
---       if (cos_val_ref(wi) /= 8) then
---         ci                          := calc_vals_y(i_id_cor)(cos_val_ref(wi));
---         add_a(o_id)(1)              <= add_r(o_id)(1);
---         add_b(o_id)(1)(23 downto 0) <= ci(23 downto 0);
---         add_b(o_id)(1)(24)          <= not ci(24) when cos_sig_ref(wi) else ci(24);
---       end if;
-
---       i_id := i_id + 1;
---     else
---       -- dft_ready(o_id) <= '1';
---     end if;
---   end if;
--- end if;
-
-
-
-
-
-
-
-
-
-
-
-
--- summ_pro : process (calc_vals, calc_vals_neg) is
-
---   variable re, im : unsigned(24 downto 0);
-
--- begin
-
---   re := (others => '0');
---   im := (others => '0');
-
---   for i_id in 0 to 15 loop
-
---     if (cos_val_ref((i_id * id) mod 16) /= 4) then
---       if cos_sig_ref((i_id * id) mod 16) then
---         re := re + unsigned(calc_vals_neg(i_id)(0)(cos_val_ref((i_id * id) mod 16)));
---         im := im + unsigned(calc_vals_neg(i_id)(1)(cos_val_ref((i_id * id) mod 16)));
---       else
---         re := re + unsigned(calc_vals(i_id)(0)(cos_val_ref((i_id * id) mod 16)));
---         im := im + unsigned(calc_vals(i_id)(1)(cos_val_ref((i_id * id) mod 16)));
---       end if;
---     end if;
-
---     if (cos_val_ref((4 - i_id * id) mod 16) /= 4) then
---       if cos_sig_ref((4 - i_id * id) mod 16) then
---         re := re + unsigned(calc_vals(i_id)(1)(cos_val_ref((4 - i_id * id) mod 16)));
---         im := im + unsigned(calc_vals_neg(i_id)(0)(cos_val_ref((4 - i_id * id) mod 16)));
---       else
---         re := re + unsigned(calc_vals_neg(i_id)(1)(cos_val_ref((4 - i_id * id) mod 16)));
---         im := im + unsigned(calc_vals(i_id)(1)(cos_val_ref((4 - i_id * id) mod 16)));
---       end if;
---     end if;
-
---   end loop;
-
---   res(id)(0) <= std_logic_vector(re);
---   res(id)(1) <= std_logic_vector(im);
-
--- end process summ_pro;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- if (i_id < 15) then
-
---   if (i_id > 8) then      -- correct
---     i_id_cor := i_id - 8;
---   else
---     i_id_cor := i_id;
---   end if;
---                                               -- this is a complex multiplication by w. and now its input is also complex. you'll have to change this a lot more.
---   wx  := (i_id_cor * o_id) mod 16;
---   wy := (4 - i_id_cor * o_id) mod 16;
-
---   if (cos_val_ref(wx) /= 4) then                                          -- if the exponent of w is not 4
---     cx                           := calc_vals(i_id_cor)(0)(cos_val_ref(wx));
---     add_ax(o_id)(0)              <= add_rx(o_id)(0);
---     add_bx(o_id)(0)(23 downto 0) <= cx(23 downto 0);
---     add_bx(o_id)(0)(24)          <= not cx(24) when cos_sig_ref(wx) else
---                                     cx(24);
-    
---     cxi                          := calc_vals(i_id_cor)(1)(cos_val_ref(wx));
---     add_ax(o_id)(1)              <= add_rx(o_id)(1);
---     add_bx(o_id)(1)(23 downto 0) <= cxi(23 downto 0);
---     add_bx(o_id)(1)(24)          <= not cxi(24) when cos_sig_ref(wx) else
---                                     cxi(24);
---   end if;
-
---   if (cos_val_ref(wx) /= 0) then                                          -- if the exponent of w is not 0
---     cy                           := calc_vals(i_id_cor)(0)(cos_val_ref(wy));
---     add_ay(o_id)(0)              <= add_ry(o_id)(0);
---     add_by(o_id)(0)(23 downto 0) <= cy(23 downto 0);
---     add_by(o_id)(0)(24)          <= not cy(24) when cos_sig_ref(wy) else
---                                     cy(24);
-    
---     cyi                          := calc_vals(i_id_cor)(1)(cos_val_ref(wy));
---     add_ay(o_id)(1)              <= add_ry(o_id)(1);
---     add_by(o_id)(1)(23 downto 0) <= cyi(23 downto 0);
---     add_by(o_id)(1)(24)          <= not cyi(24) when cos_sig_ref(wy) else
---                                     cyi(24);   
---   end if;
---   i_id := i_id + 1;
--- else
---   -- dft_ready(o_id) <= '1';
--- end if;

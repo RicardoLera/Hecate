@@ -326,9 +326,16 @@ int main() {
   archvar kcon = {0, 0x00, 0x3953}; // kcon = 1 / k^3
 
   for (int N = 0; N < 17; N++) {
-    for (int K = 0; K < 8; K++) {
-      idft_mul[N][0][K] = archmul(Product[N][0], archmul(twiddle_arr[K][0], kcon));
-      idft_mul[N][1][K] = archmul(Product[N][1], archmul(twiddle_arr[K][0], kcon)); // this twiddle_arr call is correct
+    for (int K = 0; K < 8; K++) { 
+      if (
+        (  K == 0 )                      || // for V0
+        (  N % 2 == 1)                   || // for Vall
+        ( (N % 4 == 2) && (K % 2 == 0) ) || // for V2 V4 V6
+        ( (N % 8 == 4) && (K == 4))         // for V4
+      ) {
+        idft_mul[N][0][K] = archmul(Product[N][0], archmul(twiddle_arr[K][0], kcon));
+        idft_mul[N][1][K] = archmul(Product[N][1], archmul(twiddle_arr[K][0], kcon)); // this twiddle_arr call is correct
+      }
     }
   }
 

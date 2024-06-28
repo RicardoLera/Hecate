@@ -16,7 +16,8 @@ package hecate_pkg is
 
   -- 3d padding
   type padding is array(0 to 7) of natural range 0 to 32;
-  constant pad3d : padding := (0, 1, 3, 4, 9, 10, 12, 13);
+  constant pad3d : padding := (0, 1,  3,  4,  9,  10, 12, 13);
+--constant pad3d : padding := (0, 16, 24, 4,  14, 10, 6,  22);
 
   -- DFT multiplication coeficient array
   type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
