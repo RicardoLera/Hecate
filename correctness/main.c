@@ -187,8 +187,8 @@ int main() {
 
   print_arch_rec("Input", Input);
   print_arch_rec("Kernel", Kernel);
-  print_arch_rec_10("Input (decimal)", Input);
-  print_arch_rec_10("Kernel (decimal)", Kernel);
+  // print_arch_rec_10("Input (decimal)", Input);
+  // print_arch_rec_10("Kernel (decimal)", Kernel);
 
   uint32_t hex_pi = (uint32_t)(M_PI*0xffff), hex_half_pi = hex_pi >> 1, hex_three_halves_pi = (3*hex_pi) >> 1, hex_two_pi = hex_pi << 1;
   uint32_t pre_mask = 0x00ff0000, post_mask = 0x0000ffff;
@@ -217,12 +217,12 @@ int main() {
     uint64_t C = 0, A = 0, B = 0, mask, litA, litB;
     bool At, Bt;
 
-    printf("\n\tN = %d\ti_q = %d\tk_q = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N, i_q, k_q);
-    printf("ini\t\t");
-    print_archvar(Input[N][0]); printf("\t");
-    print_archvar(Input[N][1]); printf("\t");
-    print_archvar(Input[N][2]); printf("\t");
-    printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
+    // printf("\n\tN = %d\ti_q = %d\tk_q = %d\nj\t\tX\t\tY\t\tZ\t\tA\t\tB\t\tC\n", N, i_q, k_q);
+    // printf("ini\t\t");
+    // print_archvar(Input[N][0]); printf("\t");
+    // print_archvar(Input[N][1]); printf("\t");
+    // print_archvar(Input[N][2]); printf("\t");
+    // printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
 
     for (int j = 0; j < 24; j++) {            // NOTE: 24 works, upto 32 can be done
 
@@ -245,11 +245,11 @@ int main() {
       B = (B << 1) + Bt;
 
 
-      printf("%x\t\t",j);
-      print_archvar(Input[N][0]); printf("\t");
-      print_archvar(Input[N][1]); printf("\t");
-      print_archvar(Input[N][2]); printf("\t");
-      printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
+      // printf("%x\t\t",j);
+      // print_archvar(Input[N][0]); printf("\t");
+      // print_archvar(Input[N][1]); printf("\t");
+      // print_archvar(Input[N][2]); printf("\t");
+      // printf("%" PRIx64 "\t\t%" PRIx64 "\t\t%" PRIx64 "\n", A, B, C);
     }
 
     // Angle correction
@@ -274,14 +274,14 @@ int main() {
     Product[N][0].sign = Input[N][0].sign ^ Kernel[N][0].sign;
     Product[N][2] = archadd(Input[N][2],Kernel[N][2]);
 
-    printf("Product = ");
-    print_archvar(Product[N][0]);
-    printf("\n");
+    // printf("Product = ");
+    // print_archvar(Product[N][0]);
+    // printf("\n");
   }
 
-  print_arch_pol("Input (polar coordinates)", Input);
-  print_arch_pol("Kernel (polar coordinates)", Kernel);
-  print_arch_pol("Product (polar coordinates)", Product);
+  // print_arch_pol("Input (polar coordinates)", Input);
+  // print_arch_pol("Kernel (polar coordinates)", Kernel);
+  // print_arch_pol("Product (polar coordinates)", Product);
 
 
   // Rotation CORDIC
@@ -301,18 +301,18 @@ int main() {
     Product[N][2].post = (uint16_t)(cor_angle & post_mask);
     Product[N][2].sign = 0; // angle is now at Q1
 
-    printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
-    print_archvar(Product[N][0]); printf("\t");
-    print_archvar(Product[N][1]); printf("\t");
-    print_archvar(Product[N][2]); printf("\n");
+    // printf("\n\tN = %d\nj\t\tX\t\tY\t\tZ\t\t\nini\t\t", N);
+    // print_archvar(Product[N][0]); printf("\t");
+    // print_archvar(Product[N][1]); printf("\t");
+    // print_archvar(Product[N][2]); printf("\n");
 
     for (int j = 0; j < 17; j++) {    // NOTE: previously at 24, experiment showed max j ~ 0x10 gets better results
       cordic_rot(Product[N], j);
 
-      printf("%x\t\t",j);
-      print_archvar(Product[N][0]); printf("\t");
-      print_archvar(Product[N][1]); printf("\t");
-      print_archvar(Product[N][2]); printf("\n");
+      // printf("%x\t\t",j);
+      // print_archvar(Product[N][0]); printf("\t");
+      // print_archvar(Product[N][1]); printf("\t");
+      // print_archvar(Product[N][2]); printf("\n");
     }
 
     Product[N][0].sign ^= x_sign;
@@ -348,82 +348,3 @@ int main() {
 
   print_arch_out("output", output);
 }
-
-
-
-
-
-
-
-
-
-
-
-  // printf("\n\nTesting Archvar Addition:\n\n");
-  // archvar var1 = {1, 0x02, 0x1000};
-  // print_archvar(var1);
-  // archvar var2 = {0, 0x05, 0x0003};
-  // print_archvar(var2);
-  // archvar res = archadd(var1, var2);
-  // print_archvar(res);
-
-  // printf("\n\nTesting Archvar Multiplication:\n\n");
-  // archvar var3 = {1, 0x02,0x0000};
-  // print_archvar(var3);
-  // archvar var4 = {1, 0x05, 0x0003};
-  // print_archvar(var4);
-  // archvar res2 = archmul(var3, var4);
-  // print_archvar(res2);
-
-  // printf("\n\nTesting Archvar Exponentiation:\n\n");
-  // archvar var = {0, 0x05, 0x0003};
-  // res = archpow(var, 2);
-  // print_archvar(res);
-
-  // printf("\n\nTesting Archvar Right Shift:\n\n");
-  // archvar sh = {0, 0x01, 0x41c0};
-  // sh = archshiftR(sh, 1);
-  // print_archvar(sh);
-  // printf("\n\n");
-
-
-
-  //  int j = 25;
-
-  //  printf("\n\nThe Table for j = %d:\n\n", j);
-  //  archvar arr[2], tarr;
-
-  //  arr[0].sign = 0;
-  //  arr[0].pre  = 0x00;
-  //  arr[0].post = 0x4000;
-
-  //  arr[1].sign = 0;
-  //  arr[1].pre  = 0x01;
-  //  arr[1].post = 0x41c0;
-
-  //  for (int i; i < j; i++) {
-  //      if (arr[1].sign == 1) {
-  //          tarr = arr[0];
-
-  //          arr[1].sign = ~arr[1].sign;
-  //          arr[0] = archadd(arr[0], archshiftR(arr[1], i));
-  //          arr[1].sign = ~arr[1].sign;
-
-  //          arr[1] = archadd(arr[1], archshiftR(tarr, i));
-  //      }
-  //      else {
-  //          tarr = arr[1];
-
-  //          arr[0].sign = ~arr[0].sign;
-  //          arr[1] = archadd(arr[1], archshiftR(arr[0], i));
-  //          arr[0].sign = ~arr[0].sign;
-
-  //          arr[0] = archadd(arr[0], archshiftR(tarr, i));
-  //      }
-
-  //      printf("\nTable line %d: ", i);
-  //      print_archvar(arr[0]);
-  //      printf("+ ");
-  //      print_archvar(arr[1]);
-  //      printf("i\n");
-  //  }

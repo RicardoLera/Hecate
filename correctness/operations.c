@@ -252,22 +252,22 @@ void p_idft(archvar con[17][2][8], archvar out[32][2]) {
       out[N][0] = archadd(out[N][0], archadd(a_wx, b_wy));
       out[N][1] = archadd(out[N][1], archadd(a_wy, b_wx));
 
-      if (N <= 2) {
-        //if (i==0) {printf("\n");}
-        printf("w_ex = %d\tw = %d\twc = %d\tC = %d\tout[%d][0] = ", w_ex, w, wc, C, N);
-        print_archvar(out[N][0]);
-        printf("\tout[%d][1] = ", N);
-        print_archvar(out[N][1]);
-        printf("\t R1 = ");
-        print_archvar(a_wx);
-        printf("\t R2 = ");
-        print_archvar(b_wy);
-        printf("\t I1 = ");
-        print_archvar(a_wy);
-        printf("\t I2 = ");
-        print_archvar(b_wx);
-        printf("\n");
-      }
+      // if (N <= 2) {
+      //   //if (i==0) {printf("\n");}
+      //   printf("w_ex = %d\tw = %d\twc = %d\tC = %d\tout[%d][0] = ", w_ex, w, wc, C, N);
+      //   print_archvar(out[N][0]);
+      //   printf("\tout[%d][1] = ", N);
+      //   print_archvar(out[N][1]);
+      //   printf("\t R1 = ");
+      //   print_archvar(a_wx);
+      //   printf("\t R2 = ");
+      //   print_archvar(b_wy);
+      //   printf("\t I1 = ");
+      //   print_archvar(a_wy);
+      //   printf("\t I2 = ");
+      //   print_archvar(b_wx);
+      //   printf("\n");
+      // }
     }
   }
 }
