@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Fri May  3 19:57:32 2024
 [*]
-[dumpfile] "dft.ghw"
+[dumpfile] "dft_tb.ghw"
 [dumpfile_mtime] "Fri May  3 19:55:33 2024"
 [dumpfile_size] 170630
 [savefile] "dft_testbench.gtkw"

@@ -1,11 +1,16 @@
 #!/bin/bash
-
 ghdl remove
 
 if [ "$1" = "dft" ] ; then
-  ghdl -c --std=08 hecate_pkg.vhd dft/dft.vhd dft/dft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd  -r dft_tb --wave=waveforms/dft.ghw
+  comp_files="hecate_pkg.vhd dft/dft.vhd dft/dft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd"
+  top_module="dft_tb"
 elif [ "$1" = "had" ] ; then
-  ghdl -c --std=08 hecate_pkg.vhd */*.vhd -r hadamard_tb --wave=waveforms/had.ghw
+  comp_files="hecate_pkg.vhd */*.vhd"
+  top_module="hadamard_tb"
 else
-  ghdl -c --std=08 *.vhd */*.vhd -r hecate_tb --wave=waveforms/hecate.ghw
+  comp_files="*.vhd */*.vhd"
+  top_module="hecate_tb"
 fi
+
+ghdl -c --std=08 $comp_files -r "$top_module" --wave=waveforms/"$top_module".ghw --ieee-asserts=disable-at-0
+

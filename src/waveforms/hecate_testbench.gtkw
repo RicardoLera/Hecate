@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Fri Jun 28 19:47:51 2024
 [*]
-[dumpfile] "hecate.ghw"
+[dumpfile] "hecate_tb.ghw"
 [dumpfile_mtime] "Fri Jun 28 19:44:39 2024"
 [dumpfile_size] 2099301
 [savefile] "hecate_testbench.gtkw"
