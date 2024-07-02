@@ -5,7 +5,7 @@
 [dumpfile] "hadamard_tb.ghw"
 [dumpfile_mtime] "Thu May  9 17:29:56 2024"
 [dumpfile_size] 161364
-[savefile] "had_testbench.gtkw"
+[savefile] "had_debug.gtkw"
 [timestart] 0
 [size] 1918 2110
 [pos] -1 -1

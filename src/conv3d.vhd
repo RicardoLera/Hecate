@@ -1,0 +1,113 @@
+library work;
+  use work.hecate_pkg.all;
+
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
+
+entity conv3d is
+  port (
+    img : in  b25_real_array(0 to 7); -- 2x2x2 non-padded
+    ker : in  b25_real_array(0 to 7);
+    run : in  std_logic;
+    res : out b25_real_array(0 to 26) -- 3x3x3
+  );
+end entity conv3d;
+
+architecture rtl of conv3d is
+
+  constant isize  : integer := 2;
+  constant osize  : integer := 3;
+
+  type unsigned_1d_array is array (natural range <>) of unsigned(47 downto 0);
+  type unsigned_2d_array is array (natural range <>) of unsigned_1d_array;
+  type unsigned_3d_array is array (natural range <>) of unsigned_2d_array;
+
+  signal img_3d, ker_3d : unsigned_3d_array(0 to isize-1)(0 to isize-1)(0 to isize-1) := (others => (others => (others => (others => '0'))));
+  signal res_3d         : unsigned_3d_array(0 to osize-1)(0 to osize-1)(0 to osize-1) := (others => (others => (others => (others => '0'))));
+
+begin
+
+  loop_iz : for iz in 0 to isize-1 generate
+    loop_iy : for iy in 0 to isize-1 generate
+      loop_ix : for ix in 0 to isize-1 generate
+        img_3d(ix)(iy)(iz)(23 downto 0) <= unsigned(img(ix + iy*2 + iz*4)(23 downto 0));
+        ker_3d(ix)(iy)(iz)(23 downto 0) <= unsigned(ker(ix + iy*2 + iz*4)(23 downto 0));
+      end generate loop_ix;
+    end generate loop_iy;
+  end generate loop_iz;
+
+  loop_oz : for oz in 0 to osize-1 generate
+    loop_oy : for oy in 0 to osize-1 generate
+      loop_ox : for ox in 0 to osize-1 generate
+
+        macc : process(run)
+          constant pad : integer := 2;
+          variable ix, iy, iz : integer := 0;
+        begin
+          if rising_edge(run) then
+            res_3d(ox)(oy)(oz) <= (others => '0');
+            loop_kz : for kz in 0 to isize-1 loop
+            iz := oz + kz - pad;
+              loop_ky : for ky in 0 to isize-1 loop
+              iy := oy + ky - pad;
+                loop_kx : for kx in 0 to isize-1 loop
+                  ix := ox + kx - pad;
+                  if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
+                    res_3d(ox)(oy)(oz) <= res_3d(ox)(oy)(oz) + img_3d(ix)(iy)(iz) * ker_3d(kx)(ky)(kz);
+                  end if;
+                end loop loop_kx;
+              end loop loop_ky;
+            end loop loop_kz;
+          end if;
+        end process macc;
+
+        res(ox + oy*3 + oz*9) <= '0' & std_logic_vector(res_3d(ox)(oy)(oz)(23 downto 0));
+      end generate loop_ox;
+    end generate loop_oy;
+  end generate loop_oz;
+
+end architecture rtl;
+
+
+
+
+
+
+-- for (int oy = 0; oy < osize; ++oy) {
+--   for (int ox = 0; ox < osize; ++ox) {
+--   for (int od = 0; od < odepth; ++od) {
+--       odata[oy][ox][od] = 0;  // When you iterate multiple times without closing the program, this number would stack up to infinity, so we have to zero it out every time.
+--       for (int ky = 0; ky < ksize; ++ky) {
+--       for (int kx = 0; kx < ksize; ++kx) {
+--           // map position in output and kernel to the input
+--           int iy = stride * oy + ky - pad;
+--           int ix = stride * ox + kx - pad;
+--           // use only valid inputs
+--           if (iy >= 0 && iy < isize && ix >= 0 && ix < isize) {
+--               for (int id = 0; id < idepth; ++id)
+--                   odata[oy][ox][od] += kdata[od][ky][kx][id] * idata[iy][ix][id];
+--           }
+--       }}
+--   }}}
+
+
+
+
+  -- img_3d(0)(0)(0) <= unsigned(img(0));
+  -- img_3d(1)(0)(0) <= unsigned(img(1));
+  -- img_3d(0)(1)(0) <= unsigned(img(2));
+  -- img_3d(1)(1)(0) <= unsigned(img(3));
+  -- img_3d(0)(0)(1) <= unsigned(img(4));
+  -- img_3d(1)(0)(1) <= unsigned(img(5));
+  -- img_3d(0)(1)(1) <= unsigned(img(6));
+  -- img_3d(1)(1)(1) <= unsigned(img(7));
+
+  -- ker_3d(0)(0)(0) <= unsigned(ker(0));
+  -- ker_3d(1)(0)(0) <= unsigned(ker(1));
+  -- ker_3d(0)(1)(0) <= unsigned(ker(2));
+  -- ker_3d(1)(1)(0) <= unsigned(ker(3));
+  -- ker_3d(0)(0)(1) <= unsigned(ker(4));
+  -- ker_3d(1)(0)(1) <= unsigned(ker(5));
+  -- ker_3d(0)(1)(1) <= unsigned(ker(6));
+  -- ker_3d(1)(1)(1) <= unsigned(ker(7));

@@ -110,7 +110,7 @@ int main() {
 
   archvar input[27] = {
     {0, 0x01, 0x0000},
-    {0, 0x01, 0x0000},
+    {0, 0x00, 0x8000},
     {0, 0x00, 0x0000},
     {0, 0x01, 0x0000},
     {0, 0x01, 0x0000},
@@ -279,9 +279,9 @@ int main() {
     // printf("\n");
   }
 
-  // print_arch_pol("Input (polar coordinates)", Input);
-  // print_arch_pol("Kernel (polar coordinates)", Kernel);
-  // print_arch_pol("Product (polar coordinates)", Product);
+  print_arch_pol("Input (polar coordinates)", Input);
+  print_arch_pol("Kernel (polar coordinates)", Kernel);
+  print_arch_pol("Product (polar coordinates)", Product);
 
 
   // Rotation CORDIC

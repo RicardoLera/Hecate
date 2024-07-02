@@ -7,6 +7,9 @@ if [ "$1" = "dft" ] ; then
 elif [ "$1" = "had" ] ; then
   comp_files="hecate_pkg.vhd */*.vhd"
   top_module="hadamard_tb"
+elif [ "$1" = "debug" ] ; then
+  comp_files="*.vhd */*.vhd"
+  top_module="hecate_tb_debug"
 else
   comp_files="*.vhd */*.vhd"
   top_module="hecate_tb"

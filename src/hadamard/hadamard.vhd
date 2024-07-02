@@ -285,11 +285,9 @@ begin
   -- i/k correction to Q1~4
 
   corr_latch : process (j_end) begin
-    if rising_edge(j_end) then
-      if (rotation = '0') then
-        img_z(23 downto 0) <= pc_z_in(23 downto 0);
-        ker_z(23 downto 0) <= sc_z_in(23 downto 0);
-      end if;
+    if rising_edge(j_end) and flux_mode = "01" then
+      img_z(23 downto 0) <= pc_z_in(23 downto 0);
+      ker_z(23 downto 0) <= sc_z_in(23 downto 0);
     end if;
   end process corr_latch;
 

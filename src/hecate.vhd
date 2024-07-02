@@ -164,7 +164,7 @@ begin
             add_a(o_id)(24) <= a_sign xor wx_sign;
             add_b(o_id)(24) <= not (b_sign xor wy_sign);   -- i^2 inversion
 
-            -- Orthogonal cancellations -> something is still leaking through, making this necessary
+            -- Orthogonal cancellations -> I'm not sure why, but this is still necessary
             if (w_ex=8 or w_ex=24) then -- cancel wx
               add_a(o_id) <= (others => '0');
             end if;

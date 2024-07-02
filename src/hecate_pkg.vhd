@@ -249,5 +249,14 @@ package hecate_pkg is
     );
   end component;
 
+  component conv3d is
+    port (
+      img : in  b25_real_array(0 to 7); -- 2x2x2 non-padded
+      ker : in  b25_real_array(0 to 7);
+      run : in  std_logic;
+      res : out b25_real_array(0 to 26) -- 3x3x3
+    );
+  end component conv3d;
+
 end package hecate_pkg;
 

@@ -5,7 +5,7 @@
 [dumpfile] "dft_tb.ghw"
 [dumpfile_mtime] "Fri May  3 19:55:33 2024"
 [dumpfile_size] 170630
-[savefile] "dft_testbench.gtkw"
+[savefile] "dft_debug.gtkw"
 [timestart] 0
 [size] 1918 2110
 [pos] -1 -1
