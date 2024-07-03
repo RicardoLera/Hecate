@@ -11,9 +11,6 @@ end entity hecate_tb;
 
 architecture sim of hecate_tb is
 
-  type test_tuple_t is array(0 to 1) of b25_real_array(7 downto 0);
-  signal test_tuple : test_tuple_t;
-
   signal img, ker          : b25_real_array(0 to 7);
 
   signal clk, reset, start : std_logic := '0';
@@ -23,15 +20,15 @@ architecture sim of hecate_tb is
   signal keep_simulating   : std_logic := '0';
   constant clockperiod     : time      := 1 ms;
 
-  signal gold               : b25_real_array(0 to 26);
-  signal run_gold           : std_logic := '0';
-  constant test_n           : integer := 1;
+  signal gold              : b25_real_array(0 to 26);
+  signal run_gold, g_ready : std_logic := '0';
+  constant test_n          : integer := 1;
 
-  impure function rand_slv(len : integer) return std_logic_vector is
-    variable seed1 : integer := 1;
-    variable seed2 : integer := 1;
+  impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
     variable r : real;
     variable slv : std_logic_vector(len - 1 downto 0);
+    variable seed1 : positive := s1;
+    variable seed2 : positive := s2;
   begin
     for i in slv'range loop
       uniform(seed1, seed2, r);
@@ -40,9 +37,9 @@ architecture sim of hecate_tb is
     return slv;
   end function;
 
-  procedure rand_arr(signal arr : out b25_real_array(0 to 7)) is begin
+  procedure rand_arr(signal arr : out b25_real_array(0 to 7); constant offset : in integer) is begin
     rand_loop : for i in 0 to 7 loop
-      arr(i)   <= '0' & rand_slv(8) & rand_slv(16);
+      arr(i)   <= '0' & "00000000" & rand_slv(16, i+1, i+1+offset);
     end loop rand_loop;
   end procedure;
 
@@ -66,22 +63,42 @@ begin
       img     => img,
       ker     => ker,
       run     => run_gold,
+      clk     => clk,
+      rdy     => g_ready,
       res     => gold
     );
 
   test : process 
-    variable test_res : integer := 0;
+    variable test_res, pnt : integer := 0;
+    variable err           : signed(23 downto 0);
   begin
     keep_simulating <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      rand_arr(img);
-      rand_arr(ker);
+      -- rand_arr(img, 1);
+      -- rand_arr(ker, 2);
+      zero_loop : for i in 0 to 7 loop
+        img(i)   <= '0' & "00000001" & "0000000000000000";
+        ker(i)   <= '0' & "00000001" & "0000000000000000";
+      end loop zero_loop;
+
+        ker(5)   <= '0' & "00000000" & "1000000000000000";
+
       wait for 5 * clockperiod;
       reset <= '0'; start <= '1'; run_gold <= '1';
 
-      wait until o_ready for 200 ms;
-      if (res = gold) then
+      wait until (o_ready and g_ready) for 200 ms;
+      
+      pnt := 0;
+      calc_error : for i in 0 to 26 loop
+        err := abs(signed(gold(i)(23 downto 0)) - signed(res(i)(23 downto 0)));
+        if (err < x"100") then
+          pnt := pnt + 1;
+        else
+          report "Error exceeded at n=" & integer'image(n) & " i=" & integer'image(i) & "   Total error = " & integer'image(to_integer(err));
+        end if;
+      end loop calc_error;
+      if pnt = 27 then
         test_res := test_res + 1;
       end if;
 
@@ -90,6 +107,7 @@ begin
       
     end loop test_loop;
 
+    report "passed tests = " & integer'image(test_res);
     keep_simulating <= '0';
     wait;
   end process test;

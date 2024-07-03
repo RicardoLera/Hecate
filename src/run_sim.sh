@@ -15,5 +15,5 @@ else
   top_module="hecate_tb"
 fi
 
-ghdl -c --std=08 $comp_files -r "$top_module" --wave=waveforms/"$top_module".ghw --ieee-asserts=disable-at-0
+ghdl -c --std=08 -v $comp_files -r "$top_module" --wave=waveforms/"$top_module".ghw --ieee-asserts=disable-at-0
 

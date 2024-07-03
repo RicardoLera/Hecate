@@ -10,6 +10,8 @@ entity conv3d is
     img : in  b25_real_array(0 to 7); -- 2x2x2 non-padded
     ker : in  b25_real_array(0 to 7);
     run : in  std_logic;
+    clk : in  std_logic;
+    rdy : out std_logic;
     res : out b25_real_array(0 to 26) -- 3x3x3
   );
 end entity conv3d;
@@ -19,7 +21,7 @@ architecture rtl of conv3d is
   constant isize  : integer := 2;
   constant osize  : integer := 3;
 
-  type unsigned_1d_array is array (natural range <>) of unsigned(47 downto 0);
+  type unsigned_1d_array is array (natural range <>) of unsigned(23 downto 0);
   type unsigned_2d_array is array (natural range <>) of unsigned_1d_array;
   type unsigned_3d_array is array (natural range <>) of unsigned_2d_array;
 
@@ -41,24 +43,40 @@ begin
     loop_oy : for oy in 0 to osize-1 generate
       loop_ox : for ox in 0 to osize-1 generate
 
-        macc : process(run)
-          constant pad : integer := 2;
+        macc : process(clk)
+          constant pad : integer := 1;
           variable ix, iy, iz : integer := 0;
+          variable kx, ky, kz : integer := 0;
         begin
-          if rising_edge(run) then
-            res_3d(ox)(oy)(oz) <= (others => '0');
-            loop_kz : for kz in 0 to isize-1 loop
-            iz := oz + kz - pad;
-              loop_ky : for ky in 0 to isize-1 loop
-              iy := oy + ky - pad;
-                loop_kx : for kx in 0 to isize-1 loop
-                  ix := ox + kx - pad;
-                  if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
-                    res_3d(ox)(oy)(oz) <= res_3d(ox)(oy)(oz) + img_3d(ix)(iy)(iz) * ker_3d(kx)(ky)(kz);
-                  end if;
-                end loop loop_kx;
-              end loop loop_ky;
-            end loop loop_kz;
+          if (rising_edge(clk)) then
+            if (run) then
+              loop_kz : if kz < isize then
+                iz := oz + kz - pad;
+                loop_ky : if ky < isize then
+                  iy := oy + ky - pad;
+                  loop_kx : if kx < isize then
+                    ix := ox + kx - pad;
+                    
+                    if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
+                      res_3d(ox)(oy)(oz) <= res_3d(ox)(oy)(oz) + resize((img_3d(ix)(iy)(iz)) * (ker_3d(kx)(ky)(kz)) srl 16, 24);
+                    end if;
+
+                    kx := kx + 1;
+                  else
+                    ky := ky + 1;
+                    kx := 0;
+                  end if loop_kx;
+                else
+                  kz := kz + 1;
+                  ky := 0;
+                end if loop_ky;
+              else
+                rdy <= '1';
+              end if loop_kz;
+            
+            else
+              rdy <= '0';
+            end if;
           end if;
         end process macc;
 

@@ -3,7 +3,7 @@ library ieee;
   use ieee.numeric_std.all;
   use std.textio.all;
 
-entity b25_cmul is
+entity b25_cmul is -- put constant as generic later
   port (
     a   : in    std_logic_vector(24 downto 0);
     con : in    std_logic_vector(24 downto 0);

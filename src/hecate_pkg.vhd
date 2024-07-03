@@ -254,6 +254,8 @@ package hecate_pkg is
       img : in  b25_real_array(0 to 7); -- 2x2x2 non-padded
       ker : in  b25_real_array(0 to 7);
       run : in  std_logic;
+      clk : in  std_logic;
+      rdy : out std_logic;
       res : out b25_real_array(0 to 26) -- 3x3x3
     );
   end component conv3d;
