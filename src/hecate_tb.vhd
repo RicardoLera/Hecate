@@ -22,7 +22,7 @@ architecture sim of hecate_tb is
 
   signal gold              : b25_real_array(0 to 26);
   signal run_gold, g_ready : std_logic := '0';
-  constant test_n          : integer := 1;
+  constant test_n          : integer := 20;
 
   impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
     variable r : real;
@@ -64,6 +64,7 @@ begin
       ker     => ker,
       run     => run_gold,
       clk     => clk,
+      rst     => reset,
       rdy     => g_ready,
       res     => gold
     );
@@ -75,14 +76,16 @@ begin
     keep_simulating <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      -- rand_arr(img, 1);
-      -- rand_arr(ker, 2);
-      zero_loop : for i in 0 to 7 loop
-        img(i)   <= '0' & "00000001" & "0000000000000000";
-        ker(i)   <= '0' & "00000001" & "0000000000000000";
-      end loop zero_loop;
+      rand_arr(img, n+1);
+      rand_arr(ker, n+2);
+      
+      -- one_loop : for i in 0 to 7 loop
+      --   img(i)   <= '0' & "00000001" & "0000000000000000";
+      --   ker(i)   <= '0' & "00000001" & "0000000000000000";
+      -- end loop one_loop;
 
-        ker(5)   <= '0' & "00000000" & "1000000000000000";
+        -- img(2)   <= '0' & "00000000" & "1000000000000100";
+        -- ker(1)   <= '0' & "00000000" & "1000000000000000";
 
       wait for 5 * clockperiod;
       reset <= '0'; start <= '1'; run_gold <= '1';

@@ -153,14 +153,17 @@ begin
 
   j_control_pro : process (clock) begin
     if rising_edge(clock) then
+
       case cordic_mode is
         when "10" =>
           if (unsigned(j) < to_unsigned(24, 5)) then
             j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
           end if;
-        when "01" or "11" => j <= 5x"0";
-        when others       => j <= j;
+        when "01"   => j <= 5x"0";
+        when "11"   => j <= 5x"0";
+        when others => j <= j;
       end case;
+
     end if;
   end process j_control_pro;
 
@@ -251,7 +254,7 @@ begin
         mul_b     <= 25x"0";
         mul_a_nex <= 25x"0";
         mul_b_nex <= 25x"0";
-        run_flux  <= '1';
+        run_flux  <= '0';
         run_coefs <= '0';
 
       when "01" =>
@@ -284,8 +287,11 @@ begin
 
   -- i/k correction to Q1~4
 
-  corr_latch : process (j_end) begin
-    if rising_edge(j_end) and flux_mode = "01" then
+  corr_latch : process (reset, j_end) begin
+    if (reset) then
+      img_z(23 downto 0) <= (others => '0');
+      ker_z(23 downto 0) <= (others => '0');
+    elsif rising_edge(j_end) and flux_mode = "01" then
       img_z(23 downto 0) <= pc_z_in(23 downto 0);
       ker_z(23 downto 0) <= sc_z_in(23 downto 0);
     end if;
@@ -297,7 +303,7 @@ begin
     '0' when "11",   -- QBL
     '1' when others; -- QBR
 
-  with std_logic_vector'(x_i(24) & y_i(24)) select ker_z(24) <=
+  with std_logic_vector'(x_k(24) & y_k(24)) select ker_z(24) <=
     '0' when "00",   -- QTR
     '1' when "10",   -- QTL
     '0' when "11",   -- QBL

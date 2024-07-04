@@ -255,6 +255,7 @@ package hecate_pkg is
       ker : in  b25_real_array(0 to 7);
       run : in  std_logic;
       clk : in  std_logic;
+      rst : in  std_logic;
       rdy : out std_logic;
       res : out b25_real_array(0 to 26) -- 3x3x3
     );

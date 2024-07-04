@@ -11,6 +11,7 @@ entity conv3d is
     ker : in  b25_real_array(0 to 7);
     run : in  std_logic;
     clk : in  std_logic;
+    rst : in  std_logic;
     rdy : out std_logic;
     res : out b25_real_array(0 to 26) -- 3x3x3
   );
@@ -34,7 +35,7 @@ begin
     loop_iy : for iy in 0 to isize-1 generate
       loop_ix : for ix in 0 to isize-1 generate
         img_3d(ix)(iy)(iz)(23 downto 0) <= unsigned(img(ix + iy*2 + iz*4)(23 downto 0));
-        ker_3d(ix)(iy)(iz)(23 downto 0) <= unsigned(ker(ix + iy*2 + iz*4)(23 downto 0));
+        ker_3d(isize-1-ix)(isize-1-iy)(isize-1-iz)(23 downto 0) <= unsigned(ker(ix + iy*2 + iz*4)(23 downto 0));
       end generate loop_ix;
     end generate loop_iy;
   end generate loop_iz;
@@ -49,7 +50,12 @@ begin
           variable kx, ky, kz : integer := 0;
         begin
           if (rising_edge(clk)) then
-            if (run) then
+            if (rst) then
+              res_3d(ox)(oy)(oz) <= (others => '0');
+              rdy <= '0';
+              kz := 0;
+            elsif (run) then
+
               loop_kz : if kz < isize then
                 iz := oz + kz - pad;
                 loop_ky : if ky < isize then
@@ -73,9 +79,7 @@ begin
               else
                 rdy <= '1';
               end if loop_kz;
-            
-            else
-              rdy <= '0';
+
             end if;
           end if;
         end process macc;

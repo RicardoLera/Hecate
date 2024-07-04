@@ -117,7 +117,13 @@ begin
 
     begin
       if rising_edge(clock) then
-        if (reset = '0' and hads_ready = '1') then
+        if (reset) then
+          ready_idft(o_id) <= '0';
+          i_id := 0;
+          add_a(o_id) <= (others => '0');
+          add_b(o_id) <= (others => '0');
+          acc(o_id)   <= (others => '0');
+        elsif (hads_ready = '1') then
           
           -- Each output sees all inputs
           if (i_id < 32) then  

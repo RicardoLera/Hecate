@@ -134,14 +134,19 @@ begin
 
     sum_proc : process (clock) is          -- maybe make two processes, one for real one for imaginary, so they can be (more) concurrent
 
-      variable i_id  : natural range 0 to 32;
+      variable i_id  : natural range 0 to 32 := 0;
       variable w, wi : natural range 0 to 32;
       variable c, ci : std_logic_vector(24 downto 0);
 
     begin
 
       if rising_edge(clock) then
-        if (reset = '0' and start = '1') then
+        if (reset) then
+          dft_ready(o_id) <= '0';
+          i_id := 0;
+          add_a(o_id) <= (others => (others => '0'));
+          add_b(o_id) <= (others => (others => '0'));
+        elsif (start) then
           if (i_id < 14) then                 -- end early due to 3d zero padding
             w  := (i_id * o_id) mod 32;
             wi := (8 - i_id * o_id) mod 32;
