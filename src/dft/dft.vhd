@@ -52,9 +52,11 @@ begin
     gen_v4 : if (id_pad /= 0) generate
 
       cmul_v4 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos4))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos4)),
           res => calc_vals_arr(id_pad)(4)
         );
 
@@ -63,16 +65,20 @@ begin
     gen_v2_v6 : if  (id_pad /= 0 and id_pad /= 4 and id_pad /= 12) generate
 
       cmul_v2 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos2))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos2)),
           res => calc_vals_arr(id_pad)(2)
         );
     
       cmul_v6 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos6))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos6)),
           res => calc_vals_arr(id_pad)(6)
         );
 
@@ -81,30 +87,38 @@ begin
     gen_v1_v3_v5_v7 : if (id_pad /= 0 and id_pad /= 4 and id_pad /= 10 and id_pad /= 12) generate
 
       cmul_v1 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos1))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos1)),
           res => calc_vals_arr(id_pad)(1)
         );
     
       cmul_v3 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos3))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos3)),
           res => calc_vals_arr(id_pad)(3)
         );
 
       cmul_v5 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos5))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos5)),
           res => calc_vals_arr(id_pad)(5)
         );
       
       cmul_v7 : component b25_cmul
+        generic map (
+          con => ('0', "0000000", std_logic_vector(w_cos7))
+        )
         port map (
           a   => i(id),
-          con => ('0', "0000000", std_logic_vector(w_cos7)),
           res => calc_vals_arr(id_pad)(7)
         );
     

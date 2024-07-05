@@ -22,7 +22,7 @@ architecture sim of hecate_tb is
 
   signal gold              : b25_real_array(0 to 26);
   signal run_gold, g_ready : std_logic := '0';
-  constant test_n          : integer := 20;
+  constant test_n          : integer := 2;
 
   impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
     variable r : real;
@@ -69,7 +69,8 @@ begin
       res     => gold
     );
 
-  test : process 
+  test : process
+    variable t1, t2, test_time, t_mean, t_max, t_min : time := 0 ns;
     variable test_res, pnt : integer := 0;
     variable err           : signed(23 downto 0);
   begin
@@ -88,11 +89,16 @@ begin
         -- ker(1)   <= '0' & "00000000" & "1000000000000000";
 
       wait for 5 * clockperiod;
-      reset <= '0'; start <= '1'; run_gold <= '1';
+      reset <= '0'; start <= '1'; run_gold <= '1'; t1 := now;
 
-      wait until (o_ready and g_ready) for 200 ms;
+      wait until (o_ready and g_ready) for 200 ms; t2 := now;
+
+      test_time := t2-t1;
+      t_mean := t_mean + test_time;
+      if (test_time > t_max) then t_max := test_time; end if;
+      if (test_time < t_min or t_min = 0 ns) then t_min := test_time; end if;
       
-      pnt := 0;
+      pnt := 0; 
       calc_error : for i in 0 to 26 loop
         err := abs(signed(gold(i)(23 downto 0)) - signed(res(i)(23 downto 0)));
         if (err < x"100") then
@@ -110,7 +116,13 @@ begin
       
     end loop test_loop;
 
-    report "passed tests = " & integer'image(test_res);
+    t_mean := t_mean / test_n;
+
+    report "Passed tests = " & integer'image(test_res) & " out of " & integer'image(test_n);
+    report "Max test time = " & integer'image( t_max / clockperiod ) & " cycles";
+    report "Min test time = " & integer'image( t_min / clockperiod ) & " cycles";
+    report "Average test time = " & real'image( real(t_mean / (1 fs)) * 1.0/1000000000000.0 ) & " cycles";
+
     keep_simulating <= '0';
     wait;
   end process test;

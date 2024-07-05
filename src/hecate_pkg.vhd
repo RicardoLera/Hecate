@@ -109,9 +109,11 @@ package hecate_pkg is
   -- Component declarations
 
   component b25_cmul is
+    generic (
+      con : std_logic_vector(24 downto 0)
+    );
     port (
       a   : in    std_logic_vector(24 downto 0);
-      con : in    std_logic_vector(24 downto 0);
       res : out   std_logic_vector(24 downto 0)
     );
   end component;
