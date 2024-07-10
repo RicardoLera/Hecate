@@ -17,7 +17,7 @@ entity conv3d is
   );
 end entity conv3d;
 
-architecture rtl of conv3d is
+architecture synth of conv3d is
 
   constant isize  : integer := 2;
   constant osize  : integer := 3;
@@ -89,47 +89,4 @@ begin
     end generate loop_oy;
   end generate loop_oz;
 
-end architecture rtl;
-
-
-
-
-
-
--- for (int oy = 0; oy < osize; ++oy) {
---   for (int ox = 0; ox < osize; ++ox) {
---   for (int od = 0; od < odepth; ++od) {
---       odata[oy][ox][od] = 0;  // When you iterate multiple times without closing the program, this number would stack up to infinity, so we have to zero it out every time.
---       for (int ky = 0; ky < ksize; ++ky) {
---       for (int kx = 0; kx < ksize; ++kx) {
---           // map position in output and kernel to the input
---           int iy = stride * oy + ky - pad;
---           int ix = stride * ox + kx - pad;
---           // use only valid inputs
---           if (iy >= 0 && iy < isize && ix >= 0 && ix < isize) {
---               for (int id = 0; id < idepth; ++id)
---                   odata[oy][ox][od] += kdata[od][ky][kx][id] * idata[iy][ix][id];
---           }
---       }}
---   }}}
-
-
-
-
-  -- img_3d(0)(0)(0) <= unsigned(img(0));
-  -- img_3d(1)(0)(0) <= unsigned(img(1));
-  -- img_3d(0)(1)(0) <= unsigned(img(2));
-  -- img_3d(1)(1)(0) <= unsigned(img(3));
-  -- img_3d(0)(0)(1) <= unsigned(img(4));
-  -- img_3d(1)(0)(1) <= unsigned(img(5));
-  -- img_3d(0)(1)(1) <= unsigned(img(6));
-  -- img_3d(1)(1)(1) <= unsigned(img(7));
-
-  -- ker_3d(0)(0)(0) <= unsigned(ker(0));
-  -- ker_3d(1)(0)(0) <= unsigned(ker(1));
-  -- ker_3d(0)(1)(0) <= unsigned(ker(2));
-  -- ker_3d(1)(1)(0) <= unsigned(ker(3));
-  -- ker_3d(0)(0)(1) <= unsigned(ker(4));
-  -- ker_3d(1)(0)(1) <= unsigned(ker(5));
-  -- ker_3d(0)(1)(1) <= unsigned(ker(6));
-  -- ker_3d(1)(1)(1) <= unsigned(ker(7));
+end architecture synth;

@@ -26,7 +26,7 @@ entity cordic is
   );
 end entity cordic;
 
-architecture arch of cordic is
+architecture synth of cordic is
 
   signal shifted_x, shifted_y : std_logic_vector(coords_len - 1 downto 0);
   signal x_add,     y_add     : std_logic_vector(coords_len - 1 downto 0);
@@ -91,4 +91,4 @@ begin
     z_out(z_out'length - 1) when '1',
     not y_out(y_out'length - 1) when others;
 
-end architecture arch;
+end architecture synth;

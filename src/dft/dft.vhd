@@ -26,9 +26,9 @@ entity dft is
 end entity dft;
 
 
--- Simplified method (33 mults, 34 adders, 32 cycles)
+-- Simplified method (33 cmuls, 34 adders, 32 cycles)
 
-architecture arch of dft is
+architecture simp of dft is
 
   signal calc_vals_arr : t_calc_vals_arr               := (others => (others => (others => '0')));
   signal add_a         : b25_complex_array(0 to 16)    := (others => (others => (others => '0')));
@@ -37,7 +37,6 @@ architecture arch of dft is
   signal dft_ready     : std_logic_vector(16 downto 0) := (others => '0');
 
 begin
-
   
   -- multiplication layer
 
@@ -194,13 +193,11 @@ begin
 
   s_ready <= and(dft_ready);
 
-end architecture arch;
+end architecture simp;
 
 
 
-
-
--- Optimized hardware method (3 mults, 13 adders, 17 cycles)
+-- Optimized hardware method (3 cmuls, 13 adders, 17 cycles)
 
 -- Adder order: 0 8 16   4 12   2 6 10 14    1 7 9 15   3 5 11 13
 

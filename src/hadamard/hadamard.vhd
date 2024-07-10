@@ -23,7 +23,7 @@ entity hadamard is
   );
 end entity hadamard;
 
-architecture arch of hadamard is
+architecture synth of hadamard is
 
   -- Control unit
   signal j_end, mul_ready, rotation : std_logic;
@@ -421,4 +421,4 @@ begin
   p_coefs_x <= p_coefs_x_s;
   p_coefs_y <= p_coefs_y_s;
 
-end architecture arch;
+end architecture synth;

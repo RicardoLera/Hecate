@@ -38,7 +38,7 @@ package hecate_pkg is
   constant w_cos6 : unsigned := to_unsigned(natural(65536.0*cos(6.0 * c_base)), 17);
   constant w_cos7 : unsigned := to_unsigned(natural(65536.0*cos(7.0 * c_base)), 17);
 
-  -- Flux Mul omega LUT
+  -- Flux Mul k-corrected omega LUT
   constant kcon   : real := 0.2239282404699562528386872156786372562;
   constant kw_lut : b25_real_array(0 to 7) := (
     '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 24)),
@@ -51,60 +51,43 @@ package hecate_pkg is
     '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 24))
   );
 
-  -- Pi constants for hadamard angle normalization
+  -- Pi constants for angle normalization
   constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
   constant two_pi24        : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**17)*MATH_PI)    ,24));
   constant half_pi24       : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**15)*MATH_PI)    ,24));
   constant three_half_pi24 : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**15)*3.0*MATH_PI),24));
 
-  -- lut(24 downto 0)  <= "0000000000011100101010011"; -- kcon = 1 / k^3    0x3953
-  -- lut(49 downto 25) <= "0000000000011010011110110"; -- 0x34f6
-  -- lut(74 downto 50) <= "0000000000010100010001000"; -- 0x2888
-  -- lut(99 downto 75) <= "0000000000001010111101111"; -- 0x15ef
-
   -- CORDIC arctangent LUT
-  type t_arctan_lut is array (0 to 31) of std_logic_vector(23 downto 0); -- Fix later, doesn't need 31
+  type t_arctan_lut is array (0 to 24) of std_logic_vector(23 downto 0);
   constant arctan_lut : t_arctan_lut := (
-    24x"c910",
-    24x"76b2",
-    24x"3eb7",
-    24x"1fd6",
-
-    24x"0ffb",
-    24x"07ff",
-    24x"0400",
-    24x"0200",
-
-    24x"0100",
-    24x"0080",
-    24x"0040",
-    24x"0020",
-
-    24x"0010",
-    24x"0008",
-    24x"0004",
-    24x"0002",
-
-    24x"0001",
-    24x"0000",
-    24x"0000",
-    24x"0000",
-
-    24x"0000",
-    24x"0000",
-    24x"0000",
-    24x"0000",
-
-    24x"0000",
-    24x"0000",
-    24x"0000",
-    24x"0000",
-
-    24x"0000",
-    24x"0000",
-    24x"0000",
-    24x"0000"
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -0.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -1.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -2.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -3.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -4.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -5.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -6.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -7.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -8.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -9.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-10.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-11.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-12.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-13.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-14.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-15.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-16.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-17.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-18.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-19.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-20.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-21.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-22.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-23.0)))), 24)),
+    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-24.0)))), 24))
   );
+
+
 
   -- Component declarations
 
@@ -132,7 +115,7 @@ package hecate_pkg is
     );
     port (
       data     : in    std_logic_vector(len - 1 downto 0);
-      distance : in    std_logic_vector(INTEGER(ceil(log2(real(len)))) - 1 downto 0);
+      distance : in    std_logic_vector(integer(ceil(log2(real(len)))) - 1 downto 0);
       result   : out   std_logic_vector(len - 1 downto 0)
     );
   end component;

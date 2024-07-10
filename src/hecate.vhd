@@ -18,7 +18,7 @@ entity hecate is
   );
 end entity hecate;
 
-architecture arch of hecate is
+architecture synth of hecate is
 
   signal img_transf, ker_transf : b25_complex_array(0 to 16);
 
@@ -192,4 +192,4 @@ begin
 
   end generate gen_sums;
 
-end architecture arch;
+end architecture synth;

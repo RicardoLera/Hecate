@@ -14,7 +14,7 @@ entity hadamard_uc is
   );
 end entity hadamard_uc;
 
-architecture fsm of hadamard_uc is
+architecture synth of hadamard_uc is
 
   signal e_cur : t_state := initial;
   signal e_nex : t_state;
@@ -58,4 +58,4 @@ begin
     '1' when final,
     '0' when others;
 
-end architecture fsm;
+end architecture synth;
