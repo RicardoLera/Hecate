@@ -1,0 +1,88 @@
+% Page limit: 12 (including references)
+% Refer to: https://www.computer.org/csdl/journal/td/write-for-us/15085
+
+\documentclass[10pt,journal,compsoc]{IEEEtran}
+
+% included in 2020 generic template
+\usepackage{textcomp}
+\usepackage{verbatim}
+
+% included in 2015 compsoc template
+\usepackage{algorithmic}
+\usepackage{url}
+\usepackage{array}
+\usepackage{stfloats}
+\usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{amsmath, amsfonts}
+  \interdisplaylinepenalty=2500
+\usepackage[pdftex]{graphicx}
+  \graphicspath{{figs/}}
+  \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\usepackage[nocompress]{cite}
+
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+
+% included for writing the article - REMOVE BEFORE SUBMISSION
+\usepackage{xcolor}
+\newcommand*{\todo}[1]{\textcolor{red}{#1}}
+\usepackage{lipsum}
+
+\begin{document}
+
+\title{A Scalable and Hardware-Efficient\\Convolution Accelerator}
+
+\author{
+  Ricardo~Di~Curzio~Lera,~\IEEEmembership{None,~IEEE,}
+  Miguel~Velasques~Abilio~Piola~Alves,~\IEEEmembership{\todo{Miguel membership},~IEEE,} and~%
+  Bruno~de~Carvalho~Albertini,~\IEEEmembership{\todo{Albertini membership},~IEEE}%
+  \IEEEcompsocitemizethanks{
+    \IEEEcompsocthanksitem R. Lera and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.%\protect\\
+      %E-mails: \todo{insert emails}
+  }%
+  \thanks{Manuscript received Undecimber XX, 20XX; revised Undecimber XX, 20XX.}
+}
+
+% Headers
+\markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~X, No.~X, Undecimber~\the\year{}}%
+{Lera; Alves; Albertini: A Scalable and Hardware-Efficient Convolution Accelerator}
+
+% compsoc new pubid style
+\IEEEpubid{\makebox[\columnwidth]{\hfill 0000--0000/00/\$00.00~\copyright~\the\year{} IEEE}%
+\hspace{\columnsep}\makebox[\columnwidth]{Published by the IEEE Computer Society\hfill}}
+
+% Abstract and Keywords
+\IEEEtitleabstractindextext{%
+  \begin{abstract}% 100~200 word limit (compsoc guidelines)
+    \lipsum[1-1]
+  \end{abstract}
+  \begin{IEEEkeywords}
+    Lorem, ipsum, dolor sit.
+  \end{IEEEkeywords}
+}
+
+\maketitle
+\IEEEpeerreviewmaketitle
+
+\IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
+  \IEEEPARstart{C}{onvolution} citation~\cite{smith1997scientist} and \lipsum[1-2]
+
+\section{Conclusion}
+  \lipsum[1]
+
+\section*{Acknowledgments}% limit to one paragraph
+Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{Also thank the other institution you forgot the name of.}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}{}
+
+% BibTeX documentation can be obtained at:
+% http://mirror.ctan.org/biblio/bibtex/contrib/doc/
+% IEEEtran BibTeX style support page:
+% http://www.michaelshell.org/tex/ieeetran/bibtex/
+
+% Biographies are not required in compsoc's journals (https://www.computer.org/publications/author-resources)
+% \begin{IEEEbiographynophoto}{John Doe}%\vspace{-33pt}
+%   Biography text here.
+% \end{IEEEbiographynophoto}
+
+\end{document}
