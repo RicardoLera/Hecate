@@ -206,10 +206,10 @@ end architecture simp;
 --                   1-9-V1      1-9-V7      3-13-V3      3-13-V5 4-12-V4 10-V2 10-V6
 --                   1-9-V3      1-9-V5      3-13-V7      3-13-V1
 
-architecture m3d of dft is
+-- architecture m3d of dft is
 
-begin
+-- begin
 
   
 
-end architecture;
+-- end architecture m3d;

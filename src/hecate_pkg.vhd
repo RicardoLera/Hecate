@@ -11,6 +11,9 @@ package hecate_pkg is
   type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
   type b25_complex_array is array (natural range <>) of b25_complex;
 
+  -- Synth TB RAM
+  type t_ram is array (natural range <>) of b25_real_array(0 to 26);
+
   -- Hadamard state list
   type t_state is (initial, vector_flux, pre_rot, rot_coef, final);
 
@@ -97,6 +100,14 @@ package hecate_pkg is
     );
     port (
       a   : in    std_logic_vector(24 downto 0);
+      res : out   std_logic_vector(24 downto 0)
+    );
+  end component;
+
+  component b25_mul is
+    port (
+      a   : in    std_logic_vector(24 downto 0);
+      b   : in    std_logic_vector(24 downto 0);
       res : out   std_logic_vector(24 downto 0)
     );
   end component;
@@ -236,13 +247,13 @@ package hecate_pkg is
 
   component conv3d is
     port (
-      img : in  b25_real_array(0 to 7); -- 2x2x2 non-padded
+      img : in  b25_real_array(0 to 7);
       ker : in  b25_real_array(0 to 7);
-      run : in  std_logic;
       clk : in  std_logic;
       rst : in  std_logic;
-      rdy : out std_logic;
-      res : out b25_real_array(0 to 26) -- 3x3x3
+      run : in  std_logic;
+      res : out b25_real_array(0 to 26);
+      rdy : out std_logic
     );
   end component conv3d;
 

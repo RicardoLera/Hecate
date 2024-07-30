@@ -167,7 +167,7 @@ begin
     end if;
   end process j_control_pro;
 
-  j_end <= '1' when j >= std_logic_vector(to_unsigned(24, 5)) else '0';
+  j_end <= '1' when unsigned(j) >= to_unsigned(24, 5) else '0';
 
 
 
@@ -353,7 +353,9 @@ begin
       res => prod_z_mod
     );
 
-  prod_z_mux(23 downto 0) <= prod_z_mod(23 downto 0) when (unsigned(prod_z(23 downto 0)) > unsigned(two_pi24)) else prod_z(23 downto 0);
+  prod_z_mux(23 downto 0) <=
+    prod_z_mod(23 downto 0) when (unsigned(prod_z(23 downto 0)) > unsigned(two_pi24)) else
+    prod_z(23 downto 0);
 
   prod_quadrant <=
     "00" when (unsigned(prod_z_mux(23 downto 0)) < unsigned(half_pi24)      ) else
