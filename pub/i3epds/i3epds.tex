@@ -32,12 +32,12 @@
 \title{A Scalable and Hardware-Efficient\\Convolution Accelerator}
 
 \author{
-  Ricardo~Di~Curzio~Lera,~\IEEEmembership{None,~IEEE,}
-  Miguel~Velasques~Abilio~Piola~Alves,~\IEEEmembership{\todo{Miguel membership},~IEEE,} and~%
+  Ricardo~Di~Curzio~Lera,
+  Miguel~Velasques~Abilio~Piola~Alves, and~%
   Bruno~de~Carvalho~Albertini,~\IEEEmembership{\todo{Albertini membership},~IEEE}%
   \IEEEcompsocitemizethanks{
-    \IEEEcompsocthanksitem R. Lera and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.%\protect\\
-      %E-mails: \todo{insert emails}
+    \IEEEcompsocthanksitem R. Lera, M. Alves and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.%\protect\\
+      %E-mails: \todo{insert emails}  or not
   }%
   \thanks{Manuscript received Undecimber XX, 20XX; revised Undecimber XX, 20XX.}
 }
@@ -64,13 +64,34 @@
 \IEEEpeerreviewmaketitle
 
 \IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
-  \IEEEPARstart{C}{onvolution} citation~\cite{smith1997scientist} and \lipsum[1-2]
 
+  \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\cite{}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\cite{}, which is even more prominent on three-dimensional CNNs~\cite{}.
+
+  A survey~\cite{mittal2021survey} on the current state...
+
+  %\IEEEPARstart{T}{he}
+  The computational cost of large-scale convolution has been a limiting factor since the inception of CNNs. LeCun...
+
+  A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be redirected and processed concurrently. Notable applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}.
+
+\section{Algorithms \& Complexity}
+  Current accelerator topologies aim to maximize parallelization, for instance: the TPU uses the \texttt{im2col} algorithm which re-organizes the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}. While this method enables highly-parallelized systolic array implementations, its hardware cost scales drastically with the size of the convolution kernel~\cite{lera2023hardware}. 
+
+  Regarding kernel size, modern CNNs have opted for a larger number of layers with smaller kernels, as they can provide the same receptive field as a single layer with a large kernel, at a lower processing cost~\cite{simonyan2014very}. 
+  
+  %the size of the input and kernel, while its respective performance improvement scales linearly.
+
+\section{Proposed Architecture}
+
+\section{Testing Procedures}
+
+\section{Results}
+ 
 \section{Conclusion}
-  \lipsum[1]
+
 
 \section*{Acknowledgments}% limit to one paragraph
-Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{Also thank the other institution you forgot the name of.}
+  Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{Also thank the other institution you forgot the name of.}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}{}
