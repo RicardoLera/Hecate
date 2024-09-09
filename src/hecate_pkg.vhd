@@ -5,11 +5,14 @@ library ieee;
 
 package hecate_pkg is
 
-  -- 25-bit types (and doubles)
-  type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);  -- later make these into records
+  -- 25-bit types
+  type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);  -- maybe make these into records
   type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
   type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
   type b25_complex_array is array (natural range <>) of b25_complex;
+
+  type b25_2d_real_array is array (natural range <>) of b25_real_array;
+  type b25_3d_real_array is array (natural range <>) of b25_2d_real_array;
 
   -- Synth TB RAM
   type t_ram is array (natural range <>) of b25_real_array(0 to 26);
@@ -104,6 +107,16 @@ package hecate_pkg is
     );
   end component;
 
+  component b25_wmul is
+    generic (
+      w, n : natural
+    );
+    port (
+      i : in    b25_complex;
+      o : out   b25_complex
+    );
+  end component b25_wmul;
+
   component b25_mul is
     port (
       a   : in    std_logic_vector(24 downto 0);
@@ -119,6 +132,13 @@ package hecate_pkg is
       res : out   std_logic_vector(24 downto 0)
     );
   end component;
+
+  component b25_butterfly is
+    port (
+      i_top, i_bot : in    b25_complex;
+      o_top, o_bot : out   b25_complex
+    );
+  end component b25_butterfly;
 
   component varshiftright is
     generic (
@@ -141,6 +161,19 @@ package hecate_pkg is
       s_ready : out   std_logic
     );
   end component;
+
+  component fft is
+    generic (
+      nx, ny, nz : natural range 0 to 16 := 2;
+      n_points   : natural range 0 to 1024 := 32
+    );
+    port (
+      i                   : in  b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
+      o                   : out b25_complex_array(0 to n_points/2);
+      clock, reset, start : in  std_logic;
+      s_ready             : out std_logic
+    );
+  end component fft;
 
   component adder_carry is
     port (
@@ -234,14 +267,15 @@ package hecate_pkg is
   end component;
 
   component hecate is
+    generic (
+      nx, ny, nz : natural range 0 to 16 := 2;
+      n_points : natural range 0 to 1024 := 32 --integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1))))
+    );
     port (
-      img     : in    b25_real_array(0 to 7);
-      ker     : in    b25_real_array(0 to 7);
-      clock   : in    std_logic;
-      reset   : in    std_logic;
-      start   : in    std_logic;
-      res     : out   b25_real_array(0 to 26);
-      o_ready : out   std_logic
+      img, ker            : in b25_real_array(0 to nx*ny*nz-1);
+      clock, reset, start : in std_logic;
+      res                 : out b25_real_array(0 to n_points);
+      o_ready             : out std_logic
     );
   end component;
 

@@ -1,20 +1,20 @@
--- 3D Version -> N = 32
 library work;
   use work.hecate_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+  use ieee.math_real.all;
 
 entity hecate is
+  generic (
+    nx, ny, nz : natural range 0 to 16 := 2
+  );
   port (
-    img     : in    b25_real_array(0 to 7);  -- 2x2x2 non-padded
-    ker     : in    b25_real_array(0 to 7);
-    clock   : in    std_logic;
-    reset   : in    std_logic;
-    start   : in    std_logic;
-    res     : out   b25_real_array(0 to 26); -- 3x3x3
-    o_ready : out   std_logic
+    img, ker            : in b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
+    clock, reset, start : in std_logic;
+    res                 : out b25_3d_real_array(0 to 2*nx-1)(0 to 2*ny-1)(0 to 2*nz-1);
+    o_ready             : out std_logic
   );
 end entity hecate;
 
@@ -33,28 +33,30 @@ architecture synth of hecate is
 
   signal add_a, add_b, add_r : b25_real_array(0 to 26) := (others => (others => '0'));
   signal acc : b25_real_array(0 to 26) := (others => (others => '0'));
+
+  variable n_points : natural range 0 to 1024 := integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1)))));
   
 begin
 
-  dft_in_img : component dft
-  port map (
-    i       => img,
-    o       => img_transf,
-    clock   => clock,
-    start   => start,
-    reset   => reset,
-    s_ready => ready_dft(0)
-  );
+  -- dft_in_img : component dft
+  --   port map (
+  --     i       => img,
+  --     o       => img_transf,
+  --     clock   => clock,
+  --     start   => start,
+  --     reset   => reset,
+  --     s_ready => ready_dft(0)
+  --   );
 
-  dft_in_ker : component dft
-  port map (
-    i       => ker,
-    o       => ker_transf,
-    clock   => clock,
-    start   => start,
-    reset   => reset,
-    s_ready => ready_dft(1)
-  );
+  -- dft_in_ker : component dft
+  --   port map (
+  --     i       => ker,
+  --     o       => ker_transf,
+  --     clock   => clock,
+  --     start   => start,
+  --     reset   => reset,
+  --     s_ready => ready_dft(1)
+  --   );
 
   dfts_ready  <= and(ready_dft);
   hads_ready  <= and(ready_had);
@@ -69,8 +71,17 @@ begin
       end if;
     end if;
   end process sync_ready;
-
   o_ready <= s_ready;
+
+  fft_in_img : component fft
+  port map (
+    i       => img,
+    o       => img_transf,
+    clock   => clock,
+    start   => start,
+    reset   => reset,
+    s_ready => ready_dft(0)
+  );
 
   gen_calc_vals : for id in 0 to 16 generate
 
