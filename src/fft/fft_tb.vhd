@@ -80,7 +80,7 @@ begin
     wait for 2 ms;
     reset <= '0';
     start <= '1';
-    wait until (s_ready_i = '1' and s_ready_k = '1') for 50 ms ;
+    wait until (s_ready_i = '1') for 50 ms ;
     start <= '0';
 
     simulate <= '0';
