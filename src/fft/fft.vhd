@@ -30,9 +30,9 @@ architecture synth of fft is
   signal link_trigger : std_logic := '0';
 
   signal in_raster : b25_real_array(0 to n_points-1) := (others => (others => '0'));
-  signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
+  signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) ; -- 0-top; 1-bottom
   signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/4)(0 to the_log) := (others => (others => (others => (others => '0'))));
-  signal out_buff : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal out_buff : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
   function fft_scramble_lut(x, y, z : integer) return integer is
     variable idx     : integer := 0;
@@ -41,8 +41,8 @@ architecture synth of fft is
     constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
   begin
     for g in 0 to the_log-1 loop
-      if(n mod 2**(g+1) >= 2**g) then
-        idx := idx + n_points / 2**(g+1);
+      if (n mod (2**(g+1)) >= 2**g) then
+        idx := idx + n_points / (2**(g+1));
       end if;
     end loop;
     return idx;
@@ -50,11 +50,28 @@ architecture synth of fft is
 
   type integer_pair is array(0 to 1) of integer;
 
-  function bfly_lut(stage, n : integer) return integer_pair is
-    variable b, tb : integer := 0;
+   -- bfly_lut converts n to the order the butterflies are at, top to bottom, in their respective state
+  function bfly_lut(s, n : integer) return integer_pair is
+    variable points_in_group, bflys_in_group, current_group, index_in_group, b, tb : integer;
   begin
-    --The "Table"
-    return (b, tb);
+    if (s = 0) then
+      return (0,0);
+    else
+      points_in_group       := 2**s;
+      bflys_in_group        := 2**(s-1);
+
+      current_group    := n / points_in_group;
+      index_in_group   := n mod bflys_in_group;
+
+      b := current_group * bflys_in_group + index_in_group;
+      if ((n mod points_in_group) < bflys_in_group) then
+        tb := 1;
+      else
+        tb := 0;
+      end if;
+      
+      return (b, tb);
+    end if;
   end function;
 
   function wmul_lut(stage, n : integer) return integer_pair is
@@ -132,29 +149,34 @@ begin
   -- Subcycle 1: Butterflies
   gen_procs_bfly : for n in 0 to n_points-1 generate
     proc_bfly : process (state) is
-      constant b     : integer := bfly_lut(state, n)(0);
-      constant tb    : integer := bfly_lut(state, n)(1);
-      constant w     : integer := wmul_lut(state-1, n)(0);
-      constant mn    : integer := wmul_lut(state-1, n)(1);
-      constant w_mod : integer := w mod n_points/4;
+      variable b, tb, w, mn, w_mod : integer;
     begin
 
-      if (state < the_log+1) then
-        if (state > 1) then
-          bfly_in(b)(tb) <= wmul_out(w_mod)(mn);
+      if (state > 0) then
+        b  := bfly_lut(state, n)(0);
+        tb := bfly_lut(state, n)(1);
+        w  := wmul_lut(state-1, n)(0);
+        mn := wmul_lut(state-1, n)(1);
+        w_mod := w mod n_points/4;
+
+        if (state < the_log) then
+          if (state < 1) then
+            bfly_in(b)(tb) <= (in_raster(n), 25b"0");
+          else
+            bfly_in(b)(tb) <= wmul_out(w_mod)(mn);
+          end if;
         else
-          bfly_in(b)(tb) <= (in_raster(n), 25b"0");
-        end if;
-      else
-        out_buff(n) <= bfly_in(n)(0);
-        if (n = 0) then
-          out_buff(n_points/2) <= bfly_in(0)(1); -- Hermitian limit
+          if (n < n_points/2) then
+            out_buff(n) <= bfly_in(n)(0);
+          else
+            out_buff(n) <= bfly_in(n mod n_points/2)(1);
+          end if;
         end if;
       end if;
 
     end process proc_bfly;
   end generate gen_procs_bfly;
-  o <= out_buff;
+  o <= out_buff(0 to 16);
 
   -- Subcycle link
   gen_link_b : for b in 0 to n_points/2-1 generate
