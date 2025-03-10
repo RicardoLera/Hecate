@@ -34,6 +34,8 @@ architecture synth of fft is
   signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/4)(0 to the_log) := (others => (others => (others => (others => '0'))));
   signal out_buff : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
+  signal sc1_logic : b25_complex := (others => (others => '0'));
+
   function fft_scramble_lut(x, y, z : integer) return integer is
     variable idx     : integer := 0;
     constant nx_full : integer := 2*nx-1;
@@ -52,24 +54,13 @@ architecture synth of fft is
 
    -- bfly_lut converts n to the order the butterflies are at, top to bottom, in their respective state
   function bfly_lut(s, n : integer) return integer_pair is
-    variable points_in_group, bflys_in_group, current_group, index_in_group, b, tb : integer;
+    variable b, tb : integer;
   begin
-    if (s = 0) then
+    if (s < 1 or s > the_log) then
       return (0,0);
     else
-      points_in_group       := 2**s;
-      bflys_in_group        := 2**(s-1);
-
-      current_group    := n / points_in_group;
-      index_in_group   := n mod bflys_in_group;
-
-      b := current_group * bflys_in_group + index_in_group;
-      if ((n mod points_in_group) < bflys_in_group) then
-        tb := 1;
-      else
-        tb := 0;
-      end if;
-      
+      b  := (n / 2**s) + (n mod (2**(s-1)));
+      tb := 1 when (n mod (2**s) < 2**(s-1)) else 0; -- 1 -> top    0 -> bottom
       return (b, tb);
     end if;
   end function;
@@ -148,6 +139,9 @@ begin
 
   -- Subcycle 1: Butterflies
   gen_procs_bfly : for n in 0 to n_points-1 generate
+    -- bfly_in(bfly_lut(state, n)(0))(bfly_lut(state, n)(1)) <=
+    --   (in_raster(n), 25b"0") when (state < 2) else (sc1_logic);
+
     proc_bfly : process (state) is
       variable b, tb, w, mn, w_mod : integer;
     begin
@@ -160,7 +154,7 @@ begin
         w_mod := w mod n_points/4;
 
         if (state < the_log) then
-          if (state < 1) then
+          if (state = 1) then
             bfly_in(b)(tb) <= (in_raster(n), 25b"0");
           else
             bfly_in(b)(tb) <= wmul_out(w_mod)(mn);
@@ -172,6 +166,7 @@ begin
             out_buff(n) <= bfly_in(n mod n_points/2)(1);
           end if;
         end if;
+        
       end if;
 
     end process proc_bfly;
@@ -184,7 +179,7 @@ begin
       sc_link(b) <= '1';
     end process;
   end generate gen_link_b;
-  link_trigger <= and(sc_link);
+  link_trigger <= or(sc_link);          -- can this fail in board synthesis due to spacing?
 
   -- Subcycle 2: Omega Multipliers
   gen_procs_wmul : for n in 0 to n_points-1 generate

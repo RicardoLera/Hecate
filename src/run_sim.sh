@@ -8,7 +8,7 @@ if [ "$1" = "synth" ] ; then
   family="xc${2:-"7"}"
 
   yosys -m ghdl -p \
-    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate; synth_xilinx -top hecate -family $family -flatten;" \
+    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate; synth_xilinx -top hecate -family $family -flatten; json -o yosys_out/$family.json" \
   &> yosys_out/"$family".txt
 
 else
