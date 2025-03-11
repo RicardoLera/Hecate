@@ -1,6 +1,4 @@
-library work;
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -33,8 +31,6 @@ architecture synth of fft is
   signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) ; -- 0-top; 1-bottom
   signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/4)(0 to the_log) := (others => (others => (others => (others => '0'))));
   signal out_buff : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
-
-  signal sc1_logic : b25_complex := (others => (others => '0'));
 
   function fft_scramble_lut(x, y, z : integer) return integer is
     variable idx     : integer := 0;
@@ -139,12 +135,12 @@ begin
 
   -- Subcycle 1: Butterflies
   gen_procs_bfly : for n in 0 to n_points-1 generate
-    -- bfly_in(bfly_lut(state, n)(0))(bfly_lut(state, n)(1)) <=
-    --   (in_raster(n), 25b"0") when (state < 2) else (sc1_logic);
 
     proc_bfly : process (state) is
       variable b, tb, w, mn, w_mod : integer;
     begin
+
+      report "sc1 trigger";
 
       if (state > 0) then
         b  := bfly_lut(state, n)(0);
@@ -155,7 +151,15 @@ begin
 
         if (state < the_log) then
           if (state = 1) then
+            -- checked via report, all processes make it here
+            -- also checked b/tb values are perfect here
+            report "n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) ;
             bfly_in(b)(tb) <= (in_raster(n), 25b"0");
+            report integer'image(to_integer(unsigned(bfly_in(b)(tb)(0))));
+          
+            -- last ditch effort: try switching back to std=02
+            -- ghdl only partially supports 2008, it might not handle multidimensional fuckery very well
+
           else
             bfly_in(b)(tb) <= wmul_out(w_mod)(mn);
           end if;

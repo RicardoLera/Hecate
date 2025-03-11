@@ -5,6 +5,7 @@ work-obj*.cf
 *.code-workspace
 *.txt
 *.json
+*.toml
 **/build
 
 
