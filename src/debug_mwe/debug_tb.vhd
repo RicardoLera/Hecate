@@ -9,32 +9,45 @@ architecture sim of debug_tb is
 
   component debug is
     generic (
-      n_points   : natural range 0 to 1024 := 32
+      n_points   : integer range 0 to 1024 := 32
     );
     port (
-      clock   : in  std_logic
+      clock, reset, start : in  std_logic;
+      s_ready             : out std_logic
     );
   end component debug;
 
-  signal   clock, simulate : std_logic := '0';
-  constant clockperiod : time := 1 ms; -- 1khz
+  signal   clock, reset, start, s_ready, simulate : std_logic := '0';
+  constant clockperiod : time := 1 ps;
 
 begin
 
   clock <= (not clock) and simulate after clockperiod / 2;
 
   dut : component debug
-    generic map (2)
+    generic map (32)
     port map (
-      clock => clock
+      clock => clock,
+      reset => reset,
+      start => start,
+      s_ready => s_ready
     );
 
   test : process is
   begin
     simulate <= '1';
-    
-    wait for 5 ms ;
+    reset <= '1';
 
+    wait for 1 ps;
+
+    reset <= '0';
+    start <= '1';
+
+    wait until (s_ready = '1') for 50 ps ;
+
+    wait for 1 ps;
+
+    start <= '0';
     simulate <= '0';
     stop;
   end process test;
