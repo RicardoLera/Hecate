@@ -28,7 +28,7 @@ architecture synth of fft is
   signal link_trigger : std_logic := '0';
 
   signal in_raster : b25_real_array(0 to n_points-1) := (others => (others => '0'));
-  signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) ; -- 0-top; 1-bottom
+  signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
   signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/4)(0 to the_log) := (others => (others => (others => (others => '0'))));
   signal out_buff : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
@@ -49,14 +49,16 @@ architecture synth of fft is
   type integer_pair is array(0 to 1) of integer;
 
    -- bfly_lut converts n to the order the butterflies are at, top to bottom, in their respective state
-  function bfly_lut(s, n : integer) return integer_pair is
+   function bfly_lut(s, n : integer) return integer_pair is
     variable b, tb : integer;
   begin
-    if (s < 1 or s > the_log) then
+    if ((s < 1) or (s > the_log)) then
       return (0,0);
     else
-      b  := (n / 2**s) + (n mod (2**(s-1)));
-      tb := 1 when (n mod (2**s) < 2**(s-1)) else 0; -- 1 -> top    0 -> bottom
+      b  := (n/(2**s)) * (2**(s-1)) + (n mod (2**(s-1))); -- bfly_pos = bfly_group*group_size + pos_in_group
+      -- Yes, (n/(2**s)) * (2**(s-1)) = n/2, except NOT because rounding. Leave it like that, it's synth time
+
+      tb := 1 when (n mod (2**s) < 2**(s-1)) else 0;
       return (b, tb);
     end if;
   end function;
@@ -133,53 +135,70 @@ begin
     end if;
   end process state_machine;
 
-  -- Subcycle 1: Butterflies
-  gen_procs_bfly : for n in 0 to n_points-1 generate
-
-    proc_bfly : process (state) is
-      variable b, tb, w, mn, w_mod : integer;
-    begin
-
-      report "sc1 trigger";
-
-      if (state > 0) then
-        b  := bfly_lut(state, n)(0);
-        tb := bfly_lut(state, n)(1);
-        w  := wmul_lut(state-1, n)(0);
-        mn := wmul_lut(state-1, n)(1);
-        w_mod := w mod n_points/4;
-
-        if (state < the_log) then
-          if (state = 1) then
-            -- checked via report, all processes make it here
-            -- also checked b/tb values are perfect here
-            report "n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) ;
-            bfly_in(b)(tb) <= (in_raster(n), 25b"0");
-            report integer'image(to_integer(unsigned(bfly_in(b)(tb)(0))));
-          
-            -- last ditch effort: try switching back to std=02
-            -- ghdl only partially supports 2008, it might not handle multidimensional fuckery very well
-
-          else
-            bfly_in(b)(tb) <= wmul_out(w_mod)(mn);
+  gen_procs_bfly : for b in 0 to n_points/2-1 generate
+    gen_procs_bfly_tb : for tb in 0 to 1 generate
+      proc_bfly : process (state) is
+      begin
+        for n in 0 to n_points-1 loop
+          if ((b = bfly_lut(state, n)(0)) and (tb = bfly_lut(state, n)(1))) then
+            if (state = 1) then
+              bfly_in(b)(tb) <= (in_raster(n), 25b"0");
+            else
+              bfly_in(b)(tb) <= wmul_out(wmul_lut(state-1, n)(0))(wmul_lut(state-1, n)(1));
+            end if;
           end if;
-        else
-          if (n < n_points/2) then
-            out_buff(n) <= bfly_in(n)(0);
-          else
-            out_buff(n) <= bfly_in(n mod n_points/2)(1);
-          end if;
-        end if;
-        
-      end if;
-
-    end process proc_bfly;
+        end loop;
+      end process proc_bfly;
+    end generate gen_procs_bfly_tb;
   end generate gen_procs_bfly;
-  o <= out_buff(0 to 16);
+
+  -- -- Subcycle 1: Butterflies
+  -- gen_procs_bfly : for n in 0 to n_points-1 generate
+
+  --   proc_bfly : process (state) is
+  --     variable b, tb, w, mn, w_mod : integer;
+  --   begin
+
+  --     report "sc1 trigger";
+
+  --     if (state > 0) then
+  --       b  := bfly_lut(state, n)(0);
+  --       tb := bfly_lut(state, n)(1);
+  --       w  := wmul_lut(state-1, n)(0);
+  --       mn := wmul_lut(state-1, n)(1);
+  --       w_mod := w mod n_points/4;
+
+  --       if (state < the_log) then
+  --         if (state = 1) then
+  --           -- checked via report, all processes make it here
+  --           -- also checked b/tb values are perfect here
+  --           report "n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) ;
+  --           bfly_in(b)(tb) <= (in_raster(n), 25b"0");
+  --           report integer'image(to_integer(unsigned(bfly_in(b)(tb)(0))));
+          
+  --           -- last ditch effort: try switching back to std=02
+  --           -- ghdl only partially supports 2008, it might not handle multidimensional fuckery very well
+
+  --         else
+  --           bfly_in(b)(tb) <= wmul_out(w_mod)(mn);
+  --         end if;
+  --       else
+  --         if (n < n_points/2) then
+  --           out_buff(n) <= bfly_in(n)(0);
+  --         else
+  --           out_buff(n) <= bfly_in(n mod n_points/2)(1);
+  --         end if;
+  --       end if;
+        
+  --     end if;
+
+  --   end process proc_bfly;
+  -- end generate gen_procs_bfly;
+  -- o <= out_buff(0 to 16);
 
   -- Subcycle link
   gen_link_b : for b in 0 to n_points/2-1 generate
-    process(bfly_out(b)(0)) begin
+    process(bfly_out) begin     -- make a fucking latch somehow
       sc_link(b) <= '1';
     end process;
   end generate gen_link_b;
@@ -188,12 +207,14 @@ begin
   -- Subcycle 2: Omega Multipliers
   gen_procs_wmul : for n in 0 to n_points-1 generate
     proc_wmul : process (link_trigger) is
-      constant b     : integer := bfly_lut(state, n)(0);
-      constant tb    : integer := bfly_lut(state, n)(1);
-      constant w     : integer := wmul_lut(state, n)(0);
-      constant mn    : integer := wmul_lut(state, n)(1);
-      constant w_mod : integer := w mod n_points/4;
+      variable b, tb, w, mn, w_mod : integer := 0;
     begin
+
+      b  := bfly_lut(state, n)(0);
+      tb := bfly_lut(state, n)(1);
+      w  := wmul_lut(state, n)(0);
+      mn := wmul_lut(state, n)(1);
+      w_mod := w mod n_points/4;
 
       if (w >= n_points/4) then -- multiply by i (because, e.g., w1 = i*w9)
         wmul_in(w_mod)(mn) <= (                              -- (a + bi)*i = 
@@ -208,28 +229,6 @@ begin
   end generate gen_procs_wmul;
 
 end architecture synth;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
