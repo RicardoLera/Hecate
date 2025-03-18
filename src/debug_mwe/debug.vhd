@@ -26,9 +26,6 @@ architecture sim of debug is
 
   signal bfly_in : b25_2d_complex_array(0 to integer(n_points/2-1))(0 to 1) := (others => (others => (others => (others => '0'))));
 
-  type   b_idx_arr is array (0 to n_points-1) of integer;
-  signal b_idx, tb_idx : b_idx_arr := (others => 0);
-
   signal state : integer := 0;
 
   type integer_pair is array(0 to 1) of integer;
@@ -72,14 +69,12 @@ begin
       begin
         for n in 0 to n_points-1 loop
           if ((b = bfly_lut(state, n)(0)) and (tb = bfly_lut(state, n)(1))) then
-            bfly_in(b)(tb)(0) <= "0000000000000000000000101"; -- bfly_n_buff(n);
+            bfly_in(b)(tb) <= (std_logic_vector(to_unsigned(state, 25)), 25b"0");
           end if;
         end loop;
       end process proc_bfly;
     end generate gen_procs_bfly_tb;
   end generate gen_procs_bfly;
-
-
 
   -- -- Concurrent Processes
   -- gen_procs_bfly : for n in 0 to n_points-1 generate

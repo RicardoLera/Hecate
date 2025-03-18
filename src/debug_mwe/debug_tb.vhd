@@ -18,7 +18,7 @@ architecture sim of debug_tb is
   end component debug;
 
   signal   clock, reset, start, s_ready, simulate : std_logic := '0';
-  constant clockperiod : time := 1 ps;
+  constant clockperiod : time := 1 us;
 
 begin
 
@@ -38,14 +38,14 @@ begin
     simulate <= '1';
     reset <= '1';
 
-    wait for 1 ps;
+    wait for 1 us;
 
     reset <= '0';
     start <= '1';
 
-    wait until (s_ready = '1') for 50 ps ;
+    wait until (s_ready = '1') for 50 us ;
 
-    wait for 1 ps;
+    wait for 1 us;
 
     start <= '0';
     simulate <= '0';

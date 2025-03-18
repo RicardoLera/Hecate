@@ -1,19 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.121 (w)1999-2024 BSI
-[*] Mon Mar 17 14:26:18 2025
+[*] Tue Mar 18 12:32:39 2025
 [*]
 [dumpfile] "debug_tb.ghw"
-[dumpfile_mtime] "Mon Mar 17 14:23:50 2025"
-[dumpfile_size] 6563
+[dumpfile_mtime] "Tue Mar 18 11:57:32 2025"
+[dumpfile_size] 6289
 [savefile] "debug_tb.gtkw"
 [timestart] 0
 [size] 1920 1032
 [pos] -1 -1
-*-9.722153 1511 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+*-30.068518 6508000000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [treeopen] top.
 [treeopen] top.debug_tb.
 [treeopen] top.debug_tb.dut.
-[treeopen] top.debug_tb.dut.bfly_in.
 [treeopen] top.debug_tb.dut.bfly_in.[0].
 [treeopen] top.debug_tb.dut.bfly_in.[0].[0].
 [treeopen] top.debug_tb.dut.bfly_in.[0].[1].
@@ -31,87 +30,11 @@ top.debug_tb.s_ready
 top.debug_tb.clock
 @420
 top.debug_tb.dut.state
-@200
--
-@c00200
--b_idx
-@420
-top.debug_tb.dut.b_idx[0]
-top.debug_tb.dut.b_idx[1]
-top.debug_tb.dut.b_idx[2]
-top.debug_tb.dut.b_idx[3]
-top.debug_tb.dut.b_idx[4]
-top.debug_tb.dut.b_idx[5]
-top.debug_tb.dut.b_idx[6]
-top.debug_tb.dut.b_idx[7]
-top.debug_tb.dut.b_idx[8]
-top.debug_tb.dut.b_idx[9]
-top.debug_tb.dut.b_idx[10]
-top.debug_tb.dut.b_idx[11]
-top.debug_tb.dut.b_idx[12]
-top.debug_tb.dut.b_idx[13]
-top.debug_tb.dut.b_idx[14]
-top.debug_tb.dut.b_idx[15]
-top.debug_tb.dut.b_idx[16]
-top.debug_tb.dut.b_idx[17]
-top.debug_tb.dut.b_idx[18]
-top.debug_tb.dut.b_idx[19]
-top.debug_tb.dut.b_idx[20]
-top.debug_tb.dut.b_idx[21]
-top.debug_tb.dut.b_idx[22]
-top.debug_tb.dut.b_idx[23]
-top.debug_tb.dut.b_idx[24]
-top.debug_tb.dut.b_idx[25]
-top.debug_tb.dut.b_idx[26]
-top.debug_tb.dut.b_idx[27]
-top.debug_tb.dut.b_idx[28]
-top.debug_tb.dut.b_idx[29]
-top.debug_tb.dut.b_idx[30]
-top.debug_tb.dut.b_idx[31]
-@1401200
--b_idx
-@c00200
--tb_idx
-@420
-top.debug_tb.dut.tb_idx[0]
-top.debug_tb.dut.tb_idx[1]
-top.debug_tb.dut.tb_idx[2]
-top.debug_tb.dut.tb_idx[3]
-top.debug_tb.dut.tb_idx[4]
-top.debug_tb.dut.tb_idx[5]
-top.debug_tb.dut.tb_idx[6]
-top.debug_tb.dut.tb_idx[7]
-top.debug_tb.dut.tb_idx[8]
-top.debug_tb.dut.tb_idx[9]
-top.debug_tb.dut.tb_idx[10]
-top.debug_tb.dut.tb_idx[11]
-top.debug_tb.dut.tb_idx[12]
-top.debug_tb.dut.tb_idx[13]
-top.debug_tb.dut.tb_idx[14]
-top.debug_tb.dut.tb_idx[15]
-top.debug_tb.dut.tb_idx[16]
-top.debug_tb.dut.tb_idx[17]
-top.debug_tb.dut.tb_idx[18]
-top.debug_tb.dut.tb_idx[19]
-top.debug_tb.dut.tb_idx[20]
-top.debug_tb.dut.tb_idx[21]
-top.debug_tb.dut.tb_idx[22]
-top.debug_tb.dut.tb_idx[23]
-top.debug_tb.dut.tb_idx[24]
-top.debug_tb.dut.tb_idx[25]
-top.debug_tb.dut.tb_idx[26]
-top.debug_tb.dut.tb_idx[27]
-top.debug_tb.dut.tb_idx[28]
-top.debug_tb.dut.tb_idx[29]
-top.debug_tb.dut.tb_idx[30]
-top.debug_tb.dut.tb_idx[31]
-@1401200
--tb_idx
-@200
+@201
 -
 @800200
 -bfly_in
-@28
+@22
 #{top.debug_tb.dut.bfly_in[0][0][0][24:0]} top.debug_tb.dut.bfly_in[0][0][0][24] top.debug_tb.dut.bfly_in[0][0][0][23] top.debug_tb.dut.bfly_in[0][0][0][22] top.debug_tb.dut.bfly_in[0][0][0][21] top.debug_tb.dut.bfly_in[0][0][0][20] top.debug_tb.dut.bfly_in[0][0][0][19] top.debug_tb.dut.bfly_in[0][0][0][18] top.debug_tb.dut.bfly_in[0][0][0][17] top.debug_tb.dut.bfly_in[0][0][0][16] top.debug_tb.dut.bfly_in[0][0][0][15] top.debug_tb.dut.bfly_in[0][0][0][14] top.debug_tb.dut.bfly_in[0][0][0][13] top.debug_tb.dut.bfly_in[0][0][0][12] top.debug_tb.dut.bfly_in[0][0][0][11] top.debug_tb.dut.bfly_in[0][0][0][10] top.debug_tb.dut.bfly_in[0][0][0][9] top.debug_tb.dut.bfly_in[0][0][0][8] top.debug_tb.dut.bfly_in[0][0][0][7] top.debug_tb.dut.bfly_in[0][0][0][6] top.debug_tb.dut.bfly_in[0][0][0][5] top.debug_tb.dut.bfly_in[0][0][0][4] top.debug_tb.dut.bfly_in[0][0][0][3] top.debug_tb.dut.bfly_in[0][0][0][2] top.debug_tb.dut.bfly_in[0][0][0][1] top.debug_tb.dut.bfly_in[0][0][0][0]
 #{top.debug_tb.dut.bfly_in[0][0][1][24:0]} top.debug_tb.dut.bfly_in[0][0][1][24] top.debug_tb.dut.bfly_in[0][0][1][23] top.debug_tb.dut.bfly_in[0][0][1][22] top.debug_tb.dut.bfly_in[0][0][1][21] top.debug_tb.dut.bfly_in[0][0][1][20] top.debug_tb.dut.bfly_in[0][0][1][19] top.debug_tb.dut.bfly_in[0][0][1][18] top.debug_tb.dut.bfly_in[0][0][1][17] top.debug_tb.dut.bfly_in[0][0][1][16] top.debug_tb.dut.bfly_in[0][0][1][15] top.debug_tb.dut.bfly_in[0][0][1][14] top.debug_tb.dut.bfly_in[0][0][1][13] top.debug_tb.dut.bfly_in[0][0][1][12] top.debug_tb.dut.bfly_in[0][0][1][11] top.debug_tb.dut.bfly_in[0][0][1][10] top.debug_tb.dut.bfly_in[0][0][1][9] top.debug_tb.dut.bfly_in[0][0][1][8] top.debug_tb.dut.bfly_in[0][0][1][7] top.debug_tb.dut.bfly_in[0][0][1][6] top.debug_tb.dut.bfly_in[0][0][1][5] top.debug_tb.dut.bfly_in[0][0][1][4] top.debug_tb.dut.bfly_in[0][0][1][3] top.debug_tb.dut.bfly_in[0][0][1][2] top.debug_tb.dut.bfly_in[0][0][1][1] top.debug_tb.dut.bfly_in[0][0][1][0]
 #{top.debug_tb.dut.bfly_in[0][1][0][24:0]} top.debug_tb.dut.bfly_in[0][1][0][24] top.debug_tb.dut.bfly_in[0][1][0][23] top.debug_tb.dut.bfly_in[0][1][0][22] top.debug_tb.dut.bfly_in[0][1][0][21] top.debug_tb.dut.bfly_in[0][1][0][20] top.debug_tb.dut.bfly_in[0][1][0][19] top.debug_tb.dut.bfly_in[0][1][0][18] top.debug_tb.dut.bfly_in[0][1][0][17] top.debug_tb.dut.bfly_in[0][1][0][16] top.debug_tb.dut.bfly_in[0][1][0][15] top.debug_tb.dut.bfly_in[0][1][0][14] top.debug_tb.dut.bfly_in[0][1][0][13] top.debug_tb.dut.bfly_in[0][1][0][12] top.debug_tb.dut.bfly_in[0][1][0][11] top.debug_tb.dut.bfly_in[0][1][0][10] top.debug_tb.dut.bfly_in[0][1][0][9] top.debug_tb.dut.bfly_in[0][1][0][8] top.debug_tb.dut.bfly_in[0][1][0][7] top.debug_tb.dut.bfly_in[0][1][0][6] top.debug_tb.dut.bfly_in[0][1][0][5] top.debug_tb.dut.bfly_in[0][1][0][4] top.debug_tb.dut.bfly_in[0][1][0][3] top.debug_tb.dut.bfly_in[0][1][0][2] top.debug_tb.dut.bfly_in[0][1][0][1] top.debug_tb.dut.bfly_in[0][1][0][0]
@@ -178,5 +101,7 @@ top.debug_tb.dut.tb_idx[31]
 #{top.debug_tb.dut.bfly_in[15][1][1][24:0]} top.debug_tb.dut.bfly_in[15][1][1][24] top.debug_tb.dut.bfly_in[15][1][1][23] top.debug_tb.dut.bfly_in[15][1][1][22] top.debug_tb.dut.bfly_in[15][1][1][21] top.debug_tb.dut.bfly_in[15][1][1][20] top.debug_tb.dut.bfly_in[15][1][1][19] top.debug_tb.dut.bfly_in[15][1][1][18] top.debug_tb.dut.bfly_in[15][1][1][17] top.debug_tb.dut.bfly_in[15][1][1][16] top.debug_tb.dut.bfly_in[15][1][1][15] top.debug_tb.dut.bfly_in[15][1][1][14] top.debug_tb.dut.bfly_in[15][1][1][13] top.debug_tb.dut.bfly_in[15][1][1][12] top.debug_tb.dut.bfly_in[15][1][1][11] top.debug_tb.dut.bfly_in[15][1][1][10] top.debug_tb.dut.bfly_in[15][1][1][9] top.debug_tb.dut.bfly_in[15][1][1][8] top.debug_tb.dut.bfly_in[15][1][1][7] top.debug_tb.dut.bfly_in[15][1][1][6] top.debug_tb.dut.bfly_in[15][1][1][5] top.debug_tb.dut.bfly_in[15][1][1][4] top.debug_tb.dut.bfly_in[15][1][1][3] top.debug_tb.dut.bfly_in[15][1][1][2] top.debug_tb.dut.bfly_in[15][1][1][1] top.debug_tb.dut.bfly_in[15][1][1][0]
 @1000200
 -bfly_in
+@200
+-
 [pattern_trace] 1
 [pattern_trace] 0

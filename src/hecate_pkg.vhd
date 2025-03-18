@@ -14,6 +14,7 @@ package hecate_pkg is
   type b25_2d_real_array is array (natural range <>) of b25_real_array;
   type b25_3d_real_array is array (natural range <>) of b25_2d_real_array;
   type b25_2d_complex_array is array (natural range <>) of b25_complex_array;
+  type b25_3d_complex_array is array (natural range <>) of b25_2d_complex_array;
 
   -- Synth TB RAM
   type t_ram is array (natural range <>) of b25_real_array(0 to 26);
