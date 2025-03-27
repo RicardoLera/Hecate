@@ -22,11 +22,12 @@ architecture karatsuba of b25_wmul is -- 3 constant multipliers + 3 adders
     constant base : real := 2.0*MATH_PI/real(pnt);
     variable x : b25_complex;
   begin
-    x(0) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(inp) * base)), 17)));
-    x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
     if (inp > pnt/4) then
-      x(0)(24) := ('1');
+      x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(pnt/2-inp) * base)), 17)));
+    else
+      x(0) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(inp) * base)), 17)));
     end if;
+    x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
     return b25_complex(x);
   end function;
   constant wn : b25_complex := twiddle(w, n);

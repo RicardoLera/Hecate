@@ -49,11 +49,12 @@ begin
     i <= test_arr;
     
     reset <= '1';
-    wait for 2 ms;
+    wait for 1 ms;
     reset <= '0';
     start <= '1';
     wait until (s_ready = '1') for 50 ms ;
     start <= '0';
+    wait for 1 ms;
 
     simulate <= '0';
     stop;

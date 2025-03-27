@@ -27,17 +27,8 @@ architecture synth of fft is
 
   signal in_raster         : b25_real_array(0 to n_points-1) := (others => (others => '0'));
   signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
-  signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/4)(0 to n_points/2-1) := (others => (others => (others => (others => '0')))); -- 2*(2^0 + 2^1 + ... 2^(log2(N)-3)) = N/2 - 2 (accounting for q1-q2 symmetry)
+  signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/2-1) := (others => (others => (others => (others => '0'))));
   signal out_buff         : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
-
-  function factor2(n : integer) return integer is
-    variable f : integer := 1;
-  begin
-    while (n mod (2**f) = 0) loop
-      f := f + 1;
-    end loop;
-    return (f);
-  end function;
 
   function fft_scramble_lut(x, y, z : integer) return integer is
     variable idx     : integer := 0;
@@ -62,6 +53,7 @@ architecture synth of fft is
     if ((s < 1) or (s > the_log)) then
       return (0,0);
     else
+      --report "Inside bfly_lut: s = " & integer'image(s) & "   n = " & integer'image(n) & "   b = " & integer'image(b);
       if (tb) then
         return (b,1);
       else
@@ -70,42 +62,45 @@ architecture synth of fft is
     end if;
   end function;
 
-    -- 2*(n/(n_points/(2**(s+1)))); ?
-  -- previous (n/(2**(s+1))) mod (n_points/(2**(s+1))); -- n's group index mod number_of_groups (next state)
+  -- bfly_lut_rev converts (b, tb) back to n, in their respective state
+  function bfly_lut_rev(s, b, tb : integer) return integer is
+    constant group_size   : integer := (2**(s-1));
+    constant group_idx    : integer := b/group_size;
+    constant pos_in_group : integer := b mod group_size;
+    constant n : integer := 2*group_size*group_idx + pos_in_group + group_size*tb;
+  begin
+    if ((s < 1) or (s > the_log)) then
+      return 0;
+    else
+      return n;
+    end if;
+  end function;
+  
   -- wmul_lut converts n to the respective w multipliers, in their respective state, or returns (0,0,1) if no multiplication is needed
   function wmul_lut(s, n : integer) return integer_trio is
     constant valid : boolean := not (n mod (2**(s+1)) < 2**s); -- it's tb for the next state. I hate/love Fourier symmetry
     constant w : integer := (n mod (2**s)) * (2**(the_log-s-1)); -- pos_in_group (next state) times decreasing constant (2**(the_log-s-1))
-    constant m : integer := 2*(n/(2**(s+1))); -- group_idx + (pos_in_group >= group_size/2)
+    constant m : integer := (n/(2**(s+1))) ; -- group_idx = n/g_size[points]
   begin
     if ((s < 1) or (s > the_log-1) or not valid) then
       return (0,0,1);
     else
-      if (w > n_points/4) then
-        if (n mod (2**s)) >= (2**(s-1)) then 
-          return (n_points/4 - (w mod n_points/4)-1,m+1,1);
-        else
-          return (n_points/4 - (w mod n_points/4)-1,m,1);
-        end if;
-      else
-        if (n mod (2**s)) >= (2**(s-1)) then 
-          return (w,m+1,0);
-        else
-          return (w,m,0);
-        end if;
-      end if;
+      --if (n mod (2**s)) >= (2**(s-1)) then 
+        --return (w,m+1,0);
+      --else
+        return (w,m,0);
+      --end if;
     end if;
   end function;
 
-  -- previous (2**s)*m + (w mod (2**s));
   -- wmul_lut_rev converts (w, m) back to n, in its respective state
   function wmul_lut_rev(s, w, m : integer) return integer is
     constant group_size   : integer := (2**s);
-    constant pos_in_group : integer := (w / (2**(the_log-s-1))) + (m mod 2) * ( group_size-1 - (w / (2**(the_log-s-1))));
-    constant group_idx    : integer := m / group_size; -- pos_in_group < group_size, so it will round down and dissappear
+    constant pos_in_group : integer := w / (2**(the_log-s-1));
+    constant group_idx    : integer := m;
     constant n : integer := 2*group_size*group_idx + pos_in_group + group_size;
   begin
-    if ((s < 1) or (s > the_log-1)) then
+    if ((s < 1) or (s > the_log-1) or (n > n_points-1)) then -- or (n mod (2**(s+1)) < 2**s) (invalid)
       return 0;
     else
       return n;
@@ -126,25 +121,27 @@ begin
   end generate gen_bfly;
 
   -- Generate complex constant multiplers
-  gen_wmul : for w in 1 to n_points/4-1 generate -- e.g., w1~w7 for N=32
-    gen_wmul2 : for m in 0 to 2*factor2(n_points)-1 generate
-      wmul : component b25_wmul
-        generic map (
-          w => w,
-          n => n_points
-        )
-        port map (
-          i => wmul_in(w)(m),
-          o => wmul_out(w)(m)
-        );
+  gen_wmul : for w in 1 to n_points/2-1 generate -- e.g., w1~w15 for N=32
+    gen_wmul2 : for m in 0 to n_points/4-1 generate -- This can be further reduced with an if generate (previous: 2*factor2(n_points)-1)
+      gen_wmul3 : if (w /= n_points/4) generate
+        wmul : component b25_wmul
+          generic map (
+            w => w,
+            n => n_points
+          )
+          port map (
+            i => wmul_in(w)(m),
+            o => wmul_out(w)(m)
+          );
+      end generate gen_wmul3;
     end generate gen_wmul2;
   end generate gen_wmul;
-  gen_wmul3 : for m in 0 to n_points/2-1 generate -- to cover, e.g., w0 and w8 for N=32                                 n_points/2-3 ?
+  gen_wmul4 : for m in 0 to n_points/2-1 generate -- to cover, e.g., w8 for N=32, of which there are 15 instances
     wmul_out(n_points/4)(m) <= (                                                  -- (a + bi)*i = 
     (not wmul_in(n_points/4)(m)(1)(24) & wmul_in(n_points/4)(m)(1)(23 downto 0)), -- -b
     wmul_in(n_points/4)(m)(0)                                                     -- +ai
     );
-  end generate gen_wmul3;
+  end generate gen_wmul4;
   wmul_out(0) <= wmul_in(0);
 
   -- State machine
@@ -174,43 +171,47 @@ begin
 
   -- Butterfly Layer
   -- This version of the bfly and wmul blocks scour the LUTs recursivelly, which is hope is optimized by the synthesizer
-  -- Later attempt calling 'bfly_in(bfly_lut(state, n)(0))(bfly_lut(state, n)(1))' to see if the direct call is still interpreted as static and avoid driver clashes
+  -- Later attempt calling 'bfly_in(bfly_lut(state, n)(0))(bfly_lut(state, n)(1))' to see if the direct call is still interpreted as static and avoid lsp clashes
   gen_procs_bfly : for b in 0 to n_points/2-1 generate -- bfly_out(b)(tb)[b25C] <= in_raster(n) | wmul_out(w)(m)(state)[b25C]
     gen_procs_bfly_tb : for tb in 0 to 1 generate
       proc_bfly : process (state) is
+        variable n : integer;
       begin
-        for n in 0 to n_points-1 loop
-          if (state > 0) then
-            if ((b = bfly_lut(state, n)(0)) and (tb = bfly_lut(state, n)(1))) then
 
-              if (state < the_log+1) then
-                if (state = 1) then
-                  --report "n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb);
-                  bfly_in(b)(tb) <= (in_raster(n), 25b"0");
-                else
-                  if (wmul_lut(state-1, n) /= (0,0,1)) then -- verifies if there is a corresponding multiplier
-                    bfly_in(b)(tb) <= wmul_out(wmul_lut(state-1, n)(0))(wmul_lut(state-1, n)(1));
-                  else
-                    bfly_in(b)(tb) <= bfly_out(bfly_lut(state-1, n)(0))(bfly_lut(state-1, n)(1));
-                  end if;
-                end if;
-              end if;
-
+        if (state > 0) and (state < the_log+1) then
+          n := bfly_lut_rev(state, b, tb);
+          if (state = 1) then
+            --report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb);
+            bfly_in(b)(tb) <= (in_raster(n), 25b"0");
+          else
+            if (wmul_lut(state-1, n) /= (0,0,1)) then -- verifies if there is a corresponding multiplier
+              bfly_in(b)(tb) <= wmul_out(wmul_lut(state-1, n)(0))(wmul_lut(state-1, n)(1));
+            else
+              bfly_in(b)(tb) <= bfly_out(bfly_lut(state-1, n)(0))(bfly_lut(state-1, n)(1));
             end if;
           end if;
-        end loop;
+        end if;
+        
       end process proc_bfly;
     end generate gen_procs_bfly_tb;
   end generate gen_procs_bfly;
 
   -- Complex Multiplier Layer
-  gen_procs_wmul : for w in 0 to n_points/4 generate -- wmul_in(w)(m)(state)[b25C] <= bfly_out(b)(tb)[b25C]
+  gen_procs_wmul : for w in 0 to n_points/2-1 generate -- wmul_in(w)(m)(state)[b25C] <= bfly_out(b)(tb)[b25C]
     gen_procs_wmul2 : for m in 0 to n_points/2-1 generate
-      signal trigger: b25_2d_complex_array(0 to n_points/4)(0 to n_points/2-1) := (others => (others => (others => (others => '0'))));
+      signal trigger: b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/2-1) := (others => (others => (others => (others => '0'))));
     begin
       trigger(w)(m) <=
-        bfly_out(bfly_lut(state, wmul_lut_rev(state,w,m))(0))(bfly_lut(state, wmul_lut_rev(state,w,m))(1))
-      when (state > 0) and (state < the_log) else (others => (others => '0'));
+        bfly_out(
+          bfly_lut(
+            state, wmul_lut_rev(state,w,m)
+          )(0)
+        )(
+          bfly_lut(
+            state, wmul_lut_rev(state,w,m)
+          )(1)
+        )
+        when (state > 0) and (state < the_log) else (others => (others => '0'));
       proc_wmul : process (trigger(w)(m)) is
         variable b, tb, n : integer;
       begin
@@ -218,18 +219,10 @@ begin
           n  := wmul_lut_rev(state,w,m);
           b  := bfly_lut(state, n)(0);
           tb := bfly_lut(state, n)(1);
-          if ((w = wmul_lut(state, n)(0)) and (m = wmul_lut(state, n)(1)) and (wmul_lut(state, n) /= (0,0,1))) then
+          if (wmul_lut(state, n) /= (0,0,1)) then
 
-            if (wmul_lut(state, n)(2) = 1) then -- multiply by i (because, e.g., w1 = i*w9)
-              report "i   state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
-              wmul_in(w)(m) <= (                                                -- (a + bi)*i = 
-                (not bfly_out(b)(tb)(1)(24) & bfly_out(b)(tb)(1)(23 downto 0)), -- -b
-                bfly_out(b)(tb)(0)                                              -- +ai
-              );
-            else
-              report "r   state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
-              wmul_in(w)(m) <= bfly_out(b)(tb);
-            end if;
+            report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
+            wmul_in(w)(m) <= bfly_out(b)(tb);
 
           end if;
         end if;
