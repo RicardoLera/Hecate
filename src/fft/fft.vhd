@@ -149,12 +149,9 @@ begin
     if rising_edge(clock) then
       if (reset) then
         state <= 0;
-        s_ready <= '0';
       elsif (start) then
         if (state < the_log+1) then
           state <= state + 1;
-        else
-          s_ready <= '1';
         end if;
       end if;
     end if;
@@ -203,28 +200,23 @@ begin
     begin
       trigger(w)(m) <=
         bfly_out(
-          bfly_lut(
-            state, wmul_lut_rev(state,w,m)
-          )(0)
+          bfly_lut(state, wmul_lut_rev(state,w,m))(0)
         )(
-          bfly_lut(
-            state, wmul_lut_rev(state,w,m)
-          )(1)
-        )
+          bfly_lut(state, wmul_lut_rev(state,w,m))(1))
         when (state > 0) and (state < the_log) else (others => (others => '0'));
       proc_wmul : process (trigger(w)(m)) is
         variable b, tb, n : integer;
       begin
         if ((state > 0) and (state < the_log)) then
+
           n  := wmul_lut_rev(state,w,m);
           b  := bfly_lut(state, n)(0);
           tb := bfly_lut(state, n)(1);
-          if (wmul_lut(state, n) /= (0,0,1)) then
-
+          if ((wmul_lut(state, n)(0) = w) and (wmul_lut(state, n)(1) = m) and (wmul_lut(state, n) /= (0,0,1))) then
             report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
             wmul_in(w)(m) <= bfly_out(b)(tb);
-
           end if;
+
         end if;
       end process proc_wmul;
     end generate gen_procs_wmul2;
@@ -238,8 +230,11 @@ begin
         if (n < n_points/2) then -- top/bottom
           out_buff(n) <= bfly_out(n)(0);
         else
-          out_buff(n) <= bfly_out(n mod n_points/2)(1);
+          out_buff(n) <= bfly_out(n mod (n_points/2))(1);
         end if;
+        s_ready <= '1';
+      else
+        s_ready <= '0';
       end if;
     end process proc_out;
   end generate gen_procs_out;
