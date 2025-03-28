@@ -13,9 +13,9 @@ if [ "$1" = "synth" ] ; then
 
 else
 
-  if [ "$1" = "debug" ] ; then
-    comp_files="debug_mwe/debug.vhd debug_mwe/debug_tb.vhd"
-    top_module="debug_tb"
+  if [ "$1" = "lsp" ] ; then
+    comp_files="debug_lsp/*.vhd"
+    top_module="lsp_tb"
 
   elif [ "$1" = "dft" ] ; then
     comp_files="hecate_pkg.vhd dft/dft.vhd dft/dft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd"
@@ -33,7 +33,7 @@ else
     comp_files="*.vhd */*.vhd"
     top_module="hecate_tb_debug"
 
-  elif [ "$1" = "sim" ] ; then
+  elif [ "$1" = "hec" ] ; then
     comp_files="*.vhd */*.vhd"
     top_module="hecate_tb sim"
 

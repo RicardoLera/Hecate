@@ -13,7 +13,7 @@ entity fft is
     i                   : in  b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
     o                   : out b25_complex_array(0 to n_points/2);
     clock, reset, start : in  std_logic;
-    s_ready             : out std_logic
+    s_ready             : out std_logic := '0'
   );
 end entity fft;
 
@@ -28,7 +28,9 @@ architecture synth of fft is
   signal in_raster         : b25_real_array(0 to n_points-1) := (others => (others => '0'));
   signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
   signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/2-1) := (others => (others => (others => (others => '0'))));
-  signal out_buff         : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal out_buff          : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+
+  signal trigger           : b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/2-1) := (others => (others => (others => (others => '0'))));
 
   function fft_scramble_lut(x, y, z : integer) return integer is
     variable idx     : integer := 0;
@@ -174,8 +176,10 @@ begin
       proc_bfly : process (state) is
         variable n : integer;
       begin
+        if (reset) then
+          bfly_in(b)(tb) <= (others => (others => '0'));
 
-        if (state > 0) and (state < the_log+1) then
+        elsif (state > 0) and (state < the_log+1) then
           n := bfly_lut_rev(state, b, tb);
           if (state = 1) then
             --report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb);
@@ -196,28 +200,32 @@ begin
   -- Complex Multiplier Layer
   gen_procs_wmul : for w in 0 to n_points/2-1 generate -- wmul_in(w)(m)(state)[b25C] <= bfly_out(b)(tb)[b25C]
     gen_procs_wmul2 : for m in 0 to n_points/2-1 generate
-      signal trigger: b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/2-1) := (others => (others => (others => (others => '0'))));
-    begin
+
       trigger(w)(m) <=
-        bfly_out(
-          bfly_lut(state, wmul_lut_rev(state,w,m))(0)
-        )(
-          bfly_lut(state, wmul_lut_rev(state,w,m))(1))
-        when (state > 0) and (state < the_log) else (others => (others => '0'));
+        bfly_out(bfly_lut(state, wmul_lut_rev(state,w,m))(0))(bfly_lut(state, wmul_lut_rev(state,w,m))(1))
+        when (state > 0) and (state < the_log)
+      else
+        (25b"1", 25b"0")    -- Trigger all processes when reset=1, so they can be reset
+        when (reset = '1')
+      else
+        (others => (others => '0'));
+
       proc_wmul : process (trigger(w)(m)) is
         variable b, tb, n : integer;
       begin
-        if ((state > 0) and (state < the_log)) then
+        if (reset = '1') then
+          wmul_in(w)(m) <= (others => (others => '0'));
 
+        elsif ((state > 0) and (state < the_log)) then
           n  := wmul_lut_rev(state,w,m);
           b  := bfly_lut(state, n)(0);
           tb := bfly_lut(state, n)(1);
           if ((wmul_lut(state, n)(0) = w) and (wmul_lut(state, n)(1) = m) and (wmul_lut(state, n) /= (0,0,1))) then
-            report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
+            --report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
             wmul_in(w)(m) <= bfly_out(b)(tb);
           end if;
-
         end if;
+
       end process proc_wmul;
     end generate gen_procs_wmul2;
   end generate gen_procs_wmul;
@@ -226,18 +234,19 @@ begin
   gen_procs_out : for n in 0 to n_points-1 generate
     proc_out : process (state)
     begin
-      if (state = the_log+1) then
+      if (reset = '1') then
+        out_buff(n) <= (others => (others => '0'));
+        s_ready <= '0';
+      elsif (state = the_log+1) then
         if (n < n_points/2) then -- top/bottom
           out_buff(n) <= bfly_out(n)(0);
         else
           out_buff(n) <= bfly_out(n mod (n_points/2))(1);
         end if;
         s_ready <= '1';
-      else
-        s_ready <= '0';
       end if;
     end process proc_out;
   end generate gen_procs_out;
-  o <= out_buff(0 to n_points/2);
+  o <= out_buff(0 to n_points/2); -- full N buffer is meant for debugging, but it's not a lot of hardware so I'll leave it
 
 end architecture synth;

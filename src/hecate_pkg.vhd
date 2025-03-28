@@ -173,7 +173,7 @@ package hecate_pkg is
       i                   : in  b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
       o                   : out b25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
-      s_ready             : out std_logic
+      s_ready             : out std_logic := '0'
     );
   end component fft;
 
@@ -269,22 +269,18 @@ package hecate_pkg is
   end component;
 
   component hecate is
-    generic (
-      nx, ny, nz : natural range 0 to 16 := 2;
-      n_points : natural range 0 to 1024 := 32 --integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1))))
-    );
     port (
-      img, ker            : in b25_real_array(0 to nx*ny*nz-1);
+      img, ker            : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
       clock, reset, start : in std_logic;
-      res                 : out b25_real_array(0 to n_points);
+      res                 : out b25_real_array(0 to 26) := (others => (others => '0'));
       o_ready             : out std_logic
     );
   end component;
 
   component conv3d is
     port (
-      img : in  b25_real_array(0 to 7);
-      ker : in  b25_real_array(0 to 7);
+      img : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
       clk : in  std_logic;
       rst : in  std_logic;
       run : in  std_logic;

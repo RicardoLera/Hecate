@@ -1,4 +1,3 @@
-library work;
   use work.hecate_pkg.all;
 
 library ieee;
@@ -7,18 +6,22 @@ library ieee;
   use ieee.math_real.all;
 
 entity hecate is
-  generic (
-    nx, ny, nz : natural range 0 to 16 := 2
-  );
   port (
-    img, ker            : in b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
+    img, ker            : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
     clock, reset, start : in std_logic;
-    res                 : out b25_3d_real_array(0 to 2*nx-1)(0 to 2*ny-1)(0 to 2*nz-1);
+    res                 : out b25_real_array(0 to 26) := (others => (others => '0'));
     o_ready             : out std_logic
   );
 end entity hecate;
 
 architecture synth of hecate is
+
+  --constant n_points : natural range 0 to 1024 := integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1)))));
+
+  signal ready_fft  : std_logic_vector(0 to 1);
+  signal ready_had  : std_logic_vector(0 to 16);
+  signal ready_idft : std_logic_vector(0 to 26) := (others => '0');
+  signal ffts_ready, hads_ready, idfts_ready, s_ready : std_logic := '0';
 
   signal img_transf, ker_transf : b25_complex_array(0 to 16);
 
@@ -26,39 +29,25 @@ architecture synth of hecate is
   signal calc_vals_x : t_calc_matrix := (others => (others => (others => '0')));
   signal calc_vals_y : t_calc_matrix := (others => (others => (others => '0')));
 
-  signal ready_dft  : std_logic_vector(0 to 1);
-  signal ready_had  : std_logic_vector(0 to 16);
-  signal ready_idft : std_logic_vector(0 to 26) := (others => '0');
-  signal dfts_ready, hads_ready, idfts_ready, s_ready : std_logic := '0';
+  -- signal res_buff : b25_real_array(0 to 26);
 
-  signal add_a, add_b, add_r : b25_real_array(0 to 26) := (others => (others => '0'));
-  signal acc : b25_real_array(0 to 26) := (others => (others => '0'));
-
-  variable n_points : natural range 0 to 1024 := integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1)))));
+  -- function raster_lut(x, y, z : integer) return integer is
+  --   variable idx     : integer := 0;
+  --   constant nx_full : integer := 3; -- 2*nx-1
+  --   constant ny_full : integer := 3; -- 2*ny-1
+  --   constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
+  -- begin
+  --   for g in 0 to 4 loop -- 0 to log2(N)-1
+  --     if (n mod (2**(g+1)) >= 2**g) then
+  --       idx := idx + 32 / (2**(g+1)); -- N = 32
+  --     end if;
+  --   end loop;
+  --   return idx;
+  -- end function;
   
 begin
 
-  -- dft_in_img : component dft
-  --   port map (
-  --     i       => img,
-  --     o       => img_transf,
-  --     clock   => clock,
-  --     start   => start,
-  --     reset   => reset,
-  --     s_ready => ready_dft(0)
-  --   );
-
-  -- dft_in_ker : component dft
-  --   port map (
-  --     i       => ker,
-  --     o       => ker_transf,
-  --     clock   => clock,
-  --     start   => start,
-  --     reset   => reset,
-  --     s_ready => ready_dft(1)
-  --   );
-
-  dfts_ready  <= and(ready_dft);
+  ffts_ready  <= and(ready_fft);
   hads_ready  <= and(ready_had);
   idfts_ready <= and(ready_idft);
 
@@ -74,25 +63,34 @@ begin
   o_ready <= s_ready;
 
   fft_in_img : component fft
-  port map (
-    i       => img,
-    o       => img_transf,
-    clock   => clock,
-    start   => start,
-    reset   => reset,
-    s_ready => ready_dft(0)
-  );
+    generic map (2, 2, 2, 32)
+    port map (
+      i       => img,
+      o       => img_transf,
+      clock   => clock,
+      start   => start,
+      reset   => reset,
+      s_ready => ready_fft(0)
+    );
+
+  fft_in_ker : component fft
+    generic map (2, 2, 2, 32)
+    port map (
+      i       => ker,
+      o       => ker_transf,
+      clock   => clock,
+      start   => start,
+      reset   => reset,
+      s_ready => ready_fft(1)
+    );
 
   gen_calc_vals : for id in 0 to 16 generate
-
     had : component hadamard
-      generic map (
-        n_idx => id
-      )
+      generic map (n_idx => id)
       port map (
         clock     => clock,
         reset     => reset,
-        start     => dfts_ready,
+        start     => ffts_ready,
         x_i       => img_transf(id)(0),
         y_i       => img_transf(id)(1),
         x_k       => ker_transf(id)(0),
@@ -101,10 +99,12 @@ begin
         p_coefs_y => calc_vals_y(id),
         ready     => ready_had(id)
       );
-
   end generate gen_calc_vals;
 
   gen_sums : for o_id in 0 to 26 generate
+    signal add_a, add_b, add_r : b25_real_array(0 to 26) := (others => (others => '0'));
+    signal acc : b25_real_array(0 to 26) := (others => (others => '0'));
+  begin
 
     sum_r : component b25_add
       port map (
@@ -112,7 +112,6 @@ begin
         b   => add_b(o_id),
         res => add_r(o_id)
       );
-    
     sum_out : component b25_add
       port map (
         a   => add_r(o_id),
@@ -121,11 +120,9 @@ begin
       );
 
     sum_pro : process (clock) is
-
-      variable i_id, w_ex, w_exc, w, wc: natural range 0 to 32;
+      variable i_id, w_ex, w, wc: natural range 0 to 32; -- w_exc removed
       variable i_id_cor : natural range 0 to 16;
       variable a_sign, b_sign, wx_sign, wy_sign : std_logic;
-
     begin
       if rising_edge(clock) then
         if (reset) then
@@ -200,7 +197,15 @@ begin
         end if;
       end if;
     end process sum_pro;
-
   end generate gen_sums;
+
+  -- Output Layer (unrasterize)
+  -- gen_x : for x in 0 to 2 generate
+  --   gen_y : for y in 0 to 2 generate
+  --     gen_z : for z in 0 to 2 generate
+  --       res(x)(y)(z) <= res_buff(raster_lut(x, y, z)) when idfts_ready = '1';
+  --     end generate gen_z;
+  --   end generate gen_y;
+  -- end generate gen_x;
 
 end architecture synth;

@@ -47,8 +47,11 @@ arrToHex = np.vectorize(toHex)
 # ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
 
 # 3D Test
-img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
+img = np.array([1, 0.5, 0, 1, 1, 0, 0, 0, 0, 1, 0.5, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
 ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
+
+# img = np.array([1, 0, 0, 1, 0, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
+# ker = np.array([1, 0, 0, 1, 0, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
 
 # Random array test
 # img = np.random.rand(8)
@@ -65,7 +68,9 @@ spsize =2**(math.ceil(math.log(np.size(img), 2))) # next power of 2
 
 # FFT
 IMG = np.fft.fft(img, spsize)
+print(arrToHex(np.real(IMG)))
 KER = np.fft.fft(ker, spsize)
+print(arrToHex(np.real(KER)))
 
 # CORDIC rect -> polar
 mIMG = np.abs(IMG) * kcor

@@ -45,7 +45,7 @@ void print_arch_con(archvar arr[17][2][8], int c) {
 
 void print_arch_out (char* name, archvar arr[32][2]) {
   printf("\n%s:\n", name);
-  for (int i = 0; i < 32; i++) (print_archvar(arr[i][0]), print_archvar(arr[i][1]), printf("i\n"));
+  for (int i = 0; i < 32; i++) (print_archvar(arr[i][0]), print_archvar(arr[i][1]), printf("i   [%d]\n", i));
 }
 
 

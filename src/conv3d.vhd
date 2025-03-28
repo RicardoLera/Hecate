@@ -1,4 +1,3 @@
-library work;
   use work.hecate_pkg.all;
 
 library ieee;
@@ -7,8 +6,8 @@ library ieee;
 
 entity conv3d is
   port (
-    img : in  b25_real_array(0 to 7);
-    ker : in  b25_real_array(0 to 7);
+    img : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
     clk : in  std_logic;
     rst : in  std_logic;
     run : in  std_logic;
@@ -22,27 +21,14 @@ architecture synth of conv3d is
   constant isize  : integer := 2;
   constant osize  : integer := 3;
 
-  type array_2d is array (natural range <>) of b25_real_array;
-  type array_3d is array (natural range <>) of array_2d;
+  signal rdy_sub        : std_logic_vector(26 downto 0) := (others => '0');
 
-  signal img_3d, ker_3d : array_3d(0 to isize-1)(0 to isize-1)(0 to isize-1)  := (others => (others => (others => (others => '0'))));
-  signal rdy_sub        : std_logic_vector(osize * osize * osize -1 downto 0) := (others => '0');
-
-  signal mul_a, mul_b, mul_res : b25_real_array(osize * osize * osize - 1 downto 0) := (others => (others => '0'));
-  signal add_a, add_b, add_res : b25_real_array(osize * osize * osize - 1 downto 0) := (others => (others => '0'));
-
+  signal mul_a, mul_b, mul_res : b25_real_array(26 downto 0) := (others => (others => '0'));
+  signal add_a, add_b          : b25_real_array(26 downto 0) := (others => (others => '0'));
+  
 begin
 
   add_b <= mul_res;
-
-  loop_iz : for iz in 0 to isize-1 generate
-    loop_iy : for iy in 0 to isize-1 generate
-      loop_ix : for ix in 0 to isize-1 generate
-        img_3d(ix)(iy)(iz)(23 downto 0) <= img(ix + iy*2 + iz*4)(23 downto 0);
-        ker_3d(isize-1-ix)(isize-1-iy)(isize-1-iz)(23 downto 0) <= ker(ix + iy*2 + iz*4)(23 downto 0);
-      end generate loop_ix;
-    end generate loop_iy;
-  end generate loop_iz;
 
   loop_oz : for oz in 0 to osize-1 generate
     loop_oy : for oy in 0 to osize-1 generate
@@ -91,13 +77,9 @@ begin
                     
                     if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
 
-                      mul_a(oidx) <= img_3d(ix)(iy)(iz);
-                      mul_b(oidx) <= ker_3d(kx)(ky)(kz);
+                      mul_a(oidx) <= img(ix)(iy)(iz);
+                      mul_b(oidx) <= ker(kx)(ky)(kz);
                       add_a(oidx) <= res(oidx); 
-                      
-                      -- res_3d(ox)(oy)(oz) <= res_3d(ox)(oy)(oz) + resize((img_3d(ix)(iy)(iz)) * (ker_3d(kx)(ky)(kz)) srl 16, 24);
-
-
 
                     end if;
 

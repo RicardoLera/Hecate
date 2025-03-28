@@ -1,4 +1,3 @@
-library work;
   use work.hecate_pkg.all;
 
 library ieee;
@@ -10,9 +9,9 @@ entity hecate_tb is
   generic (
     test_n : integer := 2
   );
-  port (
-    ram    : out t_ram(0 to 2*test_n)
-  );
+  -- port (
+  --   ram    : out t_ram(0 to 2*test_n)
+  -- );
 end entity hecate_tb;
 
 
@@ -22,11 +21,11 @@ end entity hecate_tb;
 architecture sim of hecate_tb is
 
   signal clk, reset, start : std_logic := '0';
-  signal img, ker          : b25_real_array(0 to 7);
+  signal img, ker          : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
 
   signal res               : b25_real_array(0 to 26);
   signal o_ready           : std_logic;
-  
+
   signal gold              : b25_real_array(0 to 26);
   signal g_ready           : std_logic := '0';
 
@@ -46,10 +45,14 @@ architecture sim of hecate_tb is
     return slv;
   end function;
 
-  procedure rand_arr(signal arr : out b25_real_array(0 to 7); constant offset : in integer) is begin
-    rand_loop : for i in 0 to 7 loop
-      arr(i)   <= '0' & "00000000" & rand_slv(16, i+1, i+1+offset);
-    end loop rand_loop;
+  procedure rand_arr(signal arr : out b25_3d_real_array(0 to 1)(0 to 1)(0 to 1); constant offset : in integer) is begin
+    for x in 0 to 1 loop
+      for y in 0 to 1 loop
+        for z in 0 to 1 loop
+          arr(x)(y)(z) <= '0' & "00000000" & rand_slv(16, x+y+z+1, x+y+z+1+offset);
+        end loop;
+      end loop;
+    end loop;
   end procedure;
 
 begin
@@ -86,16 +89,20 @@ begin
     keep_simulating <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      rand_arr(img, n+1);
-      rand_arr(ker, n+2);
+      --rand_arr(img, n+1);
+      --rand_arr(ker, n+2);
       
-      -- one_loop : for i in 0 to 7 loop
-      --   img(i)   <= '0' & "00000001" & "0000000000000000";
-      --   ker(i)   <= '0' & "00000001" & "0000000000000000";
-      -- end loop one_loop;
+      one_loop_x : for x in 0 to 1 loop
+        one_loop_y : for y in 0 to 1 loop
+          one_loop_z : for z in 0 to 1 loop
+            img(x)(y)(z) <= '0' & "00000001" & "0000000000000000";
+            ker(x)(y)(z) <= '0' & "00000001" & "0000000000000000";
+          end loop one_loop_z;
+        end loop one_loop_y;
+      end loop one_loop_x;
 
-        -- img(2)   <= '0' & "00000000" & "1000000000000100";
-        -- ker(1)   <= '0' & "00000000" & "1000000000000000";
+      img(0)(0)(1) <= '0' & "00000000" & "0100000000000000";
+      ker(1)(0)(1) <= '0' & "00000000" & "0100000000000000";
 
       wait for 5 * clockperiod;
       reset <= '0'; start <= '1'; t1 := now;
@@ -146,103 +153,112 @@ end architecture sim;
 
 
 
+
+
+
+
+
+
+
+
+
 -----SYNTHESIZEABLE ARCHITECTURE-----
 
 
-architecture synth of hecate_tb is
+-- architecture synth of hecate_tb is
 
-  signal clk, start      : std_logic := '0';
-  signal reset           : std_logic := '1';
-  signal img, ker        : b25_real_array(0 to 7) := (others => (others => '0'));
+--   signal clk, start      : std_logic := '0';
+--   signal reset           : std_logic := '1';
+--   signal img, ker        : b25_real_array(0 to 7) := (others => (others => '0'));
 
-  signal res             : b25_real_array(0 to 26);
-  signal o_ready         : std_logic;
+--   signal res             : b25_real_array(0 to 26);
+--   signal o_ready         : std_logic;
   
-  signal gold            : b25_real_array(0 to 26);
-  signal g_ready         : std_logic;
+--   signal gold            : b25_real_array(0 to 26);
+--   signal g_ready         : std_logic;
 
-  signal keep_simulating : std_logic := '1';
-  constant clockperiod   : time      := 1 ms;
+--   signal keep_simulating : std_logic := '1';
+--   constant clockperiod   : time      := 1 ms;
 
-  type t_rom is array (natural range <>) of b25_real_array(0 to 7);
+--   type t_rom is array (natural range <>) of b25_real_array(0 to 7);
 
-  impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
-    variable r : real;
-    variable slv : std_logic_vector(len - 1 downto 0);
-    variable seed1 : positive := s1;
-    variable seed2 : positive := s2;
-  begin
-    for i in slv'range loop
-      uniform(seed1, seed2, r);
-      slv(i) := '1' when r > 0.5 else '0';
-    end loop;
-    return slv;
-  end function;
+--   impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
+--     variable r : real;
+--     variable slv : std_logic_vector(len - 1 downto 0);
+--     variable seed1 : positive := s1;
+--     variable seed2 : positive := s2;
+--   begin
+--     for i in slv'range loop
+--       uniform(seed1, seed2, r);
+--       slv(i) := '1' when r > 0.5 else '0';
+--     end loop;
+--     return slv;
+--   end function;
 
-  impure function gen_data(constant n : in integer) return t_rom is
-    variable mem : t_rom(0 to n);
-  begin
-    data_loop : for i in 0 to n loop
-      arr_loop : for j in 0 to 7 loop
-        mem(i)(j) := '0' & "00000000" & rand_slv(16, j+1, j+2+i);
-      end loop arr_loop;
-    end loop data_loop;
-    return mem;
-  end function;
+--   impure function gen_data(constant n : in integer) return t_rom is
+--     variable mem : t_rom(0 to n);
+--   begin
+--     data_loop : for i in 0 to n loop
+--       arr_loop : for j in 0 to 7 loop
+--         mem(i)(j) := '0' & "00000000" & rand_slv(16, j+1, j+2+i);
+--       end loop arr_loop;
+--     end loop data_loop;
+--     return mem;
+--   end function;
 
-  constant rom : t_rom(0 to 2*test_n) := gen_data(2*test_n);
+--   constant rom : t_rom(0 to 2*test_n) := gen_data(2*test_n);
 
-begin
+-- begin
 
-  clk <= (not clk) and keep_simulating after clockperiod / 2;
+--   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
-  dut : component hecate
-    port map (
-      img     => img,
-      ker     => ker,
-      clock   => clk,
-      reset   => reset,
-      start   => start,
-      res     => res,
-      o_ready => o_ready
-    );
+--   dut : component hecate
+--     port map (
+--       img     => img,
+--       ker     => ker,
+--       clock   => clk,
+--       reset   => reset,
+--       start   => start,
+--       res     => res,
+--       o_ready => o_ready
+--     );
 
-  golden : component conv3d
-    port map (
-      img     => img,
-      ker     => ker,
-      clk     => clk,
-      rst     => reset,
-      run     => start,
-      res     => gold,
-      rdy     => g_ready
-    );
+--   golden : component conv3d
+--     port map (
+--       img     => img,
+--       ker     => ker,
+--       clk     => clk,
+--       rst     => reset,
+--       run     => start,
+--       res     => gold,
+--       rdy     => g_ready
+--     );
 
-  test : process (clk)
-    variable tn : integer := 0;
-  begin
-    if rising_edge(clk) then
+--   test : process (clk)
+--     variable tn : integer := 0;
+--   begin
+--     if rising_edge(clk) then
 
-      if (o_ready and g_ready) then
-        if (tn < test_n) then
-          ram(tn)   <= res;
-          ram(tn+1) <= gold;
-          start <= '0';
-          reset <= '1';
-        else
-          keep_simulating <= '0';
-        end if;
-      else
-        if (reset) then
-          img <= rom(tn);
-          ker <= rom(tn+1);
-          start <= '1';
-          reset <= '0';
-          tn  := tn + 2;
-        end if;
-      end if;
+--       if (o_ready and g_ready) then
+--         if (tn < test_n) then
+--           ram(tn)   <= res;
+--           ram(tn+1) <= gold;
+--           start <= '0';
+--           reset <= '1';
+--         else
+--           keep_simulating <= '0';
+--         end if;
+--       else
+--         if (reset) then
+--           img <= rom(tn);
+--           ker <= rom(tn+1);
+--           start <= '1';
+--           reset <= '0';
+--           tn  := tn + 2;
+--         end if;
+--       end if;
 
-    end if;
-  end process test;
+--     end if;
+--   end process test;
 
-end architecture synth;
+-- end architecture synth;

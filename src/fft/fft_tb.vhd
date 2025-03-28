@@ -13,6 +13,17 @@ architecture arch of fft_tb is
 
   constant test_arr : b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1) := (
     ( ( "0000000010000000000000000",
+        "0000000001000000000000000" ),
+      ( "0000000010000000000000000",
+        "0000000010000000000000000" ) ),
+    ( ( "0000000010000000000000000",
+        "0000000001000000000000000" ),
+      ( "0000000010000000000000000",
+        "0000000010000000000000000" ) )
+  );
+
+  constant test_arr2 : b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1) := (
+    ( ( "0000000010000000000000000",
         "0000000010000000000000000" ),
       ( "0000000010000000000000000",
         "0000000010000000000000000" ) ),
@@ -47,15 +58,22 @@ begin
 
     simulate <= '1';
     i <= test_arr;
-    
-    reset <= '1';
-    wait for 1 ms;
+
     reset <= '0';
     start <= '1';
     wait until (s_ready = '1') for 50 ms ;
+
+    i <= test_arr2;
+    reset <= '1';
+    start <= '0';
+    wait for 2 ms;
+
+    reset <= '0';
+    start <= '1';
+    wait until (s_ready = '1') for 50 ms ;
+
     start <= '0';
     wait for 1 ms;
-
     simulate <= '0';
     stop;
 
