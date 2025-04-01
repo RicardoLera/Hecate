@@ -1,4 +1,3 @@
-library work;
   use work.hecate_pkg.all;
 
 library ieee;

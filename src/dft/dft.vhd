@@ -6,7 +6,6 @@
 
 -- For quick implementation, we can use a simplified method that uses 33 mults and 34 adders, along 32 cycles
 
-library work;
   use work.hecate_pkg.all;
 
 library ieee;
