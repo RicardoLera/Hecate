@@ -170,7 +170,7 @@ package hecate_pkg is
       n_points   : natural range 0 to 1024 := 32
     );
     port (
-      i                   : in  b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
+      i                   : in  b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
       o                   : out b25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
       s_ready             : out std_logic := '0'

@@ -22,7 +22,7 @@ architecture karatsuba of b25_wmul is -- 3 constant multipliers + 3 adders
     constant base : real := 2.0*MATH_PI/real(pnt);
     variable x : b25_complex;
   begin
-    report "inp = " & integer'image(inp) & "   pnt/4 = " & integer'image(pnt/4);
+    -- report "inp = " & integer'image(inp) & "   pnt/4 = " & integer'image(pnt/4);
     if (inp > pnt/4) then
       x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(pnt/2-inp) * base)), 17)));
     else

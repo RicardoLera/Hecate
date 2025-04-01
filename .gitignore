@@ -1,7 +1,7 @@
 .*
 !/.gitignore
 
-src/fft_reference.jpg
+src/fft/references
 work-obj*.cf
 *.code-workspace
 *.txt

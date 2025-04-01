@@ -11,7 +11,7 @@ architecture arch of fft_tb is
 
   constant nx, ny, nz : natural range 0 to 16 := 2;
 
-  constant test_arr : b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1) := (
+  constant test_arr : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1) := (
     ( ( "0000000010000000000000000",
         "0000000001000000000000000" ),
       ( "0000000010000000000000000",
@@ -22,7 +22,7 @@ architecture arch of fft_tb is
         "0000000010000000000000000" ) )
   );
 
-  constant test_arr2 : b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1) := (
+  constant test_arr2 : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1) := (
     ( ( "0000000010000000000000000",
         "0000000010000000000000000" ),
       ( "0000000010000000000000000",
@@ -33,7 +33,7 @@ architecture arch of fft_tb is
         "0000000010000000000000000" ) )
   );
 
-  signal   i : b25_3d_real_array(0 to nx-1)(0 to ny-1)(0 to nz-1);
+  signal   i : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
   signal   o : b25_complex_array(0 to 16) := (others => (others => (others => '0')));
   signal   clock, start, reset, s_ready, simulate : std_logic := '0';
   constant clockperiod : time := 1 ms;

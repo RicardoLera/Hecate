@@ -145,7 +145,7 @@ begin
 
             -- Exponent of w in full unit circle
             w_ex := (i_id * o_id) mod 32;
-            -- report "o_id = " & to_string(o_id) & "   i = " & to_string(i_id) & "   w_ex = " & to_string(w_ex);
+            --report "o_id = " & to_string(o_id) & "   i = " & to_string(i_id) & "   w_ex = " & to_string(w_ex);
             
             -- Second and fourth quadrant reflections
             if (((w_ex > 8) and (w_ex <= 16)) or ((w_ex > 24) and (w_ex <= 31))) then
@@ -164,16 +164,16 @@ begin
             -- (a + bi) * (wx + wyi) = [ws_x]a*wx + [ws_x]b*wx(i) + [ws_y]a*wy(i) + [-ws_y]b*wy
             -- add_a(0) = a_wx    add_b(0) = b_wy    add_a(1) = a_wy    add_b(1) = b_wx
 
-            a_sign := calc_vals_x(i_id_cor)(0)(24);
-            b_sign := calc_vals_y(i_id_cor)(0)(24);
+            a_sign  := calc_vals_x(i_id_cor)(0)(24);
+            b_sign  := calc_vals_y(i_id_cor)(0)(24);
             wx_sign := '1' when cos_sig_ref(w_ex)=1 else '0';
             wy_sign := '1' when sin_sig_ref(w_ex)=1 else '0';
 
-            add_a(o_id) <= calc_vals_x(i_id_cor)(w);  -- a_wx
-            add_b(o_id) <= calc_vals_y(i_id_cor)(wc); -- b_wy
-
             if (i_id > 16) then b_sign := not b_sign; end if; -- Complex conjugate inversion (b)
             wy_sign := not wy_sign;                           -- DFT/IDFT inversion
+
+            add_a(o_id)(23 downto 0) <= calc_vals_x(i_id_cor)(w)(23 downto 0);  -- a_wx
+            add_b(o_id)(23 downto 0) <= calc_vals_y(i_id_cor)(wc)(23 downto 0); -- b_wy
 
             add_a(o_id)(24) <= a_sign xor wx_sign;
             add_b(o_id)(24) <= not (b_sign xor wy_sign);   -- i^2 inversion

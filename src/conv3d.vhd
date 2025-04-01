@@ -18,10 +18,10 @@ end entity conv3d;
 
 architecture synth of conv3d is
 
-  constant isize  : integer := 2;
-  constant osize  : integer := 3;
+  constant isize : integer := 2;
+  constant osize : integer := 3;
 
-  signal rdy_sub        : std_logic_vector(26 downto 0) := (others => '0');
+  signal rdy_sub : std_logic_vector(26 downto 0) := (others => '0');
 
   signal mul_a, mul_b, mul_res : b25_real_array(26 downto 0) := (others => (others => '0'));
   signal add_a, add_b          : b25_real_array(26 downto 0) := (others => (others => '0'));
@@ -77,8 +77,8 @@ begin
                     
                     if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
 
-                      mul_a(oidx) <= img(ix)(iy)(iz);
-                      mul_b(oidx) <= ker(kx)(ky)(kz);
+                      mul_a(oidx) <= img(iz)(iy)(ix);
+                      mul_b(oidx) <= ker(isize-1-kz)(isize-1-ky)(isize-1-kx); -- flip kernel
                       add_a(oidx) <= res(oidx); 
 
                     end if;

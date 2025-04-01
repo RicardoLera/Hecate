@@ -46,10 +46,10 @@ architecture sim of hecate_tb is
   end function;
 
   procedure rand_arr(signal arr : out b25_3d_real_array(0 to 1)(0 to 1)(0 to 1); constant offset : in integer) is begin
-    for x in 0 to 1 loop
+    for z in 0 to 1 loop
       for y in 0 to 1 loop
-        for z in 0 to 1 loop
-          arr(x)(y)(z) <= '0' & "00000000" & rand_slv(16, x+y+z+1, x+y+z+1+offset);
+        for x in 0 to 1 loop
+          arr(z)(y)(x) <= '0' & "00000000" & rand_slv(16, x+y+z+1, x+y+z+1+offset);
         end loop;
       end loop;
     end loop;
@@ -89,20 +89,20 @@ begin
     keep_simulating <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      --rand_arr(img, n+1);
-      --rand_arr(ker, n+2);
+      rand_arr(img, n+1);
+      rand_arr(ker, n+2);
       
-      one_loop_x : for x in 0 to 1 loop
-        one_loop_y : for y in 0 to 1 loop
-          one_loop_z : for z in 0 to 1 loop
-            img(x)(y)(z) <= '0' & "00000001" & "0000000000000000";
-            ker(x)(y)(z) <= '0' & "00000001" & "0000000000000000";
-          end loop one_loop_z;
-        end loop one_loop_y;
-      end loop one_loop_x;
+      -- one_loop_z : for z in 0 to 1 loop
+      --   one_loop_y : for y in 0 to 1 loop
+      --     one_loop_x : for x in 0 to 1 loop
+      --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --     end loop one_loop_x;
+      --   end loop one_loop_y;
+      -- end loop one_loop_z;
 
-      img(0)(0)(1) <= '0' & "00000000" & "0100000000000000";
-      ker(1)(0)(1) <= '0' & "00000000" & "0100000000000000";
+      -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
+      -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
 
       wait for 5 * clockperiod;
       reset <= '0'; start <= '1'; t1 := now;
