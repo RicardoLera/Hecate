@@ -10,7 +10,7 @@ entity hecate_tb is
     test_n : integer := 2
   );
   port (
-    ram    : out t_ram(0 to test_n)
+    ram    : out t_ram(0 to test_n)(0 to 2)(0 to 2)(0 to 2)
   );
 end entity hecate_tb;
 
@@ -23,10 +23,10 @@ architecture sim of hecate_tb is
   signal clk, reset, start : std_logic := '0';
   signal img, ker          : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
 
-  signal res               : b25_real_array(0 to 26);
+  signal res               : b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
   signal o_ready           : std_logic;
 
-  signal gold              : b25_real_array(0 to 26);
+  signal gold              : b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
   signal g_ready           : std_logic := '0';
 
   signal keep_simulating   : std_logic := '0';
@@ -115,14 +115,18 @@ begin
       if (test_time < t_min or t_min = 0 ns) then t_min := test_time; end if;
       
       pnt := 0; 
-      calc_error : for i in 0 to 26 loop
-        err := abs(signed(gold(i)(23 downto 0)) - signed(res(i)(23 downto 0)));
-        if (err < x"100") then
-          pnt := pnt + 1;
-        else
-          report "Error exceeded at n=" & integer'image(n) & " i=" & integer'image(i) & "   Total error = " & integer'image(to_integer(err));
-        end if;
-      end loop calc_error;
+      calc_error_z : for z in 0 to 2 loop
+        calc_error_y : for y in 0 to 2 loop
+          calc_error_x : for x in 0 to 2 loop
+            err := abs(signed(gold(z)(y)(x)(23 downto 0)) - signed(res(z)(y)(x)(23 downto 0)));
+            if (err < x"100") then
+              pnt := pnt + 1;
+            else
+              report "Error exceeded at n=" & integer'image(z*9+y*3+x) & "   Total error = " & integer'image(to_integer(err));
+            end if;
+          end loop calc_error_x;
+        end loop calc_error_y;
+      end loop calc_error_z;
       if pnt = 27 then
         test_res := test_res + 1;
       end if;
@@ -155,7 +159,7 @@ architecture synth of hecate_tb is
   signal reset           : std_logic := '1';
   signal img, ker        : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
 
-  signal res             : b25_real_array(0 to 26);
+  signal res             : b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
   signal o_ready         : std_logic;
 
   signal keep_simulating : std_logic := '1';

@@ -11,7 +11,7 @@ entity conv3d is
     clk : in  std_logic;
     rst : in  std_logic;
     run : in  std_logic;
-    res : out b25_real_array(0 to 26);
+    res : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
     rdy : out std_logic
   );
 end entity conv3d;
@@ -25,6 +25,22 @@ architecture synth of conv3d is
 
   signal mul_a, mul_b, mul_res : b25_real_array(26 downto 0) := (others => (others => '0'));
   signal add_a, add_b          : b25_real_array(26 downto 0) := (others => (others => '0'));
+
+  signal res_buff : b25_real_array(0 to 26);
+
+  function raster_lut(x, y, z : integer) return integer is
+    variable idx     : integer := 0;
+    constant nx_full : integer := 3; -- 2*nx-1
+    constant ny_full : integer := 3; -- 2*ny-1
+    constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
+  begin
+    for g in 0 to 4 loop -- 0 to log2(N)-1
+      if (n mod (2**(g+1)) >= 2**g) then
+        idx := idx + 32 / (2**(g+1)); -- N = 32
+      end if;
+    end loop;
+    return idx;
+  end function;
   
 begin
 
@@ -49,7 +65,7 @@ begin
           port map (
             a   => add_a(oidx),
             b   => add_b(oidx),
-            res => res(oidx)
+            res => res_buff(oidx)
           );
         
         macc : process(clk)
@@ -79,7 +95,7 @@ begin
 
                       mul_a(oidx) <= img(iz)(iy)(ix);
                       mul_b(oidx) <= ker(isize-1-kz)(isize-1-ky)(isize-1-kx); -- flip kernel
-                      add_a(oidx) <= res(oidx); 
+                      add_a(oidx) <= res_buff(oidx); 
 
                     end if;
 
@@ -105,5 +121,18 @@ begin
   end generate loop_oz;
 
   rdy <= and(rdy_sub);
+
+  --Output Layer (unrasterize)
+  gen_x : for x in 0 to 2 generate
+    gen_y : for y in 0 to 2 generate
+      gen_z : for z in 0 to 2 generate
+        constant idx : natural := raster_lut(x, y, z);
+      begin
+        gen_if : if (idx <= 26) generate
+          res(z)(y)(x) <= res_buff(idx) when rdy = '1';
+        end generate gen_if;
+      end generate gen_z;
+    end generate gen_y;
+  end generate gen_x;
 
 end architecture synth;

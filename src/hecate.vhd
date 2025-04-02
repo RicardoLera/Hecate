@@ -9,7 +9,7 @@ entity hecate is
   port (
     img, ker            : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
     clock, reset, start : in std_logic;
-    res                 : out b25_real_array(0 to 26) := (others => (others => '0'));
+    res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
     o_ready             : out std_logic
   );
 end entity hecate;
@@ -29,21 +29,21 @@ architecture synth of hecate is
   signal calc_vals_x : t_calc_matrix := (others => (others => (others => '0')));
   signal calc_vals_y : t_calc_matrix := (others => (others => (others => '0')));
 
-  -- signal res_buff : b25_real_array(0 to 26);
+  signal res_buff : b25_real_array(0 to 26);
 
-  -- function raster_lut(x, y, z : integer) return integer is
-  --   variable idx     : integer := 0;
-  --   constant nx_full : integer := 3; -- 2*nx-1
-  --   constant ny_full : integer := 3; -- 2*ny-1
-  --   constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
-  -- begin
-  --   for g in 0 to 4 loop -- 0 to log2(N)-1
-  --     if (n mod (2**(g+1)) >= 2**g) then
-  --       idx := idx + 32 / (2**(g+1)); -- N = 32
-  --     end if;
-  --   end loop;
-  --   return idx;
-  -- end function;
+  function raster_lut(x, y, z : integer) return integer is
+    variable idx     : integer := 0;
+    constant nx_full : integer := 3; -- 2*nx-1
+    constant ny_full : integer := 3; -- 2*ny-1
+    constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
+  begin
+    for g in 0 to 4 loop -- 0 to log2(N)-1
+      if (n mod (2**(g+1)) >= 2**g) then
+        idx := idx + 32 / (2**(g+1)); -- N = 32
+      end if;
+    end loop;
+    return idx;
+  end function;
   
 begin
 
@@ -116,7 +116,7 @@ begin
       port map (
         a   => add_r(o_id),
         b   => acc(o_id),
-        res => res(o_id)
+        res => res_buff(o_id)
       );
 
     sum_pro : process (clock) is
@@ -186,7 +186,7 @@ begin
               add_b(o_id) <= (others => '0');
             end if;
             
-            acc(o_id) <= res(o_id);
+            acc(o_id) <= res_buff(o_id);
 
             i_id := i_id + 1;
 
@@ -199,13 +199,17 @@ begin
     end process sum_pro;
   end generate gen_sums;
 
-  -- Output Layer (unrasterize)
-  -- gen_x : for x in 0 to 2 generate
-  --   gen_y : for y in 0 to 2 generate
-  --     gen_z : for z in 0 to 2 generate
-  --       res(x)(y)(z) <= res_buff(raster_lut(x, y, z)) when idfts_ready = '1';
-  --     end generate gen_z;
-  --   end generate gen_y;
-  -- end generate gen_x;
+  --Output Layer (unrasterize)
+  gen_z : for z in 0 to 2 generate
+    gen_y : for y in 0 to 2 generate
+      gen_x : for x in 0 to 2 generate
+        constant idx : natural := raster_lut(x, y, z);
+      begin
+        gen_if : if (idx <= 26) generate
+          res(z)(y)(x) <= res_buff(idx) when idfts_ready = '1';
+        end generate gen_if;
+      end generate gen_x;
+    end generate gen_y;
+  end generate gen_z;
 
 end architecture synth;
