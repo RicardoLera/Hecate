@@ -27,20 +27,6 @@ architecture synth of conv3d is
   signal add_a, add_b          : b25_real_array(26 downto 0) := (others => (others => '0'));
 
   signal res_buff : b25_real_array(0 to 26);
-
-  function raster_lut(x, y, z : integer) return integer is
-    variable idx     : integer := 0;
-    constant nx_full : integer := 3; -- 2*nx-1
-    constant ny_full : integer := 3; -- 2*ny-1
-    constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
-  begin
-    for g in 0 to 4 loop -- 0 to log2(N)-1
-      if (n mod (2**(g+1)) >= 2**g) then
-        idx := idx + 32 / (2**(g+1)); -- N = 32
-      end if;
-    end loop;
-    return idx;
-  end function;
   
 begin
 
@@ -126,7 +112,7 @@ begin
   gen_x : for x in 0 to 2 generate
     gen_y : for y in 0 to 2 generate
       gen_z : for z in 0 to 2 generate
-        constant idx : natural := raster_lut(x, y, z);
+        constant idx : natural := x + y*3 + z*3*3;
       begin
         gen_if : if (idx <= 26) generate
           res(z)(y)(x) <= res_buff(idx) when rdy = '1';

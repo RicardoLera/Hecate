@@ -29,13 +29,21 @@ else
     comp_files="hecate_pkg.vhd */*.vhd"
     top_module="hadamard_tb"
 
-  elif [ "$1" = "debug" ] ; then
+  elif [ "$1" = "hec_debug" ] ; then
     comp_files="*.vhd */*.vhd"
     top_module="hecate_tb_debug"
 
   elif [ "$1" = "hec" ] ; then
     comp_files="*.vhd */*.vhd"
     top_module="hecate_tb sim"
+
+  elif [ "$1" = "hec_oa_debug" ] ; then
+    comp_files="*.vhd */*.vhd"
+    top_module="hecate_oa_tb_debug"
+
+  elif [ "$1" = "hec_oa" ] ; then
+    comp_files="*.vhd */*.vhd"
+    top_module="hecate_tb_oa sim"
 
   else
     printf "ERROR: OPERATION NOT RECOGNIZED\n"

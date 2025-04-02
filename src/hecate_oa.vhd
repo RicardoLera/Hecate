@@ -6,8 +6,8 @@ library ieee;
   
 entity hecate_oa is
   generic (
-    ix, iy, iz : natural range 2 to 16 := 2;
-    ox, oy, oz : natural range 3 to 17 := 32
+    ix, iy, iz : natural range 2 to 128 := 4;  -- assumes i mod k = 0, use assert in the testbench
+    ox, oy, oz : natural range 3 to 129 := 5
   ); 
   port (
     img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
@@ -20,79 +20,94 @@ end entity hecate_oa;
 
 architecture synth of hecate_oa is
 
-  constant hec_x : natural := (ox / 2) + (ox mod 2);
-  constant hec_y : natural := (oy / 2) + (oy mod 2);
-  constant hec_z : natural := (oz / 2) + (oz mod 2);
+  constant hec_x : natural := ix/2;
+  constant hec_y : natural := iy/2;
+  constant hec_z : natural := iz/2;
+
+  signal trigger_arr : std_logic_vector(0 to hec_x*hec_y*hec_z-1);
+  signal trigger     : std_logic;
+  signal ready_arr   : std_logic_vector(0 to ox*oy*oz-1) := (others => '0');
 
   type b25_4d_real_array is array (natural range <>) of b25_3d_real_array;
   type b25_5d_real_array is array (natural range <>) of b25_4d_real_array;
   type b25_6d_real_array is array (natural range <>) of b25_5d_real_array;
   signal hec : b25_6d_real_array(0 to hec_z-1)(0 to hec_y-1)(0 to hec_x-1)(0 to 2)(0 to 2)(0 to 2);
 
+  signal overlaps: b25_4d_real_array(0 to 7)(0 to oz-1)(0 to oy-1)(0 to ox-1);
+
 begin
 
   gen_hec_z : for hz in 0 to hec_z-1 generate
     gen_hec_y : for hy in 0 to hec_y-1 generate
       gen_hec_x : for hx in 0 to hec_x-1 generate
-        constant sx0 : natural := 
-        constant sx1 : natural := 
-        constant sy0 : natural := 
-        constant sy1 : natural := 
-        constant sz0 : natural := 
-        constant sz1 : natural := 
+        signal slice : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
       begin
-        slice : component hecate
+        slice <= (
+          ( ( img(hz*2  )(hy*2  )(hx*2  ),
+              img(hz*2  )(hy*2  )(hx*2+1)  ),
+            ( img(hz*2  )(hy*2+1)(hx*2  ),
+              img(hz*2  )(hy*2+1)(hx*2+1)  ) ),
+          ( ( img(hz*2+1)(hy*2  )(hx*2  ),
+              img(hz*2+1)(hy*2  )(hx*2+1)  ),
+          (   img(hz*2+1)(hy*2+1)(hx*2  ),
+              img(hz*2+1)(hy*2+1)(hx*2+1)  ) )
+        );
+        hec_slice : component hecate
           port map (
-            img     => img(sz0 to sz1)(sy0 to sy1)(sx0 to sx1),
+            img     => slice,
             ker     => ker,
             clock   => clock,
             reset   => reset,
             start   => start,
             res     => hec(hz)(hy)(hx),
-            o_ready => o_ready
+            o_ready => trigger_arr(hz*hec_y*hec_x + hy*hec_x + hx)
           );
       end generate gen_hec_x;
     end generate gen_hec_y;
   end generate gen_hec_z;
+  trigger <= and(trigger_arr);
 
   gen_oz : for g_oz in 0 to oz-1 generate
     gen_oy : for g_oy in 0 to oy-1 generate
       gen_ox : for g_ox in 0 to ox-1 generate
-
-      begin
-
-        process (start) is
-          variable s_ox, s_oy, s_oz : natural;
+        process (clock, reset) is
+          variable hec_idx : std_logic_vector(2 downto 0) := (others => '0');
+          variable hz, hy, hx : integer := 0;
         begin
-          if (reset) then
+          if rising_edge(clock) then
+            if (reset) then
+              res(g_oz)(g_oy)(g_ox) <= (others => '0');
+              ready_arr(g_oz*oy*ox + g_oy*ox + g_ox) <= '0';
+              hec_idx := (others => '0');
+            elsif(trigger and not ready_arr(g_oz*oy*ox + g_oy*ox + g_ox)) then
+              hz := to_integer(unsigned'('0' & hec_idx(2)));
+              hy := to_integer(unsigned'('0' & hec_idx(1)));
+              hx := to_integer(unsigned'('0' & hec_idx(0)));
+                for sz in 0 to 2 loop
+                  for sy in 0 to 2 loop
+                    for sx in 0 to 2 loop
+                      if ((g_ox=hx*2+sx) and (g_oy=hy*2+sy) and (g_oz=hz*2+sz)) then
+                        res(g_oz)(g_oy)(g_ox) <= std_logic_vector(unsigned(res(g_oz)(g_oy)(g_ox)) + unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx)));
 
-          elsif(start) then
-
-            for hz in 0 to hec_z loop
-              for hy in 0 to hec_y loop
-                for hx in 0 to hec_x loop
-                  for sz in 0 to 2 loop
-                    for sy in 0 to 2 loop
-                      for sx in 0 to 2 loop
-                        s_ox := 
-                        s_oy := 
-                        s_oz := 
-                        if ((g_ox=s_ox) and (g_oy=s_oy) and (g_oz=s_oz)) then
-                          res(g_oz)(g_oy)(g_ox) <= std_logic_vector(unsigned(res(g_oz)(g_oy)(g_ox)) + unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx)));
+                        if ((g_oz=2) and (g_oy=2) and (g_ox=2)) then -- central point
+                          report "hec(" & integer'image(hz) & ")(" & integer'image(hy) & ")(" & integer'image(hx) & ")(" & integer'image(sz) & ")(" & integer'image(sy) & ")(" & integer'image(sx) & ") = " & integer'image(to_integer(unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx))));
                         end if;
-                      end loop;
+
+                      end if;
                     end loop;
                   end loop;
-                end loop;
-              end loop;
-            end loop;
-
+                 end loop;
+              if hec_idx = "111" then
+                ready_arr(g_oz*oy*ox + g_oy*ox + g_ox) <= '1';
+              else
+                hec_idx := std_logic_vector(unsigned(hec_idx) + 1);
+              end if;
+            end if;
           end if;
         end process;
-
       end generate gen_ox;
     end generate gen_oy;
   end generate gen_oz;
-
+  o_ready <= and(ready_arr);
 
 end architecture synth;

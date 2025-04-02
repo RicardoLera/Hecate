@@ -277,6 +277,20 @@ package hecate_pkg is
     );
   end component;
 
+  component hecate_oa is
+    generic (
+      ix, iy, iz : natural range 2 to 128 := 2;  -- assumes i mod k = 0, use assert in the testbench
+      ox, oy, oz : natural range 3 to 129 := 3
+    ); 
+    port (
+      img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+      ker                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      clock, reset, start : in std_logic;
+      res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
+      o_ready             : out std_logic
+    );
+  end component;
+
   component conv3d is
     port (
       img : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
