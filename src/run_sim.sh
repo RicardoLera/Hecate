@@ -3,12 +3,14 @@ ghdl remove
 
 if [ "$1" = "synth" ] ; then
   
-  comp_files="hecate_pkg.vhd hecate.vhd hadamard/hadamard_uc.vhd hadamard/hadamard.vhd hadamard/flux_multiplier.vhd hadamard/flux_inverter.vhd hadamard/cordic.vhd dft/dft.vhd arithmetic/varshiftright.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/adder_carry.vhd"
+  #comp_files="hecate_pkg.vhd hecate.vhd hadamard/hadamard_uc.vhd hadamard/hadamard.vhd hadamard/flux_multiplier.vhd hadamard/flux_inverter.vhd hadamard/cordic.vhd dft/dft.vhd arithmetic/varshiftright.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/adder_carry.vhd"
+
+  comp_files="*.vhd */*.vhd"
 
   family="xc${2:-"7"}"
 
   yosys -m ghdl -p \
-    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate; synth_xilinx -top hecate -family $family -flatten; json -o yosys_out/$family.json" \
+    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate_oa; synth_xilinx -top hecate_oa -family $family -flatten; json -o yosys_out/$family.json" \
   &> yosys_out/"$family".txt
 
 else
@@ -43,7 +45,7 @@ else
 
   elif [ "$1" = "hec_oa" ] ; then
     comp_files="*.vhd */*.vhd"
-    top_module="hecate_tb_oa sim"
+    top_module="hecate_oa_tb sim"
 
   else
     printf "ERROR: OPERATION NOT RECOGNIZED\n"

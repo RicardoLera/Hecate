@@ -1,4 +1,4 @@
-use work.hecate_pkg.all;
+  use work.hecate_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -6,8 +6,8 @@ library ieee;
   
 entity hecate_oa is
   generic (
-    ix, iy, iz : natural range 2 to 128 := 4;  -- assumes i mod k = 0, use assert in the testbench
-    ox, oy, oz : natural range 3 to 129 := 5
+    ix, iy, iz : natural := 4;  -- assumes i mod k = 0, use assert in the testbench
+    ox, oy, oz : natural := 5
   ); 
   port (
     img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
@@ -32,9 +32,7 @@ architecture synth of hecate_oa is
   type b25_5d_real_array is array (natural range <>) of b25_4d_real_array;
   type b25_6d_real_array is array (natural range <>) of b25_5d_real_array;
   signal hec : b25_6d_real_array(0 to hec_z-1)(0 to hec_y-1)(0 to hec_x-1)(0 to 2)(0 to 2)(0 to 2);
-
-  signal overlaps: b25_4d_real_array(0 to 7)(0 to oz-1)(0 to oy-1)(0 to ox-1);
-
+  
 begin
 
   gen_hec_z : for hz in 0 to hec_z-1 generate
