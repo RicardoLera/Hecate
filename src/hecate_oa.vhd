@@ -24,6 +24,9 @@ architecture synth of hecate_oa is
   constant hec_y : natural := iy/2;
   constant hec_z : natural := iz/2;
 
+  signal ker_transf : b25_complex_array(0 to 16);
+  signal ready_ker  : std_logic;
+
   signal trigger_arr : std_logic_vector(0 to hec_x*hec_y*hec_z-1);
   signal trigger     : std_logic;
   signal ready_arr   : std_logic_vector(0 to ox*oy*oz-1) := (others => '0');
@@ -34,6 +37,17 @@ architecture synth of hecate_oa is
   signal hec : b25_6d_real_array(0 to hec_z-1)(0 to hec_y-1)(0 to hec_x-1)(0 to 2)(0 to 2)(0 to 2);
   
 begin
+
+  fft_in_ker : component fft
+  generic map (2, 2, 2, 32)
+  port map (
+    i       => ker,
+    o       => ker_transf,
+    clock   => clock,
+    start   => start,
+    reset   => reset,
+    s_ready => ready_ker
+  );
 
   gen_hec_z : for hz in 0 to hec_z-1 generate
     gen_hec_y : for hy in 0 to hec_y-1 generate
@@ -52,13 +66,14 @@ begin
         );
         hec_slice : component hecate
           port map (
-            img     => slice,
-            ker     => ker,
-            clock   => clock,
-            reset   => reset,
-            start   => start,
-            res     => hec(hz)(hy)(hx),
-            o_ready => trigger_arr(hz*hec_y*hec_x + hy*hec_x + hx)
+            img        => slice,
+            ker_transf => ker_transf,
+            ready_ker  => ready_ker,
+            clock      => clock,
+            reset      => reset,
+            start      => start,
+            res        => hec(hz)(hy)(hx),
+            o_ready    => trigger_arr(hz*hec_y*hec_x + hy*hec_x + hx)
           );
       end generate gen_hec_x;
     end generate gen_hec_y;
@@ -87,9 +102,9 @@ begin
                       if ((g_ox=hx*2+sx) and (g_oy=hy*2+sy) and (g_oz=hz*2+sz)) then
                         res(g_oz)(g_oy)(g_ox) <= std_logic_vector(unsigned(res(g_oz)(g_oy)(g_ox)) + unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx)));
 
-                        if ((g_oz=2) and (g_oy=2) and (g_ox=2)) then -- central point
-                          report "hec(" & integer'image(hz) & ")(" & integer'image(hy) & ")(" & integer'image(hx) & ")(" & integer'image(sz) & ")(" & integer'image(sy) & ")(" & integer'image(sx) & ") = " & integer'image(to_integer(unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx))));
-                        end if;
+                        -- if ((g_oz=2) and (g_oy=2) and (g_ox=2)) then -- central point
+                        --   report "hec(" & integer'image(hz) & ")(" & integer'image(hy) & ")(" & integer'image(hx) & ")(" & integer'image(sz) & ")(" & integer'image(sy) & ")(" & integer'image(sx) & ") = " & integer'image(to_integer(unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx))));
+                        -- end if;
 
                       end if;
                     end loop;

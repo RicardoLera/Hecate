@@ -178,6 +178,11 @@ package hecate_pkg is
 
 
 
+
+
+
+
+
   -- Component declarations
 
   component b25_cmul is
@@ -254,7 +259,7 @@ package hecate_pkg is
       i                   : in  b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
       o                   : out b25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
-      s_ready             : out std_logic := '0'
+      s_ready             : out std_logic
     );
   end component fft;
 
@@ -351,7 +356,9 @@ package hecate_pkg is
 
   component hecate is
     port (
-      img, ker            : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      img                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      ker_transf          : in b25_complex_array(0 to 16);
+      ready_ker           : in std_logic;
       clock, reset, start : in std_logic;
       res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
       o_ready             : out std_logic
@@ -384,5 +391,109 @@ package hecate_pkg is
     );
   end component conv3d;
 
+
+
+
+
+
+
+
+  -- Functions
+
+  type integer_pair is array(0 to 1) of integer;
+  type integer_trio is array(0 to 2) of integer;
+
+  function scramble_lut(n : integer) return integer;
+  function bfly_lut(s, n : integer) return integer_pair;
+  function wmul_lut(s, n : integer) return integer_trio;
+  function bfly_lut_rev(s, b, tb : integer) return integer;
+  function wmul_lut_rev(s, w, m : integer) return integer;
+
 end package hecate_pkg;
+
+package body hecate_pkg is
+    
+    -- "Scrambling" is the natural sorting process that an array undergoes when passing through a discrete fourier transform. By scrambling the array in the same manner before the operation, it will return the array in its original order
+    function scramble_lut(n : integer) return integer is
+      constant n_points : integer := 32;
+      constant the_log : integer := 5;
+      variable idx     : integer := 0;
+    begin
+      for g in 0 to the_log-1 loop
+        if (n mod (2**(g+1)) >= 2**g) then
+          idx := idx + n_points / (2**(g+1));
+        end if;
+      end loop;
+      return idx;
+    end function;
+  
+    -- bfly_lut converts n to the order the butterflies are at, top to bottom, in their respective state
+    function bfly_lut(s, n : integer) return integer_pair is
+      constant the_log : integer := 5;
+      constant b : integer := (n/(2**s)) * (2**(s-1)) + (n mod (2**(s-1))); -- bfly_pos = bfly_group*group_size + pos_in_group
+      -- Yes, (n/(2**s)) * (2**(s-1)) = n/2, except NOT because rounding. Leave it like that, it's synth time
+      constant tb : boolean := (n mod (2**s)) >= 2**(s-1);
+    begin
+      if ((s < 1) or (s > the_log)) then
+        return (0,0);
+      else
+        --report "Inside bfly_lut: s = " & integer'image(s) & "   n = " & integer'image(n) & "   b = " & integer'image(b);
+        if (tb) then
+          return (b,1);
+        else
+          return (b,0);
+        end if;
+      end if;
+    end function;
+    
+    -- wmul_lut converts n to the respective w multipliers, in their respective state, or returns (0,0,1) if no multiplication is needed
+    function wmul_lut(s, n : integer) return integer_trio is
+      constant the_log : integer := 5;
+      constant valid : boolean := (n mod (2**(s+1))) >= 2**s; -- it's tb for the next state. I hate/love Fourier symmetry
+      constant w : integer := (n mod (2**s)) * (2**(the_log-s-1)); -- pos_in_group (next state) times decreasing constant (2**(the_log-s-1))
+      constant m : integer := n/(2**(s+1)) ; 
+    begin
+      if ((s < 1) or (s > the_log-1) or not valid) then
+        return (0,0,1);
+      else
+        --if (n mod (2**s)) >= (2**(s-1)) then
+          --return (w,m+1,0);
+        --else
+          return (w,m,0);
+        --end if;
+      end if;
+    end function;
+  
+    -- bfly_lut_rev converts (b, tb) back to n, in their respective state
+    function bfly_lut_rev(s, b, tb : integer) return integer is
+      constant the_log : integer := 5;
+      constant group_size   : integer := (2**(s-1));       -- [in BFLYS]
+      constant pos_in_group : integer := b mod group_size; -- [in BFLYS]
+      constant group_idx    : integer := b/group_size;
+      constant n : integer := 2*group_size*group_idx + pos_in_group + group_size*tb;
+    begin
+      if ((s < 1) or (s > the_log)) then
+        return 0;
+      else
+        return n;
+      end if;
+    end function;
+  
+    -- wmul_lut_rev converts (w, m) back to n, in its respective state
+    function wmul_lut_rev(s, w, m : integer) return integer is
+      constant n_points : integer := 32;
+      constant the_log : integer := 5;
+      constant group_size   : integer := (2**(s-1))*2;           -- [in POINTS]
+      constant pos_in_group : integer := w / (2**(the_log-s-1)); -- [in POINTS]
+      constant group_idx    : integer := 2*m+1;
+      constant n : integer := group_size*group_idx + pos_in_group;
+    begin
+      if ((s < 1) or (s > the_log-1) or (n > n_points-1)) then -- or (n mod (2**(s+1)) < 2**s) (invalid)
+        return 0;
+      else
+        return n;
+      end if;
+    end function;
+
+end package body hecate_pkg;
 

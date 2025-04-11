@@ -7,7 +7,9 @@ library ieee;
 
 entity hecate is
   port (
-    img, ker            : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    img                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    ker_transf          : in b25_complex_array(0 to 16);
+    ready_ker           : in std_logic;
     clock, reset, start : in std_logic;
     res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
     o_ready             : out std_logic
@@ -18,12 +20,12 @@ architecture synth of hecate is
 
   --constant n_points : natural range 0 to 1024 := integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1)))));
 
-  signal ready_fft  : std_logic_vector(0 to 1);
+  signal ready_fft  : std_logic;
   signal ready_had  : std_logic_vector(0 to 16);
   signal ready_idft : std_logic_vector(0 to 26) := (others => '0');
   signal ffts_ready, hads_ready, idfts_ready, s_ready : std_logic := '0';
 
-  signal img_transf, ker_transf : b25_complex_array(0 to 16);
+  signal img_transf : b25_complex_array(0 to 16);
 
   type t_calc_matrix is array(0 to 16) of b25_real_array(0 to 7);
   signal calc_vals_x : t_calc_matrix := (others => (others => (others => '0')));
@@ -47,7 +49,7 @@ architecture synth of hecate is
   
 begin
 
-  ffts_ready  <= and(ready_fft);
+  ffts_ready  <= (ready_fft and ready_ker);
   hads_ready  <= and(ready_had);
   idfts_ready <= and(ready_idft);
 
@@ -70,19 +72,19 @@ begin
       clock   => clock,
       start   => start,
       reset   => reset,
-      s_ready => ready_fft(0)
+      s_ready => ready_fft
     );
 
-  fft_in_ker : component fft
-    generic map (2, 2, 2, 32)
-    port map (
-      i       => ker,
-      o       => ker_transf,
-      clock   => clock,
-      start   => start,
-      reset   => reset,
-      s_ready => ready_fft(1)
-    );
+  -- fft_in_ker : component fft
+  --   generic map (2, 2, 2, 32)
+  --   port map (
+  --     i       => ker,
+  --     o       => ker_transf,
+  --     clock   => clock,
+  --     start   => start,
+  --     reset   => reset,
+  --     s_ready => ready_fft(1)
+  --   );
 
   gen_calc_vals : for id in 0 to 16 generate
     had : component hadamard

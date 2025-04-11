@@ -46,8 +46,7 @@ begin
 
     wait for 5 * clockperiod;
     keep_simulating <= '0';
-
-
+    
     wait;
 
   end process test;

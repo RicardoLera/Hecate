@@ -3,14 +3,12 @@ ghdl remove
 
 if [ "$1" = "synth" ] ; then
   
-  #comp_files="hecate_pkg.vhd hecate.vhd hadamard/hadamard_uc.vhd hadamard/hadamard.vhd hadamard/flux_multiplier.vhd hadamard/flux_inverter.vhd hadamard/cordic.vhd dft/dft.vhd arithmetic/varshiftright.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/adder_carry.vhd"
-
-  comp_files="*.vhd */*.vhd"
+  comp_files="hecate_pkg.vhd hecate_oa_tb.vhd hecate_oa.vhd hecate.vhd hadamard/hadamard_uc.vhd hadamard/hadamard.vhd hadamard/flux_multiplier.vhd hadamard/flux_inverter.vhd hadamard/cordic.vhd fft/fft.vhd arithmetic/varshiftright.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/adder_carry.vhd arithmetic/b25_butterfly.vhd arithmetic/b25_wmul.vhd"
 
   family="xc${2:-"7"}"
 
   yosys -m ghdl -p \
-    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate_oa; synth_xilinx -top hecate_oa -family $family -flatten; json -o yosys_out/$family.json" \
+    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate_oa_tb; synth_xilinx -top hecate_oa_tb -family $family -flatten; json -o yosys_out/$family.json" \
   &> yosys_out/"$family".txt
 
 else
@@ -52,6 +50,7 @@ else
     exit
   fi
 
-  ghdl -c --std=08 -v $comp_files -r $top_module --wave=waveforms/"${top_module%% *}".ghw --ieee-asserts=disable-at-0
+  #Doesn't work in gcc version. Go back to analyze->elab
+  #ghdl -c --std=08 -v $comp_files -e --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw hecate_oa_tb 
 
 fi
