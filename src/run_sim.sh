@@ -8,6 +8,7 @@
 # 
 # pacman -Q yosys
 # yosys-nightly 1:20250409_v0.51_166_gc261da4e7-1
+# Exact commit -> c261da4e796c4096c7d36c6132a854c975f38c1b
 
 # ghdl --version
 # GHDL 6.0.0-dev (b6.0.0.r62.g57dc78c76) [Dunoon edition]
@@ -16,12 +17,13 @@
 # 
 # pacman -Q ghdl
 # ghdl-gcc-git 6.0.0dev.r10015.g57dc78c76-1
+# Release -> https://github.com/ghdl/ghdl/releases/download/v5.0.1/ghdl-gcc-5.0.1-ubuntu24.04-x86_64.tar.gz
 
 # pacman -Q ghdl-yosys-plugin
 # ghdl-yosys-plugin-git r231.8c29f2c-1
 # 
 # github.com/ghdl/ghdl-yosys-plugin/
-# Exact commit at test time -> 8c29f2cc7cc3b8c979acd02f543d25f321b55c30
+# Exact commit -> 8c29f2cc7cc3b8c979acd02f543d25f321b55c30
 
 ghdl remove
 
