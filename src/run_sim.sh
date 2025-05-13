@@ -50,7 +50,7 @@ else
   
   elif [ "$1" = "fft" ] ; then
     comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd"
-    top_module="fft_tb"
+    top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
     comp_files="hecate_pkg.vhd */*.vhd"
@@ -62,7 +62,7 @@ else
 
   elif [ "$1" = "hec" ] ; then
     comp_files="*.vhd */*.vhd"
-    top_module="hecate_tb sim"
+    top_module="hecate_tb synth"
 
   elif [ "$1" = "hec_oa_debug" ] ; then
     comp_files="*.vhd */*.vhd"
@@ -77,7 +77,14 @@ else
     exit
   fi
 
-  #Doesn't work in gcc version. Go back to analyze->elab
-  #ghdl -c --std=08 -v $comp_files -e --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw hecate_oa_tb 
+  ghdl -i --std=08 $comp_files
+  ghdl -m --std=08 $top_module
+  ghdl -e --std=08 $top_module
+  ghdl -r --std=08 $top_module --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
+  rm *.o
+  rm $(echo $top_module | awk '{print $1;}')-$(echo $top_module | awk '{print $2;}')
+
+  #ghdl -c --std=08 -v $comp_files -e $top_module --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw 
+    #Doesn't work in gcc version
 
 fi

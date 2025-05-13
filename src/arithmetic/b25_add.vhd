@@ -1,7 +1,6 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  use std.textio.all;
 
 entity b25_add is
   port (
@@ -13,49 +12,79 @@ end entity b25_add;
 
 architecture arch of b25_add is
 
-  signal temp_res  : std_logic_vector(23 downto 0) := (others => '0');
-  signal temp_sign : std_logic := '0';
+  signal sa, sb, st : signed(23 downto 0);
 
 begin
 
-  add : process (a, b) is
+  sa <= signed(a(23 downto 0));
+  sb <= signed(b(23 downto 0));
+  st <= sa - sb;
 
-    variable sa, sb, st : signed(23 downto 0);
-
-  begin
-
-    sa := signed(a(23 downto 0));
-    sb := signed(b(23 downto 0));
-
-    if ((a(24) xor b(24)) = '1') then
-
-      st := sa - sb;
-
-      if (st < 0) then
-        temp_res  <= std_logic_vector(-st);
-        temp_sign <= b(24);
-      else
-        temp_res  <= std_logic_vector(st);
-        temp_sign <= a(24);
-      end if;
-    
-    else
-      temp_res  <= std_logic_vector(sa + sb);
-      temp_sign <= a(24);
-    end if;
-
-  end process add;
-
-  res(23 downto 0) <= temp_res;
-  res(24) <= temp_sign;
+  res(23 downto 0) <=
+    std_logic_vector(sa + sb)
+      when ((a(24) xor b(24)) = '0') else
+    std_logic_vector(-st)
+      when (st < 0) else
+    std_logic_vector(st);
+      
+  res(24) <=
+    a(24) -- arbitrary
+      when ((a(24) xor b(24)) = '0') else
+    b(24)
+      when (st < 0) else
+    a(24);
 
 end architecture arch;
 
 
 
 
-  -- Solution above uses slightly less hardware than working with unsigned
-  
+
+
+  -- add : process (a, b) is
+
+  --   variable sa, sb, st : signed(23 downto 0);
+
+  -- begin
+
+  --   sa := signed(a(23 downto 0));
+  --   sb := signed(b(23 downto 0));
+
+  --   if ((a(24) xor b(24)) = '1') then
+
+  --     st := sa - sb;
+
+  --     if (st < 0) then
+  --       temp_res  <= std_logic_vector(-st);
+  --       temp_sign <= b(24);
+  --     else
+  --       temp_res  <= std_logic_vector(st);
+  --       temp_sign <= a(24);
+  --     end if;
+    
+  --   else
+  --     temp_res  <= std_logic_vector(sa + sb);
+  --     temp_sign <= a(24);
+  --   end if;
+
+  -- end process add;
+
+  -- res(23 downto 0) <= temp_res;
+  -- res(24) <= temp_sign;
+
+
+
+
+
+
+
+
+
+
+
+
+
+  -- Solution above uses slightly less hardware than working with unsigned  
 
   --   variable ua : unsigned(23 downto 0);
   --   variable ub : unsigned(23 downto 0);
@@ -77,3 +106,16 @@ end architecture arch;
   --     temp_res  <= std_logic_vector(ua + ub);
   --     temp_sign <= a(24);
   --   end if;
+
+
+
+
+
+
+
+
+
+
+
+
+
