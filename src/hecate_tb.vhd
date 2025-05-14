@@ -9,7 +9,10 @@ entity hecate_tb is
     test_n : integer := 2
   );
   port (
-    ram    : out t_ram(0 to test_n)(0 to 2)(0 to 2)(0 to 2)
+    rom : in b8_3d_array(0 to 1)(0 to 1)(0 to 1);
+    ram : out b8_3d_array_signed(0 to 2)(0 to 2)(0 to 2);
+    clock, start, reset : in std_logic;
+    s_ready             : out std_logic
   );
 end entity hecate_tb;
 
@@ -143,8 +146,6 @@ end entity hecate_tb;
 
 architecture synth of hecate_tb is
 
-  signal clock, start    : std_logic := '0';
-  signal reset           : std_logic := '1';
   signal img             : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
 
   signal ker_transf      : b25_complex_array(0 to 16);
@@ -156,8 +157,8 @@ architecture synth of hecate_tb is
   signal keep_simulating : std_logic := '1';
   constant clockperiod   : time      := 1 ms;
 
-  type t_rom is array (natural range <>) of b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
-
+  --type t_rom is array (natural range <>) of b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+  
   -- impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
   --   variable r : real;
   --   variable slv : std_logic_vector(len - 1 downto 0);
@@ -188,11 +189,15 @@ architecture synth of hecate_tb is
 
   --constant rom : t_rom(0 to 2*test_n) := gen_data(2*test_n);
 
-  constant rom : t_rom(0 to test_n-1) := (test_ker, others => (others => (others => (others => (others => '0')))));
-
 begin
 
-  clock <= (not clock) and keep_simulating after clockperiod / 2;
+  b25_z : for z in 0 to 1 generate
+    b25_y : for y in 0 to 1 generate
+      b25_x : for x in 0 to 1 generate
+        img(z)(y)(x) <= (8b"0", rom(z)(y)(x), 9b"0");
+      end generate b25_x;
+    end generate b25_y;
+  end generate b25_z;
 
   fft_in_ker : component fft
     generic map (2, 2, 2, 32)
@@ -216,30 +221,16 @@ begin
       res        => res,
       o_ready    => o_ready
     );
-
-  test : process (clock)
-    variable tn : integer := 0;
-  begin
-    if rising_edge(clock) then
-
-      if (o_ready) then
-        if (tn < test_n) then
-          ram(tn) <= res;
-          start <= '0';
-          reset <= '1';
-        else
-          keep_simulating <= '0';
-        end if;
-      else
-        if (reset) then
-          img <= rom(tn);
-          start <= '1';
-          reset <= '0';
-          tn  := tn + 1;
-        end if;
-      end if;
-
-    end if;
-  end process test;
+    
+  b8_z : for z in 0 to 2 generate
+    b8_y : for y in 0 to 2 generate
+      b8_x : for x in 0 to 2 generate
+        ram(z)(y)(x) <=
+          signed(res(z)(y)(x)(17 downto 10))
+            when (res(z)(y)(x)(24) = '0') else
+          -signed(res(z)(y)(x)(17 downto 10));
+      end generate b8_x;
+    end generate b8_y;
+  end generate b8_z;
 
 end architecture synth;

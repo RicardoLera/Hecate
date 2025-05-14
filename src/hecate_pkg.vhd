@@ -5,6 +5,15 @@ library ieee;
 
 package hecate_pkg is
 
+  -- I/O
+  type b8_array is array (natural range <>) of std_logic_vector(7 downto 0);  -- maybe make these into records
+  type b8_2d_array is array (natural range <>) of b8_array;
+  type b8_3d_array is array (natural range <>) of b8_2d_array;
+  type b8_array_signed is array (natural range <>) of signed(7 downto 0);  -- maybe make these into records
+  type b8_2d_array_signed is array (natural range <>) of b8_array_signed;
+  type b8_3d_array_signed is array (natural range <>) of b8_2d_array_signed;
+
+
   -- 25-bit types
   type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);  -- maybe make these into records
   type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
