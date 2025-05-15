@@ -44,11 +44,13 @@ begin
 
   -- Generate complex constant multiplers
   gen_wmul : for w in 1 to n_points/2-1 generate -- e.g., w1~w15 for N=32
-    gen_wmul2 : for m in 0 to n_points/4-1 generate -- This can be further reduced with an if generate (previous: 2*factor2(n_points)-1)
+    gen_wmul2 : for m in 0 to n_points/4-1 generate
       gen_wmul3 : if (w /= n_points/4) generate
-        constant mask : unsigned(the_log-1 downto 0) := ('1', others => '0');
+        constant b : std_logic_vector(the_log-1 downto 0) := std_logic_vector(to_unsigned((w), the_log));
+        constant m_number : unsigned(the_log-1 downto 0) :=
+          ('0', not b(0) and not b(1) and not b(2), not b(0) and not b(1), not b(0), '1');   -- NOT GENERIC
       begin
-        gen_wmul4 : if (m <= to_integer(to_unsigned(w, the_log) nor mask)) generate
+        gen_wmul4 : if (m < to_integer(m_number)) generate
           wmul : component b25_wmul
             generic map (
               w => w,

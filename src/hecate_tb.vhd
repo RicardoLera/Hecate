@@ -141,7 +141,7 @@ begin
             if (err < x"100") then
               pnt := pnt + 1;
             else
-              report "Error exceeded at n=" & integer'image(z*9+y*3+x) & "   Total error = " & integer'image(to_integer(err));
+              report "Error exceeded at n=" & integer'image(z*9+y*3+x) & "   Total error = " & to_hstring(err);
             end if;
           end loop calc_error_x;
         end loop calc_error_y;
