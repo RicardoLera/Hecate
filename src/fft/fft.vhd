@@ -47,8 +47,12 @@ begin
     gen_wmul2 : for m in 0 to n_points/4-1 generate
       gen_wmul3 : if (w /= n_points/4) generate
         constant b : std_logic_vector(the_log-1 downto 0) := std_logic_vector(to_unsigned((w), the_log));
-        constant m_number : unsigned(the_log-1 downto 0) :=
-          ('0', not b(0) and not b(1) and not b(2), not b(0) and not b(1), not b(0), '1');   -- NOT GENERIC
+        constant m_number : unsigned(the_log-1 downto 0) := (         -- NOT GENERIC
+          '0',
+          b(3) and not b(2) and not b(1) and not b(0),
+          b(2) and not b(1) and not b(0),
+          b(1) and not b(0),
+          b(0));
       begin
         gen_wmul4 : if (m < to_integer(m_number)) generate
           wmul : component b25_wmul
