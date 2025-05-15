@@ -8,6 +8,7 @@ work-obj*.cf
 *.json
 *.toml
 **/build
+*.ghw
 
 
 ## Core latex/pdflatex auxiliary files

@@ -49,7 +49,7 @@ else
     top_module="dft_tb"
   
   elif [ "$1" = "fft" ] ; then
-    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd"
+    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd fft_rom.vhd"
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
@@ -62,7 +62,7 @@ else
 
   elif [ "$1" = "hec" ] ; then
     comp_files="*.vhd */*.vhd"
-    top_module="hecate_tb synth"
+    top_module="hecate_tb sim"
 
   elif [ "$1" = "hec_oa_debug" ] ; then
     comp_files="*.vhd */*.vhd"
@@ -82,9 +82,6 @@ else
   ghdl -e --std=08 $top_module
   ghdl -r --std=08 $top_module --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
   rm *.o
-  rm $(echo $top_module | awk '{print $1;}')-$(echo $top_module | awk '{print $2;}')
-
-  #ghdl -c --std=08 -v $comp_files -e $top_module --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw 
-    #Doesn't work in gcc version
+  rm "$(echo $top_module | awk '{print $1;}')"-"$(echo $top_module | awk '{print $2;}')"
 
 fi

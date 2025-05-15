@@ -5,28 +5,31 @@ library ieee;
   use ieee.numeric_std.all;
 
 entity conv3d is
+  generic (
+    isize : natural := 4;
+    osize : natural := 5
+  ); 
   port (
-    img : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    img : in  b25_3d_real_array(0 to isize-1)(0 to isize-1)(0 to isize-1);
     ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
     clk : in  std_logic;
     rst : in  std_logic;
     run : in  std_logic;
-    res : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
+    res : out b25_3d_real_array(0 to osize-1)(0 to osize-1)(0 to osize-1);
     rdy : out std_logic
   );
 end entity conv3d;
 
 architecture synth of conv3d is
 
-  constant isize : integer := 2;
-  constant osize : integer := 3;
+  constant osize_full : integer := osize*osize*osize;
 
-  signal rdy_sub : std_logic_vector(26 downto 0) := (others => '0');
+  signal rdy_sub : std_logic_vector(osize_full-1 downto 0) := (others => '0');
 
-  signal mul_a, mul_b, mul_res : b25_real_array(26 downto 0) := (others => (others => '0'));
-  signal add_a, add_b          : b25_real_array(26 downto 0) := (others => (others => '0'));
+  signal mul_a, mul_b, mul_res : b25_real_array(osize_full-1 downto 0) := (others => (others => '0'));
+  signal add_a, add_b          : b25_real_array(osize_full-1 downto 0) := (others => (others => '0'));
 
-  signal res_buff : b25_real_array(0 to 26);
+  signal res_buff : b25_real_array(0 to osize_full-1);
   
 begin
 
@@ -70,17 +73,17 @@ begin
 
             elsif (run) then
 
-              loop_kz : if kz < isize then
+              loop_kz : if kz < 2 then
                 iz := oz + kz - pad;
-                loop_ky : if ky < isize then
+                loop_ky : if ky < 2 then
                   iy := oy + ky - pad;
-                  loop_kx : if kx < isize then
+                  loop_kx : if kx < 2 then
                     ix := ox + kx - pad;
                     
                     if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
 
                       mul_a(oidx) <= img(iz)(iy)(ix);
-                      mul_b(oidx) <= ker(isize-1-kz)(isize-1-ky)(isize-1-kx); -- flip kernel
+                      mul_b(oidx) <= ker(1-kz)(1-ky)(1-kx); -- flip kernel
                       add_a(oidx) <= res_buff(oidx); 
 
                     end if;
@@ -109,16 +112,16 @@ begin
   rdy <= and(rdy_sub);
 
   --Output Layer (unrasterize)
-  gen_x : for x in 0 to 2 generate
-    gen_y : for y in 0 to 2 generate
-      gen_z : for z in 0 to 2 generate
-        constant idx : natural := x + y*3 + z*3*3;
+  gen_z : for z in 0 to osize-1 generate
+    gen_y : for y in 0 to osize-1 generate
+      gen_x : for x in 0 to osize-1 generate
+        constant idx : natural := x + y*osize + z*osize*osize;
       begin
-        gen_if : if (idx <= 26) generate
-          res(z)(y)(x) <= res_buff(idx) when rdy = '1';
+        gen_if : if (idx < osize_full) generate
+          res(z)(y)(x) <= res_buff(idx) when rdy = '1' else (others => '0');
         end generate gen_if;
-      end generate gen_z;
+      end generate gen_x;
     end generate gen_y;
-  end generate gen_x;
+  end generate gen_z;
 
 end architecture synth;

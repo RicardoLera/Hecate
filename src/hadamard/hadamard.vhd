@@ -41,14 +41,14 @@ architecture synth of hadamard is
   signal prod_x, prod_y       : std_logic;
 
   -- Primary CORDIC
-  signal pc_x_in, pc_y_in, pc_z_in    : std_logic_vector(24 downto 0);
+  signal pc_x_in, pc_y_in, pc_z_in    : std_logic_vector(24 downto 0) := (others => '0');
   signal pc_x_out, pc_y_out, pc_z_out : std_logic_vector(24 downto 0);
-  signal pc_sig_in, pc_sig_out        : std_logic;
+  signal pc_sig_in, pc_sig_out        : std_logic := '0';
 
   -- Secondary CORDIC
-  signal sc_x_in, sc_y_in, sc_z_in    : std_logic_vector(24 downto 0);
+  signal sc_x_in, sc_y_in, sc_z_in    : std_logic_vector(24 downto 0) := (others => '0');
   signal sc_x_out, sc_y_out, sc_z_out : std_logic_vector(24 downto 0);
-  signal sc_sig_in, sc_sig_out        : std_logic;
+  signal sc_sig_in, sc_sig_out        : std_logic := '0';
 
   -- Multiplier
   signal prod_r, prod_r_l            : std_logic_vector(24 downto 0);

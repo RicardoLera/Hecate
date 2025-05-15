@@ -12,7 +12,7 @@ entity cordic is
 
   -- 36, 34, 5, 25
   port (
-    sigma_in  : in    std_logic;
+    sigma_in  : in    std_logic := '0';
     rotation  : in    std_logic;
     j         : in    std_logic_vector(j_len - 1 downto 0);
     x_in      : in    std_logic_vector(coords_len - 1 downto 0);

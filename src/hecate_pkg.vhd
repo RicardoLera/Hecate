@@ -13,7 +13,6 @@ package hecate_pkg is
   type b8_2d_array_signed is array (natural range <>) of b8_array_signed;
   type b8_3d_array_signed is array (natural range <>) of b8_2d_array_signed;
 
-
   -- 25-bit types
   type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);  -- maybe make these into records
   type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
@@ -387,8 +386,8 @@ package hecate_pkg is
 
   component hecate_oa is
     generic (
-      ix, iy, iz : natural range 2 to 128 := 2;  -- assumes i mod k = 0, use assert in the testbench
-      ox, oy, oz : natural range 3 to 129 := 3
+      ix, iy, iz : natural := 4;  -- assumes i mod k = 0, use assert in the testbench
+      ox, oy, oz : natural := 5
     ); 
     port (
       img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
@@ -400,13 +399,17 @@ package hecate_pkg is
   end component;
 
   component conv3d is
+    generic (
+      isize : natural := 4;
+      osize : natural := 5
+    ); 
     port (
-      img : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      img : in  b25_3d_real_array(0 to isize-1)(0 to isize-1)(0 to isize-1);
       ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
       clk : in  std_logic;
       rst : in  std_logic;
       run : in  std_logic;
-      res : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
+      res : out b25_3d_real_array(0 to osize-1)(0 to osize-1)(0 to osize-1);
       rdy : out std_logic
     );
   end component conv3d;
@@ -422,12 +425,17 @@ package hecate_pkg is
 
   type integer_pair is array(0 to 1) of integer;
   type integer_trio is array(0 to 2) of integer;
+  type integer_pair_array is array (natural range <>) of integer_pair;
+  type integer_pair_2d_array is array (natural range <>) of integer_pair_array;
+  type integer_trio_array is array (natural range <>) of integer_trio;
+  type integer_trio_2d_array is array (natural range <>) of integer_trio_array;
+
 
   function scramble_lut(n : integer) return integer;
-  function bfly_lut(s, n : integer) return integer_pair;
-  function wmul_lut(s, n : integer) return integer_trio;
-  function bfly_lut_rev(s, b, tb : integer) return integer;
-  function wmul_lut_rev(s, w, m : integer) return integer;
+  function bfly_idx(s, n : integer) return integer_pair;
+  function wmul_idx(s, n : integer) return integer_trio;
+  function bfly_idx_rev(s, b, tb : integer) return integer;
+  function wmul_idx_rev(s, w, m : integer) return integer;
 
 end package hecate_pkg;
 
@@ -447,8 +455,8 @@ package body hecate_pkg is
       return idx;
     end function;
   
-    -- bfly_lut converts n to the order the butterflies are at, top to bottom, in their respective state
-    function bfly_lut(s, n : integer) return integer_pair is
+    -- bfly_idx converts n to the order the butterflies are at, top to bottom, in their respective state
+    function bfly_idx(s, n : integer) return integer_pair is
       constant the_log : integer := 5;
       constant b : integer := (n/(2**s)) * (2**(s-1)) + (n mod (2**(s-1))); -- bfly_pos = bfly_group*group_size + pos_in_group
       -- Yes, (n/(2**s)) * (2**(s-1)) = n/2, except NOT because rounding. Leave it like that, it's synth time
@@ -457,7 +465,7 @@ package body hecate_pkg is
       if ((s < 1) or (s > the_log)) then
         return (0,0);
       else
-        --report "Inside bfly_lut: s = " & integer'image(s) & "   n = " & integer'image(n) & "   b = " & integer'image(b);
+        --report "Inside bfly_idx: s = " & integer'image(s) & "   n = " & integer'image(n) & "   b = " & integer'image(b);
         if (tb) then
           return (b,1);
         else
@@ -466,26 +474,26 @@ package body hecate_pkg is
       end if;
     end function;
     
-    -- wmul_lut converts n to the respective w multipliers, in their respective state, or returns (0,0,1) if no multiplication is needed
-    function wmul_lut(s, n : integer) return integer_trio is
+    -- wmul_idx converts n to the respective w multipliers, in their respective state, or returns (0,0,1) if no multiplication is needed
+    function wmul_idx(s, n : integer) return integer_trio is
       constant the_log : integer := 5;
       constant valid : boolean := (n mod (2**(s+1))) >= 2**s; -- it's tb for the next state. I hate/love Fourier symmetry
       constant w : integer := (n mod (2**s)) * (2**(the_log-s-1)); -- pos_in_group (next state) times decreasing constant (2**(the_log-s-1))
       constant m : integer := n/(2**(s+1)) ; 
     begin
       if ((s < 1) or (s > the_log-1) or not valid) then
-        return (0,0,1);
+        return (0,0,0);
       else
         --if (n mod (2**s)) >= (2**(s-1)) then
           --return (w,m+1,0);
         --else
-          return (w,m,0);
+          return (w,m,1);
         --end if;
       end if;
     end function;
   
-    -- bfly_lut_rev converts (b, tb) back to n, in their respective state
-    function bfly_lut_rev(s, b, tb : integer) return integer is
+    -- bfly_idx_rev converts (b, tb) back to n, in their respective state
+    function bfly_idx_rev(s, b, tb : integer) return integer is
       constant the_log : integer := 5;
       constant group_size   : integer := (2**(s-1));       -- [in BFLYS]
       constant pos_in_group : integer := b mod group_size; -- [in BFLYS]
@@ -499,8 +507,8 @@ package body hecate_pkg is
       end if;
     end function;
   
-    -- wmul_lut_rev converts (w, m) back to n, in its respective state
-    function wmul_lut_rev(s, w, m : integer) return integer is
+    -- wmul_idx_rev converts (w, m) back to n, in its respective state
+    function wmul_idx_rev(s, w, m : integer) return integer is
       constant n_points : integer := 32;
       constant the_log : integer := 5;
       constant group_size   : integer := (2**(s-1))*2;           -- [in POINTS]
