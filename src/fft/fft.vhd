@@ -46,25 +46,29 @@ begin
   gen_wmul : for w in 1 to n_points/2-1 generate -- e.g., w1~w15 for N=32
     gen_wmul2 : for m in 0 to n_points/4-1 generate -- This can be further reduced with an if generate (previous: 2*factor2(n_points)-1)
       gen_wmul3 : if (w /= n_points/4) generate
-        wmul : component b25_wmul
-          generic map (
-            w => w,
-            n => n_points
-          )
-          port map (
-            i => wmul_in(w)(m),
-            o => wmul_out(w)(m)
-          );
+        constant mask : unsigned(the_log-1 downto 0) := ('1', others => '0');
+      begin
+        gen_wmul4 : if (m <= to_integer(to_unsigned(w, the_log) nor mask)) generate
+          wmul : component b25_wmul
+            generic map (
+              w => w,
+              n => n_points
+            )
+            port map (
+              i => wmul_in(w)(m),
+              o => wmul_out(w)(m)
+            );
+        end generate gen_wmul4;
       end generate gen_wmul3;
     end generate gen_wmul2;
   end generate gen_wmul;
   
-  gen_wmul4 : for m in 0 to n_points/4-1 generate -- to cover, e.g., w8 for N=32, of which there are a maximum of 7 instances active at once
+  gen_wmul5 : for m in 0 to n_points/4-1 generate -- to cover, e.g., w8 for N=32, of which there are a maximum of 7 instances active at once
     wmul_out(n_points/4)(m) <= (                                                    -- (a + bi)*i = 
     ((not wmul_in(n_points/4)(m)(1)(24)) & wmul_in(n_points/4)(m)(1)(23 downto 0)), -- -b
     wmul_in(n_points/4)(m)(0)                                                       -- +ai
     );
-  end generate gen_wmul4;
+  end generate gen_wmul5;
 
   wmul_out(0) <= wmul_in(0);
 

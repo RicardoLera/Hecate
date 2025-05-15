@@ -88,6 +88,7 @@ begin
     );
 
   golden : component conv3d
+    generic map (2, 3)
     port map (
       img     => img,
       ker     => ker,
