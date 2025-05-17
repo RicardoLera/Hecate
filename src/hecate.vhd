@@ -7,12 +7,11 @@ library ieee;
 
 entity hecate is
   port (
-    img                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    img_transf          : in b25_complex_array(0 to 16);
     ker_transf          : in b25_complex_array(0 to 16);
-    ready_ker           : in std_logic;
     clock, reset, start : in std_logic;
-    res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
-    o_ready             : out std_logic
+    res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
+    ready               : out std_logic
   );
 end entity hecate;
 
@@ -20,12 +19,9 @@ architecture synth of hecate is
 
   --constant n_points : natural range 0 to 1024 := integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1)))));
 
-  signal ready_fft  : std_logic;
   signal ready_had  : std_logic_vector(0 to 16);
   signal ready_idft : std_logic_vector(0 to 26) := (others => '0');
-  signal ffts_ready, hads_ready, idfts_ready, s_ready : std_logic := '0';
-
-  signal img_transf : b25_complex_array(0 to 16);
+  signal hads_ready, idfts_ready, s_ready : std_logic := '0';
 
   type t_calc_matrix is array(0 to 16) of b25_real_array(0 to 7);
   signal calc_vals_x : t_calc_matrix := (others => (others => (others => '0')));
@@ -33,23 +29,8 @@ architecture synth of hecate is
 
   signal res_buff : b25_real_array(0 to 26);
 
-  -- function raster_lut(x, y, z : integer) return integer is
-  --   variable idx     : integer := 0;
-  --   constant nx_full : integer := 3; -- 2*nx-1
-  --   constant ny_full : integer := 3; -- 2*ny-1
-  --   constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
-  -- begin
-  --   for g in 0 to 4 loop -- 0 to log2(N)-1
-  --     if (n mod (2**(g+1)) >= 2**g) then
-  --       idx := idx + 32 / (2**(g+1)); -- N = 32
-  --     end if;
-  --   end loop;
-  --   return idx;
-  -- end function;
-  
 begin
 
-  ffts_ready  <= (ready_fft and ready_ker);
   hads_ready  <= and(ready_had);
   idfts_ready <= and(ready_idft);
 
@@ -62,29 +43,7 @@ begin
       end if;
     end if;
   end process sync_ready;
-  o_ready <= s_ready;
-
-  fft_in_img : component fft
-    generic map (2, 2, 2, 32)
-    port map (
-      i       => img,
-      o       => img_transf,
-      clock   => clock,
-      start   => start,
-      reset   => reset,
-      s_ready => ready_fft
-    );
-
-  -- fft_in_ker : component fft
-  --   generic map (2, 2, 2, 32)
-  --   port map (
-  --     i       => ker,
-  --     o       => ker_transf,
-  --     clock   => clock,
-  --     start   => start,
-  --     reset   => reset,
-  --     s_ready => ready_fft(1)
-  --   );
+  ready <= s_ready;
 
   gen_calc_vals : for id in 0 to 16 generate
     had : component hadamard
@@ -92,7 +51,7 @@ begin
       port map (
         clock     => clock,
         reset     => reset,
-        start     => ffts_ready,
+        start     => start,
         x_i       => img_transf(id)(0),
         y_i       => img_transf(id)(1),
         x_k       => ker_transf(id)(0),
@@ -208,7 +167,7 @@ begin
         constant idx : natural := x + y*3 + z*3*3;
       begin
         gen_if : if (idx <= 26) generate
-          res(z)(y)(x) <= res_buff(idx) when idfts_ready = '1';
+          res(z)(y)(x) <= res_buff(idx) when idfts_ready = '1' else (others => '0');
         end generate gen_if;
       end generate gen_x;
     end generate gen_y;

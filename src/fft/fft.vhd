@@ -80,10 +80,10 @@ begin
 
   -- State machine
   state_machine : process (clock) begin
-    if rising_edge(clock) then
-      if (reset) then
-        state <= 0;
-      elsif (start) then
+    if (reset) then
+      state <= 0;
+    elsif rising_edge(clock) then
+      if (start) then
         if (state < the_log+1) then
           state <= state + 1;
         end if;
@@ -165,7 +165,9 @@ begin
       bfly_out(b)(tb) when 6,
       (others => (others => '0')) when others;
   end generate gen_procs_out;
-  s_ready <= '1' when state=the_log+1 else '0';
+  s_ready <=
+    '1' when (state=the_log+1) else
+    '0';
   o <= out_buff(0 to n_points/2) when s_ready else (others => (others => (others => '0')));
 
 end architecture synth;

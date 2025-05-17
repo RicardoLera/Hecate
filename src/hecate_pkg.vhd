@@ -375,12 +375,11 @@ package hecate_pkg is
 
   component hecate is
     port (
-      img                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      img_transf          : in b25_complex_array(0 to 16);
       ker_transf          : in b25_complex_array(0 to 16);
-      ready_ker           : in std_logic;
       clock, reset, start : in std_logic;
-      res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2) := (others => (others => (others => (others => '0'))));
-      o_ready             : out std_logic
+      res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
+      ready               : out std_logic
     );
   end component;
 
@@ -394,7 +393,7 @@ package hecate_pkg is
       ker                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
       clock, reset, start : in std_logic;
       res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-      o_ready             : out std_logic
+      ready               : out std_logic
     );
   end component;
 

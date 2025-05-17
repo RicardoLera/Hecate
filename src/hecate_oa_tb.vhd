@@ -24,9 +24,10 @@ end entity hecate_oa_tb;
 
 architecture sim of hecate_oa_tb is
 
-  signal clk, rst, sta    : std_logic := '0';
-  signal img              : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal ker              : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+  signal clk, sta : std_logic := '0';
+  signal rst      : std_logic := '1';
+  signal img      : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal ker      : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
 
   signal res, gold        : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
   signal o_ready, g_ready : std_logic;
@@ -64,25 +65,25 @@ begin
   dut : component hecate_oa
     generic map (ix, iy, iz, ix+1, iy+1, iz+1)
     port map (
-      img     => img,
-      ker     => ker,
-      clock   => clk,
-      reset   => rst,
-      start   => sta,
-      res     => res,
-      o_ready => o_ready
+      img   => img,
+      ker   => ker,
+      clock => clk,
+      reset => rst,
+      start => sta,
+      res   => res,
+      ready => o_ready
     );
 
   golden : component conv3d
     generic map (ix, ix+1)
     port map (
-      img     => img,
-      ker     => ker,
-      run     => sta,
-      clk     => clk,
-      rst     => rst,
-      res     => gold,
-      rdy     => g_ready
+      img => img,
+      ker => ker,
+      clk => clk,
+      rst => rst,
+      run => sta,
+      res => gold,
+      rdy => g_ready
     );
 
   test : process
@@ -96,15 +97,22 @@ begin
     test_loop : for n in 0 to test_n-1 loop
       rand_arr(img, n+1, ix);
       rand_arr(ker, n+2, 2);
-      
-      -- one_loop_z : for z in 0 to 1 loop
-      --   one_loop_y : for y in 0 to 1 loop
-      --     one_loop_x : for x in 0 to 1 loop
+
+      -- img_loop_z : for z in 0 to iz-1 loop
+      --   img_loop_y : for y in 0 to iy-1 loop
+      --     img_loop_x : for x in 0 to ix-1 loop
       --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --     end loop img_loop_x;
+      --   end loop img_loop_y;
+      -- end loop img_loop_z;
+
+      -- ker_loop_z : for z in 0 to 1 loop
+      --   ker_loop_y : for y in 0 to 1 loop
+      --     ker_loop_x : for x in 0 to 1 loop
       --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-      --     end loop one_loop_x;
-      --   end loop one_loop_y;
-      -- end loop one_loop_z;
+      --     end loop ker_loop_x;
+      --   end loop ker_loop_y;
+      -- end loop ker_loop_z;
 
       -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
       -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
@@ -112,7 +120,7 @@ begin
       wait for 5 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;
 
-      wait until (o_ready and g_ready) for 200 ms; t2 := now;
+      wait until (o_ready and g_ready) for 2000 ms; t2 := now;
 
       test_time := t2-t1;
       t_mean := t_mean + test_time;
@@ -127,7 +135,7 @@ begin
             if (err < x"100") then
               pnt := pnt + 1;
             else
-              report "Error exceeded at n=" & integer'image(z*iy*ix+y*ix+x) & "   Total error = " & integer'image(to_integer(err));
+              report "Error exceeded at (" & integer'image(z) & ")(" & integer'image(y) & ")(" & integer'image(x) & ")" & "   Total error = " & to_hstring(err);
             end if;
           end loop calc_error_x;
         end loop calc_error_y;
@@ -160,8 +168,8 @@ end architecture sim;
 
 architecture synth of hecate_oa_tb is
 
-  signal img             : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal res             : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
+  signal img : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal res : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
 
 begin
 
@@ -176,13 +184,13 @@ begin
   dut : component hecate_oa
     generic map (4, 4, 4, 5, 5, 5)
     port map (
-      img     => img,
-      ker     => test_ker,
-      clock   => clock,
-      reset   => reset,
-      start   => start,
-      res     => res,
-      o_ready => oa_ready
+      img   => img,
+      ker   => test_ker,
+      clock => clock,
+      reset => reset,
+      start => start,
+      res   => res,
+      ready => oa_ready
     );
 
   b8_z : for z in 0 to iz generate
