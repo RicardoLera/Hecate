@@ -334,10 +334,10 @@ package hecate_pkg is
       reset     : in    std_logic;
       run       : in    std_logic;
       run_coefs : in    std_logic;
-      a         : in    std_logic_vector(24 downto 0);
-      b         : in    std_logic_vector(24 downto 0);
-      a_nex     : in    std_logic_vector(24 downto 0);
-      b_nex     : in    std_logic_vector(24 downto 0);
+      a         : in    std_logic_vector(23 downto 0);
+      b         : in    std_logic_vector(23 downto 0);
+      a_nex     : in    std_logic_vector(23 downto 0);
+      b_nex     : in    std_logic_vector(23 downto 0);
       coefs_x   : out   b25_real_array(0 to 7);
       coefs_y   : out   b25_real_array(0 to 7);
       p         : out   std_logic_vector(24 downto 0);
@@ -429,12 +429,14 @@ package hecate_pkg is
   type integer_trio_array is array (natural range <>) of integer_trio;
   type integer_trio_2d_array is array (natural range <>) of integer_trio_array;
 
-
   function scramble_lut(n : integer) return integer;
   function bfly_idx(s, n : integer) return integer_pair;
   function wmul_idx(s, n : integer) return integer_trio;
   function bfly_idx_rev(s, b, tb : integer) return integer;
   function wmul_idx_rev(s, w, m : integer) return integer;
+
+  function twiddle (inp, pnt : natural) return b25_complex;
+  function w_add (a, b : std_logic_vector(24 downto 0)) return std_logic_vector;
 
 end package hecate_pkg;
 
@@ -520,6 +522,47 @@ package body hecate_pkg is
       else
         return n;
       end if;
+    end function;
+
+
+
+    -- Generic twiddle function
+    function twiddle (inp, pnt : natural) return b25_complex is
+      constant base : real := 2.0*MATH_PI/real(pnt);
+      variable x : b25_complex;
+    begin
+      -- report "inp = " & integer'image(inp) & "   pnt/4 = " & integer'image(pnt/4);
+      if (inp > pnt/4) then
+        x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(pnt/2-inp) * base)), 17)));
+      else
+        x(0) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(inp) * base)), 17)));
+      end if;
+      x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
+      return b25_complex(x);
+    end function;
+
+    -- b25_add function (synth-time)
+    function w_add (a, b : std_logic_vector(24 downto 0)) return std_logic_vector is
+      variable temp_res   : std_logic_vector(23 downto 0) := (others => '0');
+      variable temp_sign  : std_logic := '0';
+      variable sa, sb, st : signed(23 downto 0);
+    begin
+      sa := signed(a(23 downto 0));
+      sb := signed(b(23 downto 0));
+      if ((a(24) xor b(24)) = '1') then
+        st := sa - sb;
+        if (st < 0) then
+          temp_res  := std_logic_vector(-st);
+          temp_sign := b(24);
+        else
+          temp_res  := std_logic_vector(st);
+          temp_sign := a(24);
+        end if;
+      else
+        temp_res  := std_logic_vector(sa + sb);
+        temp_sign := a(24);
+      end if;
+      return (temp_sign & temp_res);
     end function;
 
 end package body hecate_pkg;

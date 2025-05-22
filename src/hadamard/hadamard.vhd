@@ -55,8 +55,8 @@ architecture synth of hadamard is
   signal prod_z, prod_pi             : std_logic_vector(24 downto 0) := (others => '0');
   signal prod_z_mod, prod_z_mux      : std_logic_vector(24 downto 0) := (others => '0');
   signal prod_z_cor, prod_z_cor_l    : std_logic_vector(24 downto 0) := (others => '0');
-  signal mul_a, mul_a_nex            : std_logic_vector(24 downto 0) := (others => '0');
-  signal mul_b, mul_b_nex            : std_logic_vector(24 downto 0) := (others => '0');
+  signal mul_a, mul_a_nex            : std_logic_vector(23 downto 0) := (others => '0');
+  signal mul_b, mul_b_nex            : std_logic_vector(23 downto 0) := (others => '0');
   signal coefs_x, neg_coefs_x        : b25_real_array(0 to 7) := (others => (others => '0'));
   signal coefs_y, neg_coefs_y        : b25_real_array(0 to 7) := (others => (others => '0'));
   signal prod_quadrant               : std_logic_vector(1 downto 0) := (others => '0');
@@ -249,26 +249,26 @@ begin
     if rising_edge(clock) then
       case flux_mode is
         when "00" =>
-          mul_a     <= 25x"0";
-          mul_b     <= 25x"0";
-          mul_a_nex <= 25x"0";
-          mul_b_nex <= 25x"0";
+          mul_a     <= 24x"0";
+          mul_b     <= 24x"0";
+          mul_a_nex <= 24x"0";
+          mul_b_nex <= 24x"0";
           run_flux  <= '0';
           run_coefs <= '0';
 
         when "01" =>
-          mul_a     <= pc_x_in;
-          mul_b     <= sc_x_in;
-          mul_a_nex <= pc_x_out;
-          mul_b_nex <= sc_x_out;
+          mul_a     <= pc_x_in(23 downto 0);
+          mul_b     <= sc_x_in(23 downto 0);
+          mul_a_nex <= pc_x_out(23 downto 0);
+          mul_b_nex <= sc_x_out(23 downto 0);
           run_flux  <= '1';
           run_coefs <= '0';
 
         when "10" =>
-          mul_a     <= pc_x_in;
-          mul_b     <= pc_y_in;
-          mul_a_nex <= pc_x_out;
-          mul_b_nex <= pc_y_out;
+          mul_a     <= pc_x_in(23 downto 0);
+          mul_b     <= pc_y_in(23 downto 0);
+          mul_a_nex <= pc_x_out(23 downto 0);
+          mul_b_nex <= pc_y_out(23 downto 0);
           run_flux  <= '1';
           run_coefs <= '1';
 

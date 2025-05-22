@@ -13,10 +13,10 @@ entity flux_multiplier is
     reset     : in    std_logic;
     run       : in    std_logic;
     run_coefs : in    std_logic;
-    a         : in    std_logic_vector(24 downto 0);
-    b         : in    std_logic_vector(24 downto 0);
-    a_nex     : in    std_logic_vector(24 downto 0);
-    b_nex     : in    std_logic_vector(24 downto 0);
+    a         : in    std_logic_vector(23 downto 0);
+    b         : in    std_logic_vector(23 downto 0);
+    a_nex     : in    std_logic_vector(23 downto 0);
+    b_nex     : in    std_logic_vector(23 downto 0);
     coefs_x   : out   b25_real_array(0 to 7);
     coefs_y   : out   b25_real_array(0 to 7);
     p         : out   std_logic_vector(24 downto 0);
@@ -31,8 +31,6 @@ architecture synth of flux_multiplier is
   signal b_sel            : ieee.numeric_std.unsigned(24 downto 0);
   signal sum              : ieee.numeric_std.unsigned(24 downto 0);
   signal shift_sum        : std_logic_vector(49 downto 0) := (others => '0');
-  signal shift_res        : std_logic_vector(49 downto 0) := (others => '0');
-  signal next_res         : std_logic_vector(49 downto 0) := (others => '0');
   signal a_bit            : std_logic;
   signal b_bit            : std_logic;
   signal bit_prod         : std_logic;
@@ -44,7 +42,7 @@ architecture synth of flux_multiplier is
   signal s_error          : std_logic;
   signal s_reset          : std_logic;
 
-  signal p_full,   a_kx           : std_logic_vector(49 downto 0) := (others => '0');
+  signal p_full                   : std_logic_vector(49 downto 0) := (others => '0');
   signal p_full_n, p_full_shifted : std_logic_vector(49 downto 0);
 
   signal kx_mux_x   : b25_double_array(0 to 7) := (others => (others => '0'));
