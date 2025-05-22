@@ -54,11 +54,11 @@ else
 
   elif [ "$1" = "had" ] ; then
     comp_files="hecate_pkg.vhd */*.vhd"
-    top_module="hadamard_tb"
+    top_module="hadamard_tb sim"
 
   elif [ "$1" = "hec_debug" ] ; then
     comp_files="*.vhd */*.vhd"
-    top_module="hecate_tb_debug"
+    top_module="hecate_tb_debug sim"
 
   elif [ "$1" = "hec" ] ; then
     comp_files="*.vhd */*.vhd"
@@ -66,7 +66,7 @@ else
 
   elif [ "$1" = "hec_oa_debug" ] ; then
     comp_files="*.vhd */*.vhd"
-    top_module="hecate_oa_tb_debug"
+    top_module="hecate_oa_tb_debug sim"
 
   elif [ "$1" = "hec_oa" ] ; then
     comp_files="*.vhd */*.vhd"

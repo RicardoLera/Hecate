@@ -6,23 +6,23 @@ library ieee;
 
 entity conv3d is
   generic (
-    isize : natural := 4;
-    osize : natural := 5
+    ix, iy, iz : natural := 4;
+    ox, oy, oz : natural := 5
   ); 
   port (
-    img : in  b25_3d_real_array(0 to isize-1)(0 to isize-1)(0 to isize-1);
+    img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
     ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
     clk : in  std_logic;
     rst : in  std_logic;
     run : in  std_logic;
-    res : out b25_3d_real_array(0 to osize-1)(0 to osize-1)(0 to osize-1);
+    res : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
     rdy : out std_logic
   );
 end entity conv3d;
 
 architecture synth of conv3d is
 
-  constant osize_full : integer := osize*osize*osize;
+  constant osize_full : integer := oz*oy*ox;
 
   signal rdy_sub : std_logic_vector(osize_full-1 downto 0) := (others => '0');
 
@@ -35,11 +35,11 @@ begin
 
   add_b <= mul_res;
 
-  loop_oz : for oz in 0 to osize-1 generate
-    loop_oy : for oy in 0 to osize-1 generate
-      loop_ox : for ox in 0 to osize-1 generate
+  loop_oz : for ozi in 0 to oz-1 generate
+    loop_oy : for oyi in 0 to oy-1 generate
+      loop_ox : for oxi in 0 to ox-1 generate
 
-        constant oidx : integer := ox + oy*osize + oz*osize*osize;
+        constant oidx : integer := oxi + oyi*ox + ozi*ox*oy;
 
       begin
 
@@ -59,7 +59,7 @@ begin
         
         macc : process(clk)
           constant pad : integer := 1;
-          variable ix, iy, iz : integer := 0;
+          variable ixi, iyi, izi : integer := 0;
           variable kx, ky, kz : integer := 0;
         begin
           if (rising_edge(clk)) then
@@ -74,15 +74,15 @@ begin
             elsif (run) then
 
               loop_kz : if kz < 2 then
-                iz := oz + kz - pad;
+                izi := ozi + kz - pad;
                 loop_ky : if ky < 2 then
-                  iy := oy + ky - pad;
+                  iyi := oyi + ky - pad;
                   loop_kx : if kx < 2 then
-                    ix := ox + kx - pad;
+                    ixi := oxi + kx - pad;
                     
-                    if ((ix >= 0) and (ix < isize) and (iy >= 0) and (iy < isize) and (iz >= 0) and (iz < isize)) then
+                    if ((ixi >= 0) and (ixi < ix) and (iyi >= 0) and (iyi < iy) and (izi >= 0) and (izi < iz)) then
 
-                      mul_a(oidx) <= img(iz)(iy)(ix);
+                      mul_a(oidx) <= img(izi)(iyi)(ixi);
                       mul_b(oidx) <= ker(1-kz)(1-ky)(1-kx); -- flip kernel
                       add_a(oidx) <= res_buff(oidx); 
 
@@ -112,10 +112,10 @@ begin
   rdy <= and(rdy_sub);
 
   --Output Layer (unrasterize)
-  gen_z : for z in 0 to osize-1 generate
-    gen_y : for y in 0 to osize-1 generate
-      gen_x : for x in 0 to osize-1 generate
-        constant idx : natural := x + y*osize + z*osize*osize;
+  gen_z : for z in 0 to oz-1 generate
+    gen_y : for y in 0 to oy-1 generate
+      gen_x : for x in 0 to ox-1 generate
+        constant idx : natural := x + y*ox + z*ox*oy;
       begin
         gen_if : if (idx < osize_full) generate
           res(z)(y)(x) <= res_buff(idx) when rdy = '1' else (others => '0');

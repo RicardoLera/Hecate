@@ -6,7 +6,7 @@ library ieee;
 entity hadamard_uc is
   port (
     clock, start, reset    : in     std_logic;
-    j_end, mul_ready       : in     std_logic;
+    mul_ready               : in     std_logic;
     cordic_mode, flux_mode : out    std_logic_vector(1 downto 0);
     rotation               : out    std_logic;
     ready                  : buffer std_logic

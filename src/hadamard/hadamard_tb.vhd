@@ -1,5 +1,4 @@
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -7,14 +6,13 @@ library ieee;
 entity hadamard_tb is
 end entity hadamard_tb;
 
-architecture rtl of hadamard_tb is
+architecture sim of hadamard_tb is
 
   signal reset, start : std_logic;
   signal x_i          : std_logic_vector(24 downto 0);
   signal y_i          : std_logic_vector(24 downto 0);
   signal x_k          : std_logic_vector(24 downto 0);
   signal y_k          : std_logic_vector(24 downto 0);
-  signal lut          : b25_real_array(0 to 7);
   signal p_coefs_x    : b25_real_array(0 to 7);
   signal p_coefs_y    : b25_real_array(0 to 7);
   signal ready        : std_logic;
@@ -72,4 +70,4 @@ begin
 
   end process test;
 
-end architecture rtl;
+end architecture sim;

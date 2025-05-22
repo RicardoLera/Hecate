@@ -9,7 +9,7 @@ entity fft_tb is
     inp     : in b8_3d_array(0 to 1)(0 to 1)(0 to 1);
     --ram     : out float_complex_array(0 to 16);
     clock   : in std_logic := '0';
-    s_ready : out std_logic := '0'
+    ready : out std_logic := '0'
   );
 end entity fft_tb;
 
@@ -41,7 +41,7 @@ architecture sim of fft_tb is
 
   signal   i : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
   signal   o : b25_complex_array(0 to 16) := (others => (others => (others => '0')));
-  signal   clk, start, reset, simulate : std_logic := '0';
+  signal   clk, start, reset, simulate, s_ready : std_logic := '0';
   constant clockperiod : time := 1 ms;
 
 begin
@@ -62,12 +62,15 @@ begin
   test : process is
   begin
 
+    reset <= '1';
     simulate <= '1';
     i <= test_arr;
+    wait for 2 ms;
 
     reset <= '0';
     start <= '1';
     wait until (s_ready = '1') for 50 ms ;
+    wait for 2 ms;
 
     i <= test_arr2;
     reset <= '1';
@@ -77,6 +80,7 @@ begin
     reset <= '0';
     start <= '1';
     wait until (s_ready = '1') for 50 ms ;
+    wait for 2 ms;
 
     start <= '0';
     wait for 1 ms;
@@ -93,7 +97,7 @@ architecture synth of fft_tb is
 
   signal inp_b25 : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1) := (others => (others => (others => (others => '0'))));
   signal res     : b25_complex_array(0 to 16) := (others => (others => (others => '0')));
-  signal start, simulate : std_logic := '0';
+  signal s_ready, start, simulate : std_logic := '0';
   signal reset : std_logic := '1';
 
 begin

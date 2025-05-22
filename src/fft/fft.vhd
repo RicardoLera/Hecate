@@ -114,15 +114,17 @@ begin
       signal bfly_in_reg : b25_complex := (others => (others => '0'));
     begin
 
-      latch_bfly_in_reg : process (state) is
+      latch_bfly_in_reg : process (clock) is
         variable n : integer;
       begin
-        if (state > 1) and (state < the_log+1) then
-          n := bfly_idx_rev(state, b, tb);
-          case (wmul_idx(state-1, n)(2)) is
-            when 1      => bfly_in_reg <= wmul_out(wmul_idx(state-1, n)(0))(wmul_idx(state-1, n)(1));
-            when others => bfly_in_reg <= bfly_out(bfly_idx(state-1, n)(0))(bfly_idx(state-1, n)(1));
-          end case;
+        if rising_edge(clock) then
+          if (state+1 > 1) and (state+1 < the_log+1) then
+            n := bfly_idx_rev(state+1, b, tb);
+            case (wmul_lut(state)(n)(2)) is
+              when 1      => bfly_in_reg <= wmul_out(wmul_lut(state)(n)(0))(wmul_lut(state)(n)(1));
+              when others => bfly_in_reg <= bfly_out(bfly_lut(state)(n)(0))(bfly_lut(state)(n)(1));
+            end case;
+          end if;
         end if;
       end process latch_bfly_in_reg;
 

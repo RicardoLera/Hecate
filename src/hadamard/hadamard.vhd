@@ -27,7 +27,7 @@ architecture synth of hadamard is
   -- Control unit
   signal j_end, mul_ready, rotation : std_logic;
   signal cordic_mode, flux_mode     : std_logic_vector(1 downto 0);
-  signal run_flux, run_coefs        : std_logic;
+  signal run_flux, run_coefs        : std_logic := '0';
 
   -- J control
   signal j : std_logic_vector(4 downto 0) := (others => '0');
@@ -51,15 +51,15 @@ architecture synth of hadamard is
   signal sc_sig_in, sc_sig_out        : std_logic := '0';
 
   -- Multiplier
-  signal prod_r, prod_r_l            : std_logic_vector(24 downto 0);
-  signal prod_z, prod_pi             : std_logic_vector(24 downto 0);
-  signal prod_z_mod, prod_z_mux      : std_logic_vector(24 downto 0);
-  signal prod_z_cor, prod_z_cor_l    : std_logic_vector(24 downto 0);
-  signal mul_a, mul_a_nex            : std_logic_vector(24 downto 0);
-  signal mul_b, mul_b_nex            : std_logic_vector(24 downto 0);
-  signal coefs_x, neg_coefs_x        : b25_real_array(0 to 7);
-  signal coefs_y, neg_coefs_y        : b25_real_array(0 to 7);
-  signal prod_quadrant               : std_logic_vector(1 downto 0);
+  signal prod_r, prod_r_l            : std_logic_vector(24 downto 0) := (others => '0');
+  signal prod_z, prod_pi             : std_logic_vector(24 downto 0) := (others => '0');
+  signal prod_z_mod, prod_z_mux      : std_logic_vector(24 downto 0) := (others => '0');
+  signal prod_z_cor, prod_z_cor_l    : std_logic_vector(24 downto 0) := (others => '0');
+  signal mul_a, mul_a_nex            : std_logic_vector(24 downto 0) := (others => '0');
+  signal mul_b, mul_b_nex            : std_logic_vector(24 downto 0) := (others => '0');
+  signal coefs_x, neg_coefs_x        : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal coefs_y, neg_coefs_y        : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal prod_quadrant               : std_logic_vector(1 downto 0) := (others => '0');
 
   -- Output
   signal coefs_x_sel, coefs_y_sel : b25_real_array(0 to 7);
@@ -73,7 +73,6 @@ begin
       clock       => clock,
       start       => start,
       reset       => reset,
-      j_end       => j_end,
       mul_ready   => mul_ready,
       cordic_mode => cordic_mode,
       flux_mode   => flux_mode,
@@ -246,53 +245,57 @@ begin
 
   -- Flux Multiplier Signals
 
-  flux_pro : process (all) begin
-    case flux_mode is
-      when "00" =>
-        mul_a     <= 25x"0";
-        mul_b     <= 25x"0";
-        mul_a_nex <= 25x"0";
-        mul_b_nex <= 25x"0";
-        run_flux  <= '0';
-        run_coefs <= '0';
+  flux_pro : process (clock) begin
+    if rising_edge(clock) then
+      case flux_mode is
+        when "00" =>
+          mul_a     <= 25x"0";
+          mul_b     <= 25x"0";
+          mul_a_nex <= 25x"0";
+          mul_b_nex <= 25x"0";
+          run_flux  <= '0';
+          run_coefs <= '0';
 
-      when "01" =>
-        mul_a     <= pc_x_in;
-        mul_b     <= sc_x_in;
-        mul_a_nex <= pc_x_out;
-        mul_b_nex <= sc_x_out;
-        run_flux  <= '1';
-        run_coefs <= '0';
+        when "01" =>
+          mul_a     <= pc_x_in;
+          mul_b     <= sc_x_in;
+          mul_a_nex <= pc_x_out;
+          mul_b_nex <= sc_x_out;
+          run_flux  <= '1';
+          run_coefs <= '0';
 
-      when "10" =>
-        mul_a     <= pc_x_in;
-        mul_b     <= pc_y_in;
-        mul_a_nex <= pc_x_out;
-        mul_b_nex <= pc_y_out;
-        run_flux  <= '1';
-        run_coefs <= '1';
+        when "10" =>
+          mul_a     <= pc_x_in;
+          mul_b     <= pc_y_in;
+          mul_a_nex <= pc_x_out;
+          mul_b_nex <= pc_y_out;
+          run_flux  <= '1';
+          run_coefs <= '1';
 
-      when others =>
-        mul_a     <= mul_a;
-        mul_b     <= mul_b;
-        mul_a_nex <= mul_a_nex;
-        mul_b_nex <= mul_b_nex;
-        run_flux  <= '1';
-        run_coefs <= '0';
-    end case;
+        when others =>
+          mul_a     <= mul_a;
+          mul_b     <= mul_b;
+          mul_a_nex <= mul_a_nex;
+          mul_b_nex <= mul_b_nex;
+          run_flux  <= '1';
+          run_coefs <= '0';
+      end case;
+    end if;
   end process flux_pro;
 
 
 
   -- i/k correction to Q1~4
 
-  corr_latch : process (reset, j_end) begin
+  corr_latch : process (reset, clock) begin
     if (reset) then
       img_z(23 downto 0) <= (others => '0');
       ker_z(23 downto 0) <= (others => '0');
-    elsif rising_edge(j_end) and flux_mode = "01" then
-      img_z(23 downto 0) <= pc_z_in(23 downto 0);
-      ker_z(23 downto 0) <= sc_z_in(23 downto 0);
+    elsif rising_edge(clock) then
+        if (j_end = '1') and flux_mode = "01" then
+        img_z(23 downto 0) <= pc_z_in(23 downto 0);
+        ker_z(23 downto 0) <= sc_z_in(23 downto 0);
+      end if;
     end if;
   end process corr_latch;
 

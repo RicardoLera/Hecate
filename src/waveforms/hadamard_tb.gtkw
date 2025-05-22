@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Thu May  9 17:37:44 2024
+[*] GTKWave Analyzer v3.3.123 (w)1999-2025 BSI
+[*] Thu May 22 17:08:45 2025
 [*]
 [dumpfile] "hadamard_tb.ghw"
-[dumpfile_mtime] "Thu May  9 17:29:56 2024"
-[dumpfile_size] 161364
+[dumpfile_mtime] "Thu May 22 17:03:03 2025"
+[dumpfile_size] 131010
 [savefile] "hadamard_tb.gtkw"
 [timestart] 0
-[size] 1918 2110
+[size] 1910 492
 [pos] -1 -1
-*-44.117527 83210000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-43.855515 83630000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.hadamard_tb.
 [treeopen] top.hadamard_tb.dut.
@@ -17,10 +17,10 @@
 [treeopen] top.hadamard_tb.dut.flux_mul.b_flux_inv.
 [treeopen] top.hadamard_tb.dut.pri_cordic.
 [treeopen] top.hadamard_tb.p_coefs_y.
-[sst_width] 208
+[sst_width] 284
 [signals_width] 222
 [sst_expanded] 1
-[sst_vpaned_height] 1445
+[sst_vpaned_height] 148
 @22
 #{top.hadamard_tb.x_i[24:0]} top.hadamard_tb.x_i[24] top.hadamard_tb.x_i[23] top.hadamard_tb.x_i[22] top.hadamard_tb.x_i[21] top.hadamard_tb.x_i[20] top.hadamard_tb.x_i[19] top.hadamard_tb.x_i[18] top.hadamard_tb.x_i[17] top.hadamard_tb.x_i[16] top.hadamard_tb.x_i[15] top.hadamard_tb.x_i[14] top.hadamard_tb.x_i[13] top.hadamard_tb.x_i[12] top.hadamard_tb.x_i[11] top.hadamard_tb.x_i[10] top.hadamard_tb.x_i[9] top.hadamard_tb.x_i[8] top.hadamard_tb.x_i[7] top.hadamard_tb.x_i[6] top.hadamard_tb.x_i[5] top.hadamard_tb.x_i[4] top.hadamard_tb.x_i[3] top.hadamard_tb.x_i[2] top.hadamard_tb.x_i[1] top.hadamard_tb.x_i[0]
 #{top.hadamard_tb.y_i[24:0]} top.hadamard_tb.y_i[24] top.hadamard_tb.y_i[23] top.hadamard_tb.y_i[22] top.hadamard_tb.y_i[21] top.hadamard_tb.y_i[20] top.hadamard_tb.y_i[19] top.hadamard_tb.y_i[18] top.hadamard_tb.y_i[17] top.hadamard_tb.y_i[16] top.hadamard_tb.y_i[15] top.hadamard_tb.y_i[14] top.hadamard_tb.y_i[13] top.hadamard_tb.y_i[12] top.hadamard_tb.y_i[11] top.hadamard_tb.y_i[10] top.hadamard_tb.y_i[9] top.hadamard_tb.y_i[8] top.hadamard_tb.y_i[7] top.hadamard_tb.y_i[6] top.hadamard_tb.y_i[5] top.hadamard_tb.y_i[4] top.hadamard_tb.y_i[3] top.hadamard_tb.y_i[2] top.hadamard_tb.y_i[1] top.hadamard_tb.y_i[0]
@@ -41,16 +41,11 @@ top.hadamard_tb.dut.ready
 top.hadamard_tb.dut.uc.e_cur
 @28
 top.hadamard_tb.dut.uc.mul_ready
-top.hadamard_tb.dut.uc.j_end
-top.hadamard_tb.dut.uc.load_change
-top.hadamard_tb.dut.uc.cordic_feedback
-top.hadamard_tb.dut.uc.flux_to_cordic
-top.hadamard_tb.dut.uc.freeze_terms
-top.hadamard_tb.dut.uc.mul_xy
-top.hadamard_tb.dut.uc.cordic_rotation
 top.hadamard_tb.ready
 @1000200
 -Control Unit
+@28
+top.hadamard_tb.dut.j_end
 @200
 -
 @800200
@@ -166,9 +161,6 @@ top.hadamard_tb.dut.flux_mul.s_reset
 @28
 top.hadamard_tb.dut.flux_mul.a_bit
 top.hadamard_tb.dut.flux_mul.b_bit
-@29
-#{top.hadamard_tb.dut.cur_change[1:0]} top.hadamard_tb.dut.cur_change[1] top.hadamard_tb.dut.cur_change[0]
-@28
 top.hadamard_tb.dut.flux_mul.ready
 @1000200
 -Flux Multiplier

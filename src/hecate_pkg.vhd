@@ -348,7 +348,7 @@ package hecate_pkg is
   component hadamard_uc is
     port (
       clock, start, reset    : in     std_logic;
-      j_end, mul_ready       : in     std_logic;
+      mul_ready       : in     std_logic;
       cordic_mode, flux_mode : out    std_logic_vector(1 downto 0);
       rotation               : out    std_logic;
       ready                  : buffer std_logic
@@ -399,16 +399,16 @@ package hecate_pkg is
 
   component conv3d is
     generic (
-      isize : natural := 4;
-      osize : natural := 5
+      ix, iy, iz : natural := 4;
+      ox, oy, oz : natural := 5
     ); 
     port (
-      img : in  b25_3d_real_array(0 to isize-1)(0 to isize-1)(0 to isize-1);
+      img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
       ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
       clk : in  std_logic;
       rst : in  std_logic;
       run : in  std_logic;
-      res : out b25_3d_real_array(0 to osize-1)(0 to osize-1)(0 to osize-1);
+      res : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
       rdy : out std_logic
     );
   end component conv3d;

@@ -7,14 +7,16 @@ library ieee;
 
 entity hecate_oa_tb is
   generic (
-    ix, iy, iz : natural := 4;
-    test_n     : natural := 2
+    ix, iy : natural := 4;
+    iz     : natural := 4;
+    test_n : natural := 2
   );
   port (
-    rom : in b8_3d_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-    ram : out b8_3d_array_signed(0 to iz)(0 to iy)(0 to ix);
-    clock, start, reset : in std_logic;
-    oa_ready            : out std_logic
+    rom_serial   : in  std_logic_vector(24 downto 0) := (others => '0');
+    ram_serial   : out std_logic_vector(24 downto 0) := (others => '0');
+    clock, start : in  std_logic := '0';
+    reset        : in  std_logic := '1';
+    ready        : out std_logic := '0'
   );
 end entity hecate_oa_tb;
 
@@ -75,7 +77,7 @@ begin
     );
 
   golden : component conv3d
-    generic map (ix, ix+1)
+    generic map (ix, iy, iz, ix+1, iy+1, iz+1)
     port map (
       img => img,
       ker => ker,
@@ -120,7 +122,7 @@ begin
       wait for 5 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;
 
-      wait until (o_ready and g_ready) for 2000 ms; t2 := now;
+      wait until (o_ready and g_ready) for 10000 ms; t2 := now;
 
       test_time := t2-t1;
       t_mean := t_mean + test_time;
@@ -168,18 +170,28 @@ end architecture sim;
 
 architecture synth of hecate_oa_tb is
 
-  signal img : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal res : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
+  signal img      : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1) := test_img;
+  signal res      : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
+  signal oa_ready, oa_start : std_logic := '0';
 
 begin
 
-  b25_z : for z in 0 to iz-1 generate
-    b25_y : for y in 0 to iy-1 generate
-      b25_x : for x in 0 to ix-1 generate
-        img(z)(y)(x) <= (8b"0", rom(z)(y)(x), 9b"0");
-      end generate b25_x;
-    end generate b25_y;
-  end generate b25_z;
+  serial_in : process (clock) is
+    variable oz, oy, ox : natural := 0;
+  begin
+    if rising_edge(clock) then
+      if reset then
+        oz := 0; oy := 0; ox := 0;
+        oa_start <= '0';
+      elsif (start and not oa_start) then
+        img(oz)(oy)(ox) <= rom_serial;
+        ox := ox + 1;
+        if (ox > ix) then oy := oy + 1; ox := 0; end if;
+        if (oy > iy) then oz := oz + 1; oy := 0; end if;
+        if (oz > iz) then oa_start <= '1'; end if;
+      end if;
+    end if;
+  end process serial_in;
 
   dut : component hecate_oa
     generic map (4, 4, 4, 5, 5, 5)
@@ -188,20 +200,26 @@ begin
       ker   => test_ker,
       clock => clock,
       reset => reset,
-      start => start,
+      start => oa_start,
       res   => res,
       ready => oa_ready
     );
 
-  b8_z : for z in 0 to iz generate
-    b8_y : for y in 0 to iy generate
-      b8_x : for x in 0 to ix generate
-        ram(z)(y)(x) <=
-          signed(res(z)(y)(x)(17 downto 10))
-            when (res(z)(y)(x)(24) = '0') else
-          -signed(res(z)(y)(x)(17 downto 10));
-      end generate b8_x;
-    end generate b8_y;
-  end generate b8_z;
+  serial_out : process (clock) is
+    variable oz, oy, ox : natural := 0;
+  begin
+    if rising_edge(clock) then
+      if reset then
+        oz := 0; oy := 0; ox := 0;
+        ready <= '0';
+      elsif (start and oa_ready and not ready) then
+        ram_serial <= res(oz)(oy)(ox);
+        ox := ox + 1;
+        if (ox > ix) then oy := oy + 1; ox := 0; end if;
+        if (oy > iy) then oz := oz + 1; oy := 0; end if;
+        if (oz > iz) then ready <= '1'; end if;
+      end if;
+    end if;
+  end process serial_out;
 
 end architecture synth;
