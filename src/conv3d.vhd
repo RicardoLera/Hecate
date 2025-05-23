@@ -5,10 +5,6 @@ library ieee;
   use ieee.numeric_std.all;
 
 entity conv3d is
-  generic (
-    ix, iy, iz : natural := 4;
-    ox, oy, oz : natural := 5
-  ); 
   port (
     img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
     ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);

@@ -7,8 +7,6 @@ library ieee;
 
 entity hecate_oa_tb is
   generic (
-    ix, iy : natural := 4;
-    iz     : natural := 4;
     test_n : natural := 2
   );
   port (
@@ -65,7 +63,6 @@ begin
   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hecate_oa
-    generic map (ix, iy, iz, ix+1, iy+1, iz+1)
     port map (
       img   => img,
       ker   => ker,
@@ -77,7 +74,6 @@ begin
     );
 
   golden : component conv3d
-    generic map (ix, iy, iz, ix+1, iy+1, iz+1)
     port map (
       img => img,
       ker => ker,
@@ -194,7 +190,6 @@ begin
   end process serial_in;
 
   dut : component hecate_oa
-    generic map (4, 4, 4, 5, 5, 5)
     port map (
       img   => img,
       ker   => test_ker,

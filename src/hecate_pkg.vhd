@@ -5,6 +5,22 @@ library ieee;
 
 package hecate_pkg is
 
+  -- Main parameters
+  constant ix : natural := 4; -- assumes i mod k = 0, use assert in the testbench
+  constant iy : natural := 4;
+  constant iz : natural := 4;
+
+  constant kx : natural := 2;
+  constant ky : natural := 2;
+  constant kz : natural := 2;
+
+  constant ox : natural := (ix+kx-1);
+  constant oy : natural := (iy+ky-1);
+  constant oz : natural := (iz+kz-1);
+  
+  constant n_points : natural := integer(2**ceil(log2(real((2*kx-1)*(2*ky-1)*(2*kz-1)))));
+  constant the_log  : natural := integer(log2(real(n_points)));
+
   -- I/O
   type b8_array is array (natural range <>) of std_logic_vector(7 downto 0);  -- maybe make these into records
   type b8_2d_array is array (natural range <>) of b8_array;
@@ -270,12 +286,8 @@ package hecate_pkg is
   end component;
 
   component fft is
-    generic (
-      nx, ny, nz : natural range 0 to 16 := 2;
-      n_points   : natural range 0 to 1024 := 32
-    );
     port (
-      i                   : in  b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+      i                   : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
       o                   : out b25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
       s_ready             : out std_logic
@@ -327,7 +339,7 @@ package hecate_pkg is
 
   component flux_multiplier is
     generic (
-      n_idx     : natural range 0 to 16 := 0
+      n_idx     : natural := 0
     );
     port (
       clock     : in    std_logic;
@@ -338,8 +350,8 @@ package hecate_pkg is
       b         : in    std_logic_vector(23 downto 0);
       a_nex     : in    std_logic_vector(23 downto 0);
       b_nex     : in    std_logic_vector(23 downto 0);
-      coefs_x   : out   b25_real_array(0 to 7);
-      coefs_y   : out   b25_real_array(0 to 7);
+      coefs_x   : out   b25_real_array(0 to n_points/4-1);
+      coefs_y   : out   b25_real_array(0 to n_points/4-1);
       p         : out   std_logic_vector(24 downto 0);
       ready     : out   std_logic
     );
@@ -357,7 +369,7 @@ package hecate_pkg is
 
   component hadamard is
     generic (
-      n_idx : natural range 0 to 16 := 0
+      n_idx : natural := 0
     );
     port (
       clock     : in    std_logic;
@@ -367,8 +379,8 @@ package hecate_pkg is
       y_i       : in    std_logic_vector(24 downto 0);
       x_k       : in    std_logic_vector(24 downto 0);
       y_k       : in    std_logic_vector(24 downto 0);
-      p_coefs_x : out   b25_real_array(0 to 7);
-      p_coefs_y : out   b25_real_array(0 to 7);
+      p_coefs_x : out   b25_real_array(0 to n_points/4-1);
+      p_coefs_y : out   b25_real_array(0 to n_points/4-1);
       ready     : buffer std_logic
     );
   end component;
@@ -384,10 +396,6 @@ package hecate_pkg is
   end component;
 
   component hecate_oa is
-    generic (
-      ix, iy, iz : natural := 4;  -- assumes i mod k = 0, use assert in the testbench
-      ox, oy, oz : natural := 5
-    ); 
     port (
       img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
       ker                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
@@ -398,10 +406,6 @@ package hecate_pkg is
   end component;
 
   component conv3d is
-    generic (
-      ix, iy, iz : natural := 4;
-      ox, oy, oz : natural := 5
-    ); 
     port (
       img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
       ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);

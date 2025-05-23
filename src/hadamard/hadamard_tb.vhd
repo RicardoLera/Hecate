@@ -13,8 +13,8 @@ architecture sim of hadamard_tb is
   signal y_i          : std_logic_vector(24 downto 0);
   signal x_k          : std_logic_vector(24 downto 0);
   signal y_k          : std_logic_vector(24 downto 0);
-  signal p_coefs_x    : b25_real_array(0 to 7);
-  signal p_coefs_y    : b25_real_array(0 to 7);
+  signal p_coefs_x    : b25_real_array(0 to n_points/4-1);
+  signal p_coefs_y    : b25_real_array(0 to n_points/4-1);
   signal ready        : std_logic;
 
   signal   clk             : std_logic := '0';
@@ -26,9 +26,7 @@ begin
   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hadamard
-    generic map (
-      n_idx => 1
-    )
+    generic map (1)
     port map (
       clock     => clk,
       reset     => reset,

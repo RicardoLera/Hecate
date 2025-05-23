@@ -6,7 +6,7 @@ library ieee;
 
 entity hadamard is
   generic (
-    n_idx : natural range 0 to 16 := 0
+    n_idx : natural := 0
   );
   port (
     clock     : in    std_logic;
@@ -16,8 +16,8 @@ entity hadamard is
     y_i       : in    std_logic_vector(24 downto 0);
     x_k       : in    std_logic_vector(24 downto 0);
     y_k       : in    std_logic_vector(24 downto 0);
-    p_coefs_x : out   b25_real_array(0 to 7);
-    p_coefs_y : out   b25_real_array(0 to 7);
+    p_coefs_x : out   b25_real_array(0 to n_points/4-1);
+    p_coefs_y : out   b25_real_array(0 to n_points/4-1);
     ready     : buffer std_logic
   );
 end entity hadamard;
@@ -57,13 +57,13 @@ architecture synth of hadamard is
   signal prod_z_cor, prod_z_cor_l    : std_logic_vector(24 downto 0) := (others => '0');
   signal mul_a, mul_a_nex            : std_logic_vector(23 downto 0) := (others => '0');
   signal mul_b, mul_b_nex            : std_logic_vector(23 downto 0) := (others => '0');
-  signal coefs_x, neg_coefs_x        : b25_real_array(0 to 7) := (others => (others => '0'));
-  signal coefs_y, neg_coefs_y        : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal coefs_x, neg_coefs_x        : b25_real_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal coefs_y, neg_coefs_y        : b25_real_array(0 to n_points/4-1) := (others => (others => '0'));
   signal prod_quadrant               : std_logic_vector(1 downto 0) := (others => '0');
 
   -- Output
-  signal coefs_x_sel, coefs_y_sel : b25_real_array(0 to 7);
-  signal p_coefs_x_s, p_coefs_y_s : b25_real_array(0 to 7) := (others => (others => '0'));
+  signal coefs_x_sel, coefs_y_sel : b25_real_array(0 to n_points/4-1);
+  signal p_coefs_x_s, p_coefs_y_s : b25_real_array(0 to n_points/4-1) := (others => (others => '0'));
 
 begin
 
@@ -82,9 +82,7 @@ begin
 
   -- Flux Multiplier
   flux_mul : component flux_multiplier
-    generic map (
-      n_idx => n_idx
-    )
+    generic map (n_idx)
     port map (
       clock     => clock,
       reset     => (mul_ready and j_end) or reset,
@@ -102,9 +100,7 @@ begin
 
   -- Primary CORDIC
   pri_cordic : component cordic
-    generic map (
-      j_len => 5, coords_len => 25
-    )
+    generic map (j_len => 5, coords_len => 25)
     port map (
       sigma_in  => pc_sig_in,
       rotation  => rotation,
@@ -120,9 +116,7 @@ begin
   
   -- Secondary CORDIC     
   sec_cordic : component cordic
-    generic map (
-      j_len => 5, coords_len => 25
-    )
+    generic map (j_len => 5, coords_len => 25)
     port map (
       sigma_in  => sc_sig_in,
       rotation  => '0',
@@ -400,7 +394,7 @@ begin
   
   -- Apply normalization to output
 
-  gen_mul_negs : for i in 0 to 7 generate
+  gen_mul_negs : for i in 0 to n_points/4-1 generate
     neg_coefs_x(i) <= not coefs_x(i)(24) & coefs_x(i)(23 downto 0);
     neg_coefs_y(i) <= not coefs_y(i)(24) & coefs_y(i)(23 downto 0);
   end generate gen_mul_negs;

@@ -3,10 +3,11 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+  use ieee.math_real.all;
 
 entity flux_multiplier is
   generic (
-    n_idx     : natural range 0 to 16 := 0
+    n_idx     : natural := 0
   );
   port (
     clock     : in    std_logic;
@@ -17,14 +18,16 @@ entity flux_multiplier is
     b         : in    std_logic_vector(23 downto 0);
     a_nex     : in    std_logic_vector(23 downto 0);
     b_nex     : in    std_logic_vector(23 downto 0);
-    coefs_x   : out   b25_real_array(0 to 7);
-    coefs_y   : out   b25_real_array(0 to 7);
+    coefs_x   : out   b25_real_array(0 to n_points/4-1);
+    coefs_y   : out   b25_real_array(0 to n_points/4-1);
     p         : out   std_logic_vector(24 downto 0);
     ready     : out   std_logic
   );
 end entity flux_multiplier;
 
 architecture synth of flux_multiplier is
+
+  constant the_log : integer := integer(ceil(log2(real(n_points))));
 
   signal a_flux,   b_flux : std_logic_vector(23 downto 0);
   signal a_sel            : ieee.numeric_std.unsigned(24 downto 0);
@@ -45,14 +48,14 @@ architecture synth of flux_multiplier is
   signal p_full                   : std_logic_vector(49 downto 0) := (others => '0');
   signal p_full_n, p_full_shifted : std_logic_vector(49 downto 0);
 
-  signal kx_mux_x   : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_add_x   : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_reg_x   : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_shift_x : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_mux_y   : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_add_y   : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_reg_y   : b25_double_array(0 to 7) := (others => (others => '0'));
-  signal kx_shift_y : b25_double_array(0 to 7) := (others => (others => '0'));
+  signal kx_mux_x   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_add_x   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_reg_x   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_shift_x : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_mux_y   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_add_y   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_reg_y   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal kx_shift_y : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
 
 begin
 
@@ -131,51 +134,52 @@ begin
 
   -- constant multipliers (kx)
 
-  kx_gen : for idx in 0 to 7 generate
+  kx_gen : for w in 0 to n_points/4-1 generate
+    kx_sel_loop : for s in 1 to the_log-2 generate
 
-    select_gen : if (
-      (  idx = 0 ) or                              -- for V0
-      (  n_idx mod 2 = 1) or                       -- for Vall
-      ( (n_idx mod 4 = 2) and (idx mod 2 = 0) ) or -- for V2 V4 V6
-      ( (n_idx mod 8 = 4) and (idx = 4))           -- for V4
-    ) generate
+      kx_sel_if : if (
+      ((w = 0) and (s=1)) or -- only generate w=0 once
+      ((n_idx mod (2**s) = (2**(s-1))) and (w mod (2**(s-1)) = 0))
+      ) generate
 
-      kx_proc : process (clock) begin
-        if rising_edge(clock) then
-          if (reset or s_reset) then
-            kx_reg_x(idx) <= (others => '0');
-            kx_reg_y(idx) <= (others => '0');
-          elsif (run_coefs) then
-            kx_reg_x(idx) <= kx_add_x(idx);
-            kx_reg_y(idx) <= kx_add_y(idx);
+        kx_proc : process (clock) begin
+          if rising_edge(clock) then
+            if (reset or s_reset) then
+              kx_reg_x(w) <= (others => '0');
+              kx_reg_y(w) <= (others => '0');
+              --coefs_x(w) <= (others => '0');
+              --coefs_y(w) <= (others => '0');
+            elsif (run_coefs) then
+              kx_reg_x(w) <= kx_add_x(w);
+              kx_reg_y(w) <= kx_add_y(w);
+            end if;
           end if;
-        end if;
-      end process kx_proc;
+        end process kx_proc;
 
-      kx_mux_x(idx)(49 downto 25) <= (others => '0');
-      kx_mux_y(idx)(49 downto 25) <= (others => '0');
+        kx_mux_x(w)(49 downto 25) <= (others => '0');
+        kx_mux_y(w)(49 downto 25) <= (others => '0');
 
-      with a_bit select kx_mux_x(idx)(24 downto 0) <=
-        kw_lut(idx) when '1',
-        25x"0" when others;
-      with b_bit select kx_mux_y(idx)(24 downto 0) <=
-        kw_lut(idx) when '1',
-        25x"0" when others;
-    
-      kx_shift_x(idx)(49 downto 1) <= kx_reg_x(idx)(48 downto 0);
-      kx_shift_y(idx)(49 downto 1) <= kx_reg_y(idx)(48 downto 0);
+        with a_bit select kx_mux_x(w)(24 downto 0) <=
+          kw_lut(w) when '1',
+          25x"0" when others;
+        with b_bit select kx_mux_y(w)(24 downto 0) <=
+          kw_lut(w) when '1',
+          25x"0" when others;
+      
+        kx_shift_x(w)(49 downto 1) <= kx_reg_x(w)(48 downto 0);
+        kx_shift_y(w)(49 downto 1) <= kx_reg_y(w)(48 downto 0);
 
-      kx_add_x(idx) <= std_logic_vector(unsigned(kx_mux_x(idx)) + unsigned(kx_shift_x(idx)));
-      kx_add_y(idx) <= std_logic_vector(unsigned(kx_mux_y(idx)) + unsigned(kx_shift_y(idx)));
+        kx_add_x(w) <= std_logic_vector(unsigned(kx_mux_x(w)) + unsigned(kx_shift_x(w)));
+        kx_add_y(w) <= std_logic_vector(unsigned(kx_mux_y(w)) + unsigned(kx_shift_y(w)));
 
-      coefs_x(idx) <= kx_reg_x(idx)(40 downto 16);
-      coefs_y(idx) <= kx_reg_y(idx)(40 downto 16);
+        coefs_x(w) <= kx_reg_x(w)(40 downto 16);
+        coefs_y(w) <= kx_reg_y(w)(40 downto 16);
 
-    else generate
-      coefs_x(idx) <= (others => '0'); -- not sure if this makes a ton of hardware
-      coefs_y(idx) <= (others => '0');
-    end generate select_gen;
-
+      --elsif (b=the_log-2) generate
+        --coefs_x(w) <= (others => '0'); -- not sure if this makes a ton of hardware
+        --coefs_y(w) <= (others => '0');
+      end generate kx_sel_if;
+    end generate kx_sel_loop;
   end generate kx_gen;
 
 end architecture synth;

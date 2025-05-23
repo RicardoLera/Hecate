@@ -7,12 +7,8 @@ library ieee;
 
 -- Note: this FFT returns the complex conjugate compared to cor.py. It's a matter twiddle factor selection (counterclockwise vs clockwise) and it cancels out in the IDFT, but it's worth noting
 entity fft is
-  generic (
-    nx, ny, nz : natural range 0 to 16 := 2;
-    n_points   : natural range 0 to 1024 := 32
-  );
   port (
-    i                   : in  b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+    i                   : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
     o                   : out b25_complex_array(0 to n_points/2);
     clock, reset, start : in  std_logic;
     s_ready             : out std_logic
@@ -21,7 +17,6 @@ end entity fft;
 
 architecture synth of fft is
 
-  constant the_log : integer := integer(ceil(log2(real(n_points))));
   signal state     : integer range 0 to the_log+1 := 0; -- state 1 is synchronous start
 
   signal in_raster, in_scramble : b25_real_array(0 to n_points-1) := (others => (others => '0'));
@@ -92,12 +87,12 @@ begin
   end process state_machine;
 
   -- Input Layer (rasterize and scramble)
-  gen_z : for z in 0 to nz-1 generate
-    gen_y : for y in 0 to ny-1 generate
-      gen_x : for x in 0 to nx-1 generate
-        constant nx_full : integer := 2*nx-1;
-        constant ny_full : integer := 2*ny-1;
-        constant n       : integer := x + y*nx_full + z*nx_full*ny_full;
+  gen_z : for z in 0 to iz-1 generate
+    gen_y : for y in 0 to iy-1 generate
+      gen_x : for x in 0 to ix-1 generate
+        constant nx : integer := 2*ix-1;
+        constant ny : integer := 2*iy-1;
+        constant n  : integer := x + y*nx + z*nx*ny;
       begin
         in_raster(n) <= i(z)(y)(x);
       end generate gen_x;

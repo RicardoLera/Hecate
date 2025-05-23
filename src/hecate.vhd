@@ -17,8 +17,6 @@ end entity hecate;
 
 architecture synth of hecate is
 
-  --constant n_points : natural range 0 to 1024 := integer(2**ceil(log2(real((2*nx-1)*(2*nx-1)*(2*nx-1)))));
-
   signal ready_had  : std_logic_vector(0 to 16);
   signal ready_idft : std_logic_vector(0 to 26) := (others => '0');
   signal hads_ready, idfts_ready, s_ready : std_logic := '0';

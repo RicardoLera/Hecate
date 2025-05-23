@@ -5,10 +5,6 @@ library ieee;
   use ieee.numeric_std.all;
   
 entity hecate_oa is
-  generic (
-    ix, iy, iz : natural := 4;  -- assumes i mod k = 0, use assert in the testbench
-    ox, oy, oz : natural := 5
-  ); 
   port (
     img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
     ker                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
@@ -45,7 +41,6 @@ architecture area_opt of hecate_oa is
 begin
 
   fft_single : component fft
-    generic map (2, 2, 2, 32)
     port map (
       i       => fft_in,
       o       => fft_out,
