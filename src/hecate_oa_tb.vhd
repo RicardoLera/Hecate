@@ -9,13 +9,14 @@ entity hecate_oa_tb is
   generic (
     test_n : natural := 2
   );
-  -- port (
-  --   rom_serial   : in  std_logic_vector(24 downto 0) := (others => '0');
-  --   ram_serial   : out std_logic_vector(24 downto 0) := (others => '0');
-  --   clock, start : in  std_logic := '0';
-  --   reset        : in  std_logic := '1';
-  --   ready        : out std_logic := '0'
-  -- );
+  port (
+    rom_serial_i : in  std_logic_vector(24 downto 0) := (others => '0');
+    rom_serial_k : in  std_logic_vector(24 downto 0) := (others => '0');
+    ram_serial   : out std_logic_vector(24 downto 0) := (others => '0');
+    clock, start : in  std_logic := '0';
+    reset        : in  std_logic := '1';
+    ready        : out std_logic := '0'
+  );
 end entity hecate_oa_tb;
 
 
@@ -168,68 +169,66 @@ end architecture sim;
 
 -----SYNTHESIZEABLE ARCHITECTURE-----
 
--- architecture synth of hecate_oa_tb is
+architecture synth of hecate_oa_tb is
 
---   signal img      : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
---   signal res      : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
---   signal oa_ready, oa_start : std_logic := '0';
+  signal img : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal ker : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+  signal res : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
+  signal oa_ready, oa_start : std_logic := '0';
 
---   constant test_ker : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1) := (      -- Specific K
---     ( ( "0000000010000000000000000",
---         "0000000001000000000000000" ),
---       ( "0000000010000000000000000",
---         "0000000010000000000000000" ) ),
---     ( ( "0000000010000000000000000",
---         "0000000001000000000000000" ),
---       ( "0000000010000000000000000",
---         "0000000010000000000000000" ) )
---   );
+  -- constant test_ker : b25_3d_real_array(0 to 7)(0 to 3)(0 to 3) := (others => (others => (others => ((others => ('0'))))));      -- Specific K
 
--- begin
+begin
 
---   serial_in : process (clock) is
---     variable oz, oy, ox : natural := 0;
---   begin
---     if rising_edge(clock) then
---       if reset then
---         oz := 0; oy := 0; ox := 0;
---         oa_start <= '0';
---       elsif (start and not oa_start) then
---         img(oz)(oy)(ox) <= rom_serial;
---         ox := ox + 1;
---         if (ox > ix) then oy := oy + 1; ox := 0; end if;
---         if (oy > iy) then oz := oz + 1; oy := 0; end if;
---         if (oz > iz) then oa_start <= '1'; end if;
---       end if;
---     end if;
---   end process serial_in;
+  serial_in : process (clock) is
+    variable ozi, oyi, oxi, kzi, kyi, kxi : natural := 0;
+  begin
+    if rising_edge(clock) then
+      if reset then
+        ozi := 0; oyi := 0; oxi := 0;
+        oa_start <= '0';
+      elsif (start and not oa_start) then
+        img(oz)(oy)(ox) <= rom_serial_i;
+        oxi := oxi + 1;
+        if (oxi > ox) then oyi := oy + 1; oxi := 0; end if;
+        if (oyi > oy) then ozi := oz + 1; oyi := 0; end if;
+        if (ozi > oz) then oa_start <= '1'; end if;
 
---   dut : component hecate_oa
---     port map (
---       img   => img,
---       ker   => test_ker,
---       clock => clock,
---       reset => reset,
---       start => oa_start,
---       res   => res,
---       ready => oa_ready
---     );
+        ker(kz)(ky)(kx) <= rom_serial_k;
+        kxi := kxi + 1;
+        if (kxi > kx) then kyi := oy + 1; kxi := 0; end if;
+        if (kyi > ky) then kzi := oz + 1; kyi := 0; end if;
+        if (kzi > kz) then oa_start <= '1'; end if;
+      end if;
+    end if;
+  end process serial_in;
 
---   serial_out : process (clock) is
---     variable oz, oy, ox : natural := 0;
---   begin
---     if rising_edge(clock) then
---       if reset then
---         oz := 0; oy := 0; ox := 0;
---         ready <= '0';
---       elsif (start and oa_ready and not ready) then
---         ram_serial <= res(oz)(oy)(ox);
---         ox := ox + 1;
---         if (ox > ix) then oy := oy + 1; ox := 0; end if;
---         if (oy > iy) then oz := oz + 1; oy := 0; end if;
---         if (oz > iz) then ready <= '1'; end if;
---       end if;
---     end if;
---   end process serial_out;
+  dut : component hecate_oa
+    port map (
+      img   => img,
+      ker   => ker,
+      clock => clock,
+      reset => reset,
+      start => oa_start,
+      res   => res,
+      ready => oa_ready
+    );
 
--- end architecture synth;
+  serial_out : process (clock) is
+    variable oz, oy, ox : natural := 0;
+  begin
+    if rising_edge(clock) then
+      if reset then
+        oz := 0; oy := 0; ox := 0;
+        ready <= '0';
+      elsif (start and oa_ready and not ready) then
+        ram_serial <= res(oz)(oy)(ox);
+        ox := ox + 1;
+        if (ox > ix) then oy := oy + 1; ox := 0; end if;
+        if (oy > iy) then oz := oz + 1; oy := 0; end if;
+        if (oz > iz) then ready <= '1'; end if;
+      end if;
+    end if;
+  end process serial_out;
+
+end architecture synth;
