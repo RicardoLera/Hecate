@@ -7,7 +7,7 @@ library ieee;
 entity conv3d is
   port (
     img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-    ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    ker : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clk : in  std_logic;
     rst : in  std_logic;
     run : in  std_logic;
@@ -54,9 +54,11 @@ begin
           );
         
         macc : process(clk)
-          constant pad : integer := 1;
+          constant pad_x : integer := kx-1;
+          constant pad_y : integer := ky-1;
+          constant pad_z : integer := kz-1;
           variable ixi, iyi, izi : integer := 0;
-          variable kx, ky, kz : integer := 0;
+          variable kxi, kyi, kzi : integer := 0;
         begin
           if (rising_edge(clk)) then
             if (rst) then
@@ -65,33 +67,33 @@ begin
               add_a(oidx) <= (others => '0');
 
               rdy_sub(oidx) <= '0';
-              kz := 0;
+              kzi := 0;
 
             elsif (run) then
 
-              loop_kz : if kz < 2 then
-                izi := ozi + kz - pad;
-                loop_ky : if ky < 2 then
-                  iyi := oyi + ky - pad;
-                  loop_kx : if kx < 2 then
-                    ixi := oxi + kx - pad;
+              loop_kz : if kzi < kz then
+                izi := ozi + kzi - pad_z;
+                loop_ky : if kyi < ky then
+                  iyi := oyi + kyi - pad_y;
+                  loop_kx : if kxi < kx then
+                    ixi := oxi + kxi - pad_x;
                     
                     if ((ixi >= 0) and (ixi < ix) and (iyi >= 0) and (iyi < iy) and (izi >= 0) and (izi < iz)) then
 
                       mul_a(oidx) <= img(izi)(iyi)(ixi);
-                      mul_b(oidx) <= ker(1-kz)(1-ky)(1-kx); -- flip kernel
+                      mul_b(oidx) <= ker(kz-1-kzi)(ky-1-kyi)(kx-1-kxi); -- flip kernel
                       add_a(oidx) <= res_buff(oidx); 
 
                     end if;
 
-                    kx := kx + 1;
+                    kxi := kxi + 1;
                   else
-                    ky := ky + 1;
-                    kx := 0;
+                    kyi := kyi + 1;
+                    kxi := 0;
                   end if loop_kx;
                 else
-                  kz := kz + 1;
-                  ky := 0;
+                  kzi := kzi + 1;
+                  kyi := 0;
                 end if loop_ky;
               else
                 rdy_sub(oidx) <= '1';

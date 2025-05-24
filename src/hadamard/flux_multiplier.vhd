@@ -27,8 +27,6 @@ end entity flux_multiplier;
 
 architecture synth of flux_multiplier is
 
-  constant the_log : integer := integer(ceil(log2(real(n_points))));
-
   signal a_flux,   b_flux : std_logic_vector(23 downto 0);
   signal a_sel            : ieee.numeric_std.unsigned(24 downto 0);
   signal b_sel            : ieee.numeric_std.unsigned(24 downto 0);
@@ -39,13 +37,12 @@ architecture synth of flux_multiplier is
   signal bit_prod         : std_logic;
   signal a_ready          : std_logic;
   signal b_ready          : std_logic;
-  signal s_ready          : std_logic;
   signal a_error          : std_logic;
   signal b_error          : std_logic;
   signal s_error          : std_logic;
   signal s_reset          : std_logic;
 
-  signal p_full                   : std_logic_vector(49 downto 0) := (others => '0');
+  signal p_full, p_temp           : std_logic_vector(49 downto 0) := (others => '0');
   signal p_full_n, p_full_shifted : std_logic_vector(49 downto 0);
 
   signal kx_mux_x   : b25_double_array(0 to n_points/4-1) := (others => (others => '0'));
@@ -97,8 +94,7 @@ begin
     end if;
   end process proc;
 
-  s_ready <= a_ready and b_ready;
-  ready   <= s_ready;
+  ready <= a_ready and b_ready;
 
   s_error <= a_error or b_error;
   s_reset <= s_error or reset;
@@ -130,25 +126,19 @@ begin
       o   => p_full_n
     );
 
-  p <= p_full(40 downto 16) srl 5; -- 25 + 16 - 1 downto 16 -- and then divided by 32 because DFT
+  p_temp <= p_full srl the_log;
+  p      <= p_temp(40 downto 16); -- 25 + 16 - 1 downto 16 -- and then divided by 32 because FFT
 
   -- constant multipliers (kx)
 
   kx_gen : for w in 0 to n_points/4-1 generate
-    kx_sel_loop : for s in 1 to the_log-2 generate
-
-      kx_sel_if : if (
-      ((w = 0) and (s=1)) or -- only generate w=0 once
-      ((n_idx mod (2**s) = (2**(s-1))) and (w mod (2**(s-1)) = 0))
-      ) generate
+      kx_sel_if : if (idft_lut(n_idx,w)) generate
 
         kx_proc : process (clock) begin
           if rising_edge(clock) then
             if (reset or s_reset) then
               kx_reg_x(w) <= (others => '0');
               kx_reg_y(w) <= (others => '0');
-              --coefs_x(w) <= (others => '0');
-              --coefs_y(w) <= (others => '0');
             elsif (run_coefs) then
               kx_reg_x(w) <= kx_add_x(w);
               kx_reg_y(w) <= kx_add_y(w);
@@ -160,10 +150,10 @@ begin
         kx_mux_y(w)(49 downto 25) <= (others => '0');
 
         with a_bit select kx_mux_x(w)(24 downto 0) <=
-          kw_lut(w) when '1',
+          k_twiddle(w) when '1',
           25x"0" when others;
         with b_bit select kx_mux_y(w)(24 downto 0) <=
-          kw_lut(w) when '1',
+          k_twiddle(w) when '1',
           25x"0" when others;
       
         kx_shift_x(w)(49 downto 1) <= kx_reg_x(w)(48 downto 0);
@@ -175,11 +165,7 @@ begin
         coefs_x(w) <= kx_reg_x(w)(40 downto 16);
         coefs_y(w) <= kx_reg_y(w)(40 downto 16);
 
-      --elsif (b=the_log-2) generate
-        --coefs_x(w) <= (others => '0'); -- not sure if this makes a ton of hardware
-        --coefs_y(w) <= (others => '0');
       end generate kx_sel_if;
-    end generate kx_sel_loop;
   end generate kx_gen;
 
 end architecture synth;

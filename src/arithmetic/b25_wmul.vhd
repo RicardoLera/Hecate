@@ -6,7 +6,7 @@ library ieee;
 
 entity b25_wmul is
   generic (
-    w, n : natural
+    w : natural
   );
   port (
     i : in    b25_complex;
@@ -17,7 +17,7 @@ end entity b25_wmul;
 
 architecture karatsuba of b25_wmul is -- 3 constant multipliers + 3 adders
 
-  constant wn : b25_complex := twiddle(w, n);
+  constant wn : b25_complex := twiddle(w);
   signal   s1, k1, k2, k3, re, im : std_logic_vector(24 downto 0);
   constant s2 : std_logic_vector(24 downto 0) := w_add(wn(0), wn(1)); -- c+d
   constant s3 : std_logic_vector(24 downto 0) := w_add(wn(1), (not wn(0)(24), wn(0)(23 downto 0))); -- d-c

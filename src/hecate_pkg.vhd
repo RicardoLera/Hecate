@@ -6,31 +6,36 @@ library ieee;
 package hecate_pkg is
 
   -- Main parameters
-  constant ix : natural := 4; -- assumes i mod k = 0, use assert in the testbench
-  constant iy : natural := 4;
-  constant iz : natural := 4;
+  constant ix : natural := 7; -- assumes i mod k = 0, use assert in the testbench
+  constant iy : natural := 3;
+  constant iz : natural := 3;
 
-  constant kx : natural := 2;
-  constant ky : natural := 2;
-  constant kz : natural := 2;
+  constant kx : natural := 7;
+  constant ky : natural := 3;
+  constant kz : natural := 3;
 
   constant ox : natural := (ix+kx-1);
   constant oy : natural := (iy+ky-1);
   constant oz : natural := (iz+kz-1);
   
-  constant n_points : natural := integer(2**ceil(log2(real((2*kx-1)*(2*ky-1)*(2*kz-1)))));
-  constant the_log  : natural := integer(log2(real(n_points)));
+  constant nx : natural := (2*kx-1);
+  constant ny : natural := (2*ky-1);
+  constant nz : natural := (2*kz-1);
+
+  constant n_points_nopad : natural := nx*ny*nz;
+  constant n_points       : natural := integer(2**ceil(log2(real(n_points_nopad))));
+  constant the_log        : natural := integer(log2(real(n_points)));
 
   -- I/O
   type b8_array is array (natural range <>) of std_logic_vector(7 downto 0);  -- maybe make these into records
   type b8_2d_array is array (natural range <>) of b8_array;
   type b8_3d_array is array (natural range <>) of b8_2d_array;
-  type b8_array_signed is array (natural range <>) of signed(7 downto 0);  -- maybe make these into records
+  type b8_array_signed is array (natural range <>) of signed(7 downto 0);
   type b8_2d_array_signed is array (natural range <>) of b8_array_signed;
   type b8_3d_array_signed is array (natural range <>) of b8_2d_array_signed;
 
   -- 25-bit types
-  type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);  -- maybe make these into records
+  type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);
   type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
   type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
   type b25_complex_array is array (natural range <>) of b25_complex;
@@ -47,41 +52,31 @@ package hecate_pkg is
   type t_state is (initial, vector_flux, pre_rot, rot_coef, final);
 
   -- 3d padding
-  type padding is array(0 to 7) of natural range 0 to 32;
-  constant pad3d : padding := (0, 1,  3,  4,  9,  10, 12, 13);
---constant pad3d : padding := (0, 16, 24, 4,  14, 10, 6,  22);
+  -- type padding is array(0 to 7) of natural range 0 to 32;
+  -- constant pad3d : padding := (0, 1,  3,  4,  9,  10, 12, 13);
+  -- constant pad3d : padding := (0, 16, 24, 4,  14, 10, 6,  22);
 
   -- DFT multiplication coeficient array
-  type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
+  -- type t_calc_vals_arr is array(0 to 31) of b25_real_array(0 to 7);
 
   -- DFT rotation reference
-  type t_cos_val_ref is array(0 to 31) of natural range 0 to 8;
-  constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1); -- Assuming no DFT-IDFT inversion
-  constant cos_sig_ref : t_cos_val_ref := (0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0);
-  constant sin_sig_ref : t_cos_val_ref := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+  -- type t_cos_val_ref is array(0 to 31) of natural range 0 to 8;
+  -- constant cos_val_ref : t_cos_val_ref := (0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1); -- Assuming no DFT-IDFT inversion
+  -- constant cos_sig_ref : t_cos_val_ref := (0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0);
+  -- constant sin_sig_ref : t_cos_val_ref := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
   -- DFT omega constants
-  constant c_base : real := MATH_PI/16.0;
-  constant w_cos1 : unsigned := to_unsigned(natural(65536.0*cos(1.0 * c_base)), 17);
-  constant w_cos2 : unsigned := to_unsigned(natural(65536.0*cos(2.0 * c_base)), 17);
-  constant w_cos3 : unsigned := to_unsigned(natural(65536.0*cos(3.0 * c_base)), 17);
-  constant w_cos4 : unsigned := to_unsigned(natural(65536.0*cos(4.0 * c_base)), 17);
-  constant w_cos5 : unsigned := to_unsigned(natural(65536.0*cos(5.0 * c_base)), 17);
-  constant w_cos6 : unsigned := to_unsigned(natural(65536.0*cos(6.0 * c_base)), 17);
-  constant w_cos7 : unsigned := to_unsigned(natural(65536.0*cos(7.0 * c_base)), 17);
+  -- constant c_base : real := MATH_PI/16.0;
+  -- constant w_cos1 : unsigned := to_unsigned(natural(65536.0*cos(1.0 * c_base)), 17);
+  -- constant w_cos2 : unsigned := to_unsigned(natural(65536.0*cos(2.0 * c_base)), 17);
+  -- constant w_cos3 : unsigned := to_unsigned(natural(65536.0*cos(3.0 * c_base)), 17);
+  -- constant w_cos4 : unsigned := to_unsigned(natural(65536.0*cos(4.0 * c_base)), 17);
+  -- constant w_cos5 : unsigned := to_unsigned(natural(65536.0*cos(5.0 * c_base)), 17);
+  -- constant w_cos6 : unsigned := to_unsigned(natural(65536.0*cos(6.0 * c_base)), 17);
+  -- constant w_cos7 : unsigned := to_unsigned(natural(65536.0*cos(7.0 * c_base)), 17);
 
-  -- Flux Mul k-corrected omega LUT
+  -- Flux Mul k-correction
   constant kcon   : real := 0.2239282404699562528386872156786372562;
-  constant kw_lut : b25_real_array(0 to 7) := (
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(0.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(1.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(2.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(3.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(4.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(5.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(6.0 * c_base) * kcon)), 24)),
-    '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(7.0 * c_base) * kcon)), 24))
-  );
 
   -- Pi constants for angle normalization
   constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
@@ -119,104 +114,7 @@ package hecate_pkg is
     std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-24.0)))), 24))
   );
 
-  constant test_arr : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1) := (
-    ( ( "0000000010000000000000000",
-        "0000000001000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
-    ( ( "0000000010000000000000000",
-        "0000000001000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) )
-  );
-
-  constant test_img : b25_3d_real_array(0 to 3)(0 to 3)(0 to 3) := (
-    ( ( "0000000010000000000000000",
-        "0000000001000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ), 
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
   
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ), 
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
-  
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ), 
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
-  
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ), 
-      ( "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000",
-        "0000000010000000000000000" ) )
-    );
-  
-  constant test_ker : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1) := (
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) )
-  );
-
-
-
-
-
-
-
 
   -- Component declarations
 
@@ -232,7 +130,7 @@ package hecate_pkg is
 
   component b25_wmul is
     generic (
-      w, n : natural
+      w : natural
     );
     port (
       i : in    b25_complex;
@@ -287,7 +185,7 @@ package hecate_pkg is
 
   component fft is
     port (
-      i                   : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+      i                   : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
       o                   : out b25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
       s_ready             : out std_logic
@@ -360,7 +258,7 @@ package hecate_pkg is
   component hadamard_uc is
     port (
       clock, start, reset    : in     std_logic;
-      mul_ready       : in     std_logic;
+      mul_ready              : in     std_logic;
       cordic_mode, flux_mode : out    std_logic_vector(1 downto 0);
       rotation               : out    std_logic;
       ready                  : buffer std_logic
@@ -387,10 +285,10 @@ package hecate_pkg is
 
   component hecate is
     port (
-      img_transf          : in b25_complex_array(0 to 16);
-      ker_transf          : in b25_complex_array(0 to 16);
+      img_transf          : in b25_complex_array(0 to n_points/2);
+      ker_transf          : in b25_complex_array(0 to n_points/2);
       clock, reset, start : in std_logic;
-      res                 : out b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
+      res                 : out b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
       ready               : out std_logic
     );
   end component;
@@ -398,17 +296,17 @@ package hecate_pkg is
   component hecate_oa is
     port (
       img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-      ker                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      ker                 : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
       clock, reset, start : in std_logic;
       res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-      ready               : out std_logic
+      ready               : out std_logic := '0'
     );
   end component;
 
   component conv3d is
     port (
       img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-      ker : in  b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+      ker : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
       clk : in  std_logic;
       rst : in  std_logic;
       run : in  std_logic;
@@ -439,8 +337,10 @@ package hecate_pkg is
   function bfly_idx_rev(s, b, tb : integer) return integer;
   function wmul_idx_rev(s, w, m : integer) return integer;
 
-  function twiddle (inp, pnt : natural) return b25_complex;
+  function twiddle (inp : natural) return b25_complex;
+  function k_twiddle (inp : natural) return std_logic_vector;
   function w_add (a, b : std_logic_vector(24 downto 0)) return std_logic_vector;
+  function idft_lut (n, w : integer) return boolean;
 
 end package hecate_pkg;
 
@@ -448,9 +348,7 @@ package body hecate_pkg is
     
     -- "Scrambling" is the natural sorting process that an array undergoes when passing through a discrete fourier transform. By scrambling the array in the same manner before the operation, it will return the array in its original order
     function scramble_lut(n : integer) return integer is
-      constant n_points : integer := 32;
-      constant the_log : integer := 5;
-      variable idx     : integer := 0;
+      variable idx : integer := 0;
     begin
       for g in 0 to the_log-1 loop
         if (n mod (2**(g+1)) >= 2**g) then
@@ -462,7 +360,6 @@ package body hecate_pkg is
   
     -- bfly_idx converts n to the order the butterflies are at, top to bottom, in their respective state
     function bfly_idx(s, n : integer) return integer_pair is
-      constant the_log : integer := 5;
       constant b : integer := (n/(2**s)) * (2**(s-1)) + (n mod (2**(s-1))); -- bfly_pos = bfly_group*group_size + pos_in_group
       -- Yes, (n/(2**s)) * (2**(s-1)) = n/2, except NOT because rounding. Leave it like that, it's synth time
       constant tb : boolean := (n mod (2**s)) >= 2**(s-1);
@@ -481,7 +378,6 @@ package body hecate_pkg is
     
     -- wmul_idx converts n to the respective w multipliers, in their respective state, or returns (0,0,1) if no multiplication is needed
     function wmul_idx(s, n : integer) return integer_trio is
-      constant the_log : integer := 5;
       constant valid : boolean := (n mod (2**(s+1))) >= 2**s; -- it's tb for the next state. I hate/love Fourier symmetry
       constant w : integer := (n mod (2**s)) * (2**(the_log-s-1)); -- pos_in_group (next state) times decreasing constant (2**(the_log-s-1))
       constant m : integer := n/(2**(s+1)) ; 
@@ -499,7 +395,6 @@ package body hecate_pkg is
   
     -- bfly_idx_rev converts (b, tb) back to n, in their respective state
     function bfly_idx_rev(s, b, tb : integer) return integer is
-      constant the_log : integer := 5;
       constant group_size   : integer := (2**(s-1));       -- [in BFLYS]
       constant pos_in_group : integer := b mod group_size; -- [in BFLYS]
       constant group_idx    : integer := b/group_size;
@@ -514,8 +409,6 @@ package body hecate_pkg is
   
     -- wmul_idx_rev converts (w, m) back to n, in its respective state
     function wmul_idx_rev(s, w, m : integer) return integer is
-      constant n_points : integer := 32;
-      constant the_log : integer := 5;
       constant group_size   : integer := (2**(s-1))*2;           -- [in POINTS]
       constant pos_in_group : integer := w / (2**(the_log-s-1)); -- [in POINTS]
       constant group_idx    : integer := 2*m+1;
@@ -531,18 +424,26 @@ package body hecate_pkg is
 
 
     -- Generic twiddle function
-    function twiddle (inp, pnt : natural) return b25_complex is
-      constant base : real := 2.0*MATH_PI/real(pnt);
+    function twiddle (inp : natural) return b25_complex is
+      constant base : real := 2.0*MATH_PI/real(n_points);
       variable x : b25_complex;
     begin
-      -- report "inp = " & integer'image(inp) & "   pnt/4 = " & integer'image(pnt/4);
-      if (inp > pnt/4) then
-        x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(pnt/2-inp) * base)), 17)));
+      if (inp > n_points/4) then
+        x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(n_points/2-inp) * base)), 17)));
       else
         x(0) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(inp) * base)), 17)));
       end if;
       x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
       return b25_complex(x);
+    end function;
+
+    -- K-corrected twiddle function
+    function k_twiddle (inp : natural) return std_logic_vector is
+      constant base : real := MATH_PI/real(n_points/2);
+      variable x : std_logic_vector(24 downto 0);
+    begin
+      x := '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(real(inp) * base) * kcon)), 24));
+      return x;
     end function;
 
     -- b25_add function (synth-time)
@@ -567,6 +468,23 @@ package body hecate_pkg is
         temp_sign := a(24);
       end if;
       return (temp_sign & temp_res);
+    end function;
+
+    -- idft LUT for n_idx vs w (synth time)
+    function idft_lut (n, w : integer) return boolean is
+      variable valid_gen : boolean := false;
+    begin
+      for s in 1 to the_log-2 loop
+        if (
+          (w = 0) or (
+            (n mod (2**s) = (2**(s-1))) and 
+            (w mod (2**(s-1)) = 0)
+          ) 
+        ) then
+          valid_gen := true;
+        end if;
+      end loop;
+      return valid_gen;
     end function;
 
 end package body hecate_pkg;

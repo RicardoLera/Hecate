@@ -7,7 +7,7 @@ library ieee;
 entity hecate_oa is
   port (
     img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-    ker                 : in b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+    ker                 : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clock, reset, start : in std_logic;
     res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
     ready               : out std_logic := '0'
@@ -19,22 +19,22 @@ end entity hecate_oa;
 -- This arch is optimized in terms of area. It uses 1 hecate and 1 fft
 architecture area_opt of hecate_oa is
 
-  constant slice_x            : natural := ix/2;
-  constant slice_y            : natural := iy/2;
-  constant slice_z            : natural := iz/2;
+  constant slice_x            : natural := ix/kx;
+  constant slice_y            : natural := iy/ky;
+  constant slice_z            : natural := iz/kz;
   signal   sx, sy, sz         : natural := 0;
 
   signal acc                  : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
-  signal ker_transf           : b25_complex_array(0 to 16); -- LATCH
+  signal ker_transf           : b25_complex_array(0 to n_points/2); -- LATCH
   signal acc_ready, ker_ready : std_logic := '0';           -- LATCH
 
-  signal fft_in               : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1) := (others => (others => (others => (others => '0'))));
-  signal fft_out              : b25_complex_array(0 to 16);
+  signal fft_in               : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
+  signal fft_out              : b25_complex_array(0 to n_points/2);
   signal fft_start, fft_ready : std_logic := '0';
   signal fft_reset            : std_logic := '1';
 
-  signal hec_img, hec_ker     : b25_complex_array(0 to 16) := (others => (others => (others => '0')));
-  signal hec_out, hec_acc     : b25_3d_real_array(0 to 2)(0 to 2)(0 to 2);
+  signal hec_img, hec_ker     : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal hec_out, hec_acc     : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
   signal hec_start, hec_ready : std_logic := '0';
   signal hec_reset            : std_logic := '1';
 
@@ -58,15 +58,16 @@ begin
       reset      => hec_reset,
       start      => hec_start,
       res        => hec_out,
-      ready      => hec_ready            --trigger_arr(sz*slice_y*slice_x + sy*slice_x + sx)
+      ready      => hec_ready
     );
 
-  gen_oa_adds_z : for z in 0 to 2 generate
-    gen_oa_adds_y : for y in 0 to 2 generate
-      gen_oa_adds_x : for x in 0 to 2 generate
+  gen_oa_adds_z : for z in 0 to nz-1 generate
+    gen_oa_adds_y : for y in 0 to ny-1 generate
+      gen_oa_adds_x : for x in 0 to nx-1 generate
         signal temp_acc : std_logic_vector(24 downto 0);
       begin
-        temp_acc <= acc(2*sz+z)(2*sy+y)(2*sx+x);
+
+        temp_acc <= acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
 
         oa_add : component b25_add
           port map (
@@ -99,16 +100,13 @@ begin
           end if;
 
         elsif (not fft_ready) then -- Transform slice
-          fft_in <= (
-            ( ( img(sz*2  )(sy*2  )(sx*2  ),
-                img(sz*2  )(sy*2  )(sx*2+1)  ),
-              ( img(sz*2  )(sy*2+1)(sx*2  ),
-                img(sz*2  )(sy*2+1)(sx*2+1)  ) ),
-            ( ( img(sz*2+1)(sy*2  )(sx*2  ),
-                img(sz*2+1)(sy*2  )(sx*2+1)  ),
-            (   img(sz*2+1)(sy*2+1)(sx*2  ),
-                img(sz*2+1)(sy*2+1)(sx*2+1)  ) )
-          );
+          for szi in 0 to kz-1 loop
+            for syi in 0 to ky-1 loop
+              for sxi in 0 to kx-1 loop
+                fft_in(szi)(syi)(sxi) <= img(sz*kz+szi)(sy*ky+syi)(sx*kx+sxi);
+              end loop;
+            end loop;
+          end loop;
           fft_start <= '1'; fft_reset <= '0';
 
         elsif (not hec_ready) then -- Start hecate
@@ -116,10 +114,10 @@ begin
           hec_start <= '1'; hec_reset <= '0';
                 
         elsif (not acc_ready) then -- Update accumulator
-          for z in 0 to 2 loop
-            for y in 0 to 2 loop
-              for x in 0 to 2 loop
-                acc(2*sz+z)(2*sy+y)(2*sx+x) <= hec_acc(z)(y)(x);
+          for z in 0 to nz-1 loop
+            for y in 0 to ny-1 loop
+              for x in 0 to nx-1 loop
+                acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= hec_acc(z)(y)(x);
               end loop;
             end loop;
           end loop;

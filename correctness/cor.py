@@ -47,11 +47,43 @@ arrToHex = np.vectorize(toHex)
 # ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
 
 # 3D Test
-img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
-ker = np.array([1, 0.5, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
+# img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
+# ker = np.array([1, 0.5, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
 
-# img = np.array([1, 0, 0, 1, 0, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
-# ker = np.array([1, 0, 0, 1, 0, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
+img = np.array(
+  [
+    1, 1, 1, 0, 0,
+    1, 1, 1, 0, 0,
+    1, 1, 1, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    
+    1, 1, 1, 0, 0,
+    1, 1, 1, 0, 0,
+    1, 1, 1, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    
+    1, 1, 1, 0, 0,
+    1, 1, 1, 0, 0,
+    1, 1, 1, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0,
+  ], dtype=np.float64)
+
+ker = img
 
 # Random array test
 # img = np.random.rand(8)
@@ -80,14 +112,15 @@ mKER = np.abs(KER) * kcor
 pKER = np.angle(KER)
 
 # Hadamard
-mHAD = mIMG * mKER / 32
+mHAD = mIMG * mKER / spsize
 pHAD = pIMG + pKER
+print(arrToHex(np.real(mHAD)))
 
 # CORDIC polar -> rect
 HAD = mHAD * np.exp(1j*pHAD) * kcor
 
 # IFFT
-had = np.fft.ifft(HAD, np.size(HAD)) * 32 /  pow(kcor,3)
+had = np.fft.ifft(HAD, np.size(HAD)) * spsize /  pow(kcor,3)
 print(arrToHex(np.real(had)))
 
 

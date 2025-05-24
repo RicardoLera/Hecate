@@ -9,30 +9,8 @@ end entity fft_tb;
 
 architecture sim of fft_tb is
 
-  constant test_arr : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1) := (
-    ( ( "0000000010000000000000000",
-        "0000000001000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
-    ( ( "0000000010000000000000000",
-        "0000000001000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) )
-  );
-
-  constant test_arr2 : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1) := (
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) ),
-    ( ( "0000000010000000000000000",
-        "0000000010000000000000000" ),
-      ( "0000000010000000000000000",
-        "0000000010000000000000000" ) )
-  );
-
-  signal   i : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal   o : b25_complex_array(0 to 16) := (others => (others => (others => '0')));
+  signal   test_arr : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
+  signal   o : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
   signal   clk, start, reset, simulate, s_ready : std_logic := '0';
   constant clockperiod : time := 1 ms;
 
@@ -42,7 +20,7 @@ begin
 
   dut : component fft
     port map (
-      i       => i,
+      i       => test_arr,
       o       => o,
       clock   => clk,
       reset   => reset,
@@ -55,15 +33,21 @@ begin
 
     reset <= '1';
     simulate <= '1';
-    i <= test_arr;
     wait for 2 ms;
+    for z in 0 to kz-1 loop
+      for y in 0 to ky-1 loop
+        for x in 0 to kx-1 loop
+          test_arr(z)(y)(x) <= "0000000010000000000000000";
+        end loop;
+      end loop;
+    end loop;
 
     reset <= '0';
     start <= '1';
     wait until (s_ready = '1') for 50 ms ;
     wait for 2 ms;
 
-    i <= test_arr2;
+    test_arr(0)(0)(1) <= "0000000001000000000000000";
     reset <= '1';
     start <= '0';
     wait for 2 ms;

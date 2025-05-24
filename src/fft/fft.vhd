@@ -8,7 +8,7 @@ library ieee;
 -- Note: this FFT returns the complex conjugate compared to cor.py. It's a matter twiddle factor selection (counterclockwise vs clockwise) and it cancels out in the IDFT, but it's worth noting
 entity fft is
   port (
-    i                   : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+    i                   : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     o                   : out b25_complex_array(0 to n_points/2);
     clock, reset, start : in  std_logic;
     s_ready             : out std_logic
@@ -17,7 +17,7 @@ end entity fft;
 
 architecture synth of fft is
 
-  signal state     : integer range 0 to the_log+1 := 0; -- state 1 is synchronous start
+  signal state : integer range 0 to the_log+1 := 0; -- state 1 is synchronous start
 
   signal in_raster, in_scramble : b25_real_array(0 to n_points-1) := (others => (others => '0'));
   signal bfly_in, bfly_out      : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
@@ -41,25 +41,18 @@ begin
   gen_wmul : for w in 1 to n_points/2-1 generate -- e.g., w1~w15 for N=32
     gen_wmul2 : for m in 0 to n_points/4-1 generate
       gen_wmul3 : if (w /= n_points/4) generate
-        constant b : std_logic_vector(the_log-1 downto 0) := std_logic_vector(to_unsigned((w), the_log));
-        constant m_number : unsigned(the_log-1 downto 0) := (         -- NOT GENERIC
-          '0',
-          b(3) and not b(2) and not b(1) and not b(0),
-          b(2) and not b(1) and not b(0),
-          b(1) and not b(0),
-          b(0));
-      begin
-        gen_wmul4 : if (m < to_integer(m_number)) generate
-          wmul : component b25_wmul
-            generic map (
-              w => w,
-              n => n_points
-            )
-            port map (
-              i => wmul_in(w)(m),
-              o => wmul_out(w)(m)
-            );
-        end generate gen_wmul4;
+
+        wmul_sel_loop : for s in 0 to the_log-2 generate
+          wmul_sel_if : if ((w mod (2**s) = 0) and (m < 2**s)) generate 
+              wmul : component b25_wmul
+                generic map (w)
+                port map (
+                  i => wmul_in(w)(m),
+                  o => wmul_out(w)(m)
+                );
+          end generate wmul_sel_if;
+        end generate wmul_sel_loop;
+
       end generate gen_wmul3;
     end generate gen_wmul2;
   end generate gen_wmul;
@@ -87,11 +80,9 @@ begin
   end process state_machine;
 
   -- Input Layer (rasterize and scramble)
-  gen_z : for z in 0 to iz-1 generate
-    gen_y : for y in 0 to iy-1 generate
-      gen_x : for x in 0 to ix-1 generate
-        constant nx : integer := 2*ix-1;
-        constant ny : integer := 2*iy-1;
+  gen_z : for z in 0 to kz-1 generate
+    gen_y : for y in 0 to ky-1 generate
+      gen_x : for x in 0 to kx-1 generate
         constant n  : integer := x + y*nx + z*nx*ny;
       begin
         in_raster(n) <= i(z)(y)(x);
@@ -103,7 +94,7 @@ begin
     in_scramble(scramble_lut(n)) <= in_raster(n);
   end generate gen_n;
 
-  -- MUX Arrays         NOT GENERIC - Fully generic requires concatenating 1-bit muxes
+  -- MUX Arrays
   gen_mux_bfly1 : for b in 0 to n_points/2-1 generate
     gen_mux_bfly2 : for tb in 0 to 1 generate
       signal bfly_in_reg : b25_complex := (others => (others => '0'));
@@ -113,11 +104,11 @@ begin
         variable n : integer;
       begin
         if rising_edge(clock) then
-          if (state+1 > 1) and (state+1 < the_log+1) then
+          if (state > 0) and (state < the_log) then
             n := bfly_idx_rev(state+1, b, tb);
-            case (wmul_lut(state)(n)(2)) is
-              when 1      => bfly_in_reg <= wmul_out(wmul_lut(state)(n)(0))(wmul_lut(state)(n)(1));
-              when others => bfly_in_reg <= bfly_out(bfly_lut(state)(n)(0))(bfly_lut(state)(n)(1));
+            case (wmul_idx(state,n)(2)) is
+              when 1      => bfly_in_reg <= wmul_out(wmul_idx(state,n)(0))(wmul_idx(state,n)(1));
+              when others => bfly_in_reg <= bfly_out(bfly_idx(state,n)(0))(bfly_idx(state,n)(1));
             end case;
           end if;
         end if;
@@ -139,17 +130,14 @@ begin
       gen_sel_wmul : for s in 1 to (the_log-1) generate
         constant n : integer := wmul_idx_rev(s, w, m);
       begin
-        with (wmul_lut(s)(n) = (w,m,1)) select wmul_in_sel(s) <=
-          bfly_out(bfly_lut(s)(n)(0))(bfly_lut(s)(n)(1)) when TRUE,
+        with (wmul_idx(s,n) = (w,m,1)) select wmul_in_sel(s) <=
+          bfly_out(bfly_idx(s,n)(0))(bfly_idx(s,n)(1)) when TRUE,
           (others => (others => '0')) when others;
       end generate gen_sel_wmul;
 
-      with state select wmul_in(w)(m) <=
-        (others => (others => '0')) when 0,
-        wmul_in_sel(1) when 1,
-        wmul_in_sel(2) when 2,
-        wmul_in_sel(3) when 3,
-        wmul_in_sel(4) when others;
+      wmul_in(w)(m) <=
+        wmul_in_sel(state) when ((state > 0) and (state < the_log)) else
+        (others => (others => '0'));
 
     end generate gen_mux_wmul2;
   end generate gen_mux_wmul1;
@@ -158,8 +146,8 @@ begin
     constant b  : integer := n mod (n_points/2);
     constant tb : integer := n / (n_points/2);
   begin
-    with state select out_buff(n) <=
-      bfly_out(b)(tb) when 6,
+    with s_ready select out_buff(n) <=
+      bfly_out(b)(tb) when '1',
       (others => (others => '0')) when others;
   end generate gen_procs_out;
   s_ready <=
@@ -168,146 +156,3 @@ begin
   o <= out_buff(0 to n_points/2) when s_ready else (others => (others => (others => '0')));
 
 end architecture synth;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  -- -- Butterfly Layer
-  -- -- This version of the bfly and wmul blocks scour the LUTs recursivelly, which is hope is optimized by the synthesizer
-  -- -- Later attempt calling 'bfly_in(bfly_lut(state, n)(0))(bfly_lut(state, n)(1))' to see if the direct call is still interpreted as static and avoid lsp clashes
-  -- gen_procs_bfly : for b in 0 to n_points/2-1 generate -- bfly_out(b)(tb)[b25C] <= in_scramble(n) | wmul_out(w)(m)(state)[b25C]
-  --   gen_procs_bfly_tb : for tb in 0 to 1 generate
-  --     -- signal n : integer;
-  --   begin
-
-  --     -- n <= bfly_lut_rev(state, b, tb) when ((state > 0) and (state < the_log)) else 0;
-  --     -- bfly_in(b)(tb) <=
-  --     --   (others => (others => '0'))
-  --     --     when (reset = '1') else
-  --     --   (in_scramble(n), 25b"0")
-  --     --     when (state = 1) else
-  --     --   wmul_out(wmul_lut(state-1, n)(0))(wmul_lut(state-1, n)(1))
-  --     --     when ((state > 0) and (state < the_log+1) and (wmul_lut(state-1, n)(2) /= 0)) else
-  --     --   bfly_out(bfly_lut(state-1, n)(0))(bfly_lut(state-1, n)(1))
-  --     --     when ((state > 0) and (state < the_log+1) and (wmul_lut(state-1, n)(2) = 0)) else
-  --     --   (others => (others => '0'));
-
-  --       -- infers latches
-  --     proc_bfly : process (state) is
-  --       variable n : integer;
-  --     begin
-  --       if (reset) then
-  --         bfly_in(b)(tb) <= (others => (others => '0'));
-
-  --       elsif (state > 0) and (state < the_log+1) then
-  --         n := bfly_lut_rev(state, b, tb);
-  --         if (state = 1) then
-  --           --report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb);
-  --           bfly_in(b)(tb) <= (in_scramble(n), 25b"0");
-  --         else
-  --           if (wmul_lut(state-1, n)(2) /= 0) then -- verifies if there is a corresponding multiplier
-  --             bfly_in(b)(tb) <= wmul_out(wmul_lut(state-1, n)(0))(wmul_lut(state-1, n)(1));
-  --           else
-  --             bfly_in(b)(tb) <= bfly_out(bfly_lut(state-1, n)(0))(bfly_lut(state-1, n)(1));
-  --           end if;
-  --         end if;
-  --       end if;
-  --     end process proc_bfly;
-
-  --   end generate gen_procs_bfly_tb;
-  -- end generate gen_procs_bfly;
-
-  -- -- Complex Multiplier Layer
-  -- gen_procs_wmul : for w in 0 to n_points/2-1 generate -- wmul_in(w)(m)(state)[b25C] <= bfly_out(b)(tb)[b25C]
-  --   gen_procs_wmul2 : for m in 0 to n_points/4-1 generate
-  --     signal n, b, tb : integer;
-  --   begin
-
-  --     n  <= wmul_lut_rev(state, w, m) when ((state > 0) and (state < the_log)) else 0;
-  --     b  <= bfly_lut(state, n)(0) when ((state > 0) and (state < the_log) and (wmul_lut(state, n) = (w,m,1))) else 0;
-  --     tb <= bfly_lut(state, n)(1) when ((state > 0) and (state < the_log) and (wmul_lut(state, n) = (w,m,1))) else 0;
-  --     wmul_in(w)(m) <=
-  --       (others => (others => '0'))
-  --         when (reset = '1') else
-  --       bfly_out(b)(tb)
-  --         when ((state > 0) and (state < the_log) and (wmul_lut(state, n) = (w,m,1))) else
-  --       (others => (others => '0'));
-
-  --       -- infers latches
-  --     -- subcycle_trigger(w)(m) <=
-  --     --   bfly_out(bfly_lut(state, wmul_lut_rev(state,w,m))(0))(bfly_lut(state, wmul_lut_rev(state,w,m))(1))
-  --     --     when (state > 0) and (state < the_log) else
-  --     --   (25b"1", 25b"0")    -- Trigger all processes when reset=1, so they can be reset
-  --     --     when (reset = '1') else
-  --     --   (others => (others => '0'));
-
-  --     -- proc_wmul : process (subcycle_trigger(w)(m)) is
-  --     --   variable b, tb, n : integer;
-  --     -- begin
-  --     --   if (reset) then
-  --     --     wmul_in(w)(m) <= (others => (others => '0'));
-
-  --     --   elsif ((state > 0) and (state < the_log)) then
-  --     --     n  := wmul_lut_rev(state, w, m);
-  --     --     if ((wmul_lut(state, n) = (w,m,1))) then
-  --     --       b  := bfly_lut(state, n)(0);
-  --     --       tb := bfly_lut(state, n)(1);
-  --     --       --report "state = " & integer'image(state) & "   n = " & integer'image(n) & "   b = " & integer'image(b) & "   tb = " & integer'image(tb) & "   w = " & integer'image(w) & "   m = " & integer'image(m);
-  --     --       wmul_in(w)(m) <= bfly_out(b)(tb);
-  --     --     end if;
-  --     --   end if;
-  --     -- end process proc_wmul;
-
-  --   end generate gen_procs_wmul2;
-  -- end generate gen_procs_wmul;
-
-  -- -- Output Layer
-  -- s_ready <= '1' when state=the_log+1 else '0';
-  -- gen_procs_out : for n in 0 to n_points-1 generate
-  --   out_buff(n) <=
-  --     (others => (others => '0'))
-  --       when (state /= the_log+1) else
-  --     bfly_out(n mod (n_points/2))(0)
-  --       when (n < n_points/2) else
-  --     bfly_out(n mod (n_points/2))(1);
-  --   -- full N buffer is meant for debugging, but it's not a lot of hardware so I'll leave it
-
-  --     -- infers latches
-  --   -- proc_out : process (state)
-  --   -- begin
-  --   --   if (state = the_log+1) then
-  --   --     if (n < n_points/2) then -- top/bottom
-  --   --       out_buff(n) <= bfly_out(n)(0);
-  --   --     else
-  --   --       out_buff(n) <= bfly_out(n mod (n_points/2))(1);
-  --   --     end if;
-  --   --   end if;
-  --   -- end process proc_out;
-  -- end generate gen_procs_out;
-  -- o <= out_buff(0 to n_points/2) when s_ready else (others => (others => (others => '0')));
