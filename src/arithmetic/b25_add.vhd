@@ -12,27 +12,28 @@ end entity b25_add;
 
 architecture arch of b25_add is
 
-  signal sa, sb, st : signed(23 downto 0);
+  signal sa, sb, add : signed(23 downto 0);
 
 begin
 
-  sa <= signed(a(23 downto 0));
-  sb <= signed(b(23 downto 0));
-  st <= sa - sb;
+  sa <= 
+    -signed(a(23 downto 0))
+      when (a(24)) else
+    signed(a(23 downto 0));
+
+  sb <=
+    -signed(b(23 downto 0))
+      when (b(24)) else
+    signed(b(23 downto 0));
+  
+  add <= sa + sb;
 
   res(23 downto 0) <=
-    std_logic_vector(sa + sb)
-      when ((a(24) xor b(24)) = '0') else
-    std_logic_vector(-st)
-      when (st < 0) else
-    std_logic_vector(st);
+    std_logic_vector(-add)
+      when add(add'left) else
+    std_logic_vector(add);
       
-  res(24) <=
-    a(24) -- arbitrary
-      when ((a(24) xor b(24)) = '0') else
-    b(24)
-      when (st < 0) else
-    a(24);
+  res(24) <= add(add'left);
 
 end architecture arch;
 

@@ -26,7 +26,7 @@ architecture area_opt of hecate_oa is
 
   signal acc                  : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
   signal ker_transf           : b25_complex_array(0 to n_points/2); -- LATCH
-  signal acc_ready, ker_ready : std_logic := '0';           -- LATCH
+  signal acc_ready, ker_ready : std_logic := '0'; -- LATCH
 
   signal fft_in               : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
   signal fft_out              : b25_complex_array(0 to n_points/2);
@@ -83,7 +83,7 @@ begin
   proc_slice : process(clock) begin
     if rising_edge(clock) then
       if (reset or ready) then
-        if (reset) then ready <= '0'; end if;
+        if reset then ready <= '0'; end if;
         sx <= 0; sy <= 0; sz <= 0;
         fft_reset <= '1'; hec_reset <= '1'; ker_ready <= '0'; acc_ready <= '0';
         acc <= (others => (others => (others => (others => '0'))));

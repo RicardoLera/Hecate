@@ -14,13 +14,9 @@ entity b25_cmul is
 end entity b25_cmul;
 
 architecture arch of b25_cmul is
-
   signal temp_res  : std_logic_vector(47 downto 0) := (others => '0');
-  -- signal temp_sign : std_logic                     := '0';
-
 begin
 
-  -- temp_sign <= a(24) xor con(24);
   temp_res  <= std_logic_vector(
       unsigned(a(23 downto 0)) * unsigned(con(23 downto 0))
   );

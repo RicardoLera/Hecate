@@ -7,7 +7,7 @@ library ieee;
 
 entity hecate_oa_tb is
   generic (
-    test_n : natural := 2
+    test_n : natural := 1
   );
   port (
     rom_serial_i : in  std_logic_vector(24 downto 0) := (others => '0');
@@ -34,9 +34,9 @@ architecture sim of hecate_oa_tb is
   signal o_ready, g_ready : std_logic;
 
   signal keep_simulating  : std_logic := '0';
-  constant clockperiod    : time      := 1 ms;
+  constant clockperiod    : time      := 1 ns;
 
-  impure function rand_slv(len : integer; s1 : integer; s2 : integer) return std_logic_vector is
+  impure function rand_slv(len : natural; s1 : natural; s2 : natural) return std_logic_vector is
     variable r : real;
     variable slv : std_logic_vector(len - 1 downto 0);
     variable seed1 : positive := s1;
@@ -49,7 +49,7 @@ architecture sim of hecate_oa_tb is
     return slv;
   end function;
 
-  procedure rand_arr(signal arr : out b25_3d_real_array; constant offset, size_z, size_y, size_x : in integer) is begin
+  procedure rand_arr(signal arr : out b25_3d_real_array; constant offset, size_z, size_y, size_x : in natural) is begin
     for z in 0 to size_z-1 loop
       for y in 0 to size_y-1 loop
         for x in 0 to size_x-1 loop
@@ -60,7 +60,6 @@ architecture sim of hecate_oa_tb is
   end procedure;
 
 begin
-
   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hecate_oa
@@ -87,14 +86,14 @@ begin
 
   test : process
     variable t1, t2, test_time, t_mean, t_max, t_min : time := 0 ns;
-    variable test_res, pnt : integer  := 0;
+    variable test_res, pnt : natural  := 0;
     variable err, err_mean : std_logic_vector(23 downto 0) := (others => '0');
   begin
     keep_simulating <= '1';
     rst <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      rand_arr(img, n+1, iz, iy, ix); -- ASSUMES SAME SIZE Is AND Ks
+      rand_arr(img, n+1, iz, iy, ix);
       rand_arr(ker, n+2, kz, ky, kx);
 
       -- img_loop_z : for z in 0 to iz-1 loop
@@ -133,10 +132,10 @@ begin
             err := std_logic_vector(abs(signed(gold(z)(y)(x)(23 downto 0)) - signed(res(z)(y)(x)(23 downto 0))));
             err_mean := std_logic_vector(unsigned(err_mean) + unsigned(err));
 
-            if (err < x"1000") then
+            if (unsigned(err) < x"1000") then
               pnt := pnt + 1;
             else
-              report "Error exceeded at (" & integer'image(z) & ")(" & integer'image(y) & ")(" & integer'image(x) & ")" & "   Total error = " & to_hstring(err);
+              report "Error exceeded at (" & natural'image(z) & ")(" & natural'image(y) & ")(" & natural'image(x) & ")" & "   Total error = " & to_hstring(err);
             end if;
           end loop calc_error_x;
         end loop calc_error_y;
@@ -153,10 +152,10 @@ begin
     t_mean   := t_mean / test_n;
     err_mean := std_logic_vector(unsigned(err_mean) / to_unsigned(oz*oy*ox, 24));
 
-    report "Passed tests = " & integer'image(test_res) & " out of " & integer'image(test_n);
-    report "Max test time = " & integer'image( t_max / clockperiod ) & " cycles";
-    report "Min test time = " & integer'image( t_min / clockperiod ) & " cycles";
-    report "Average test time = " & real'image( real(t_mean / (1 fs)) * 1.0/1000000000000.0 ) & " cycles";
+    report "Passed tests = " & natural'image(test_res) & " out of " & natural'image(test_n);
+    report "Max test time = " & natural'image(t_max / clockperiod ) & " cycles";
+    report "Min test time = " & natural'image(t_min / clockperiod ) & " cycles";
+    report "Average test time = " & real'image(real(t_mean / (1 fs)) * 1.0/1000000.0) & " cycles";
     report "Average precision error = " & to_hstring(err_mean(23 downto 16)) & "." & to_hstring(err_mean(15 downto 0));
 
     keep_simulating <= '0';
@@ -173,35 +172,40 @@ architecture synth of hecate_oa_tb is
 
   signal img : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
   signal ker : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-  signal res : b25_3d_real_array(0 to iz)(0 to iy)(0 to ix);
-  signal oa_ready, oa_start : std_logic := '0';
+  signal res : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
+  signal oa_ready, oa_start, serial_i_ready, serial_k_ready : std_logic := '0';
 
   -- constant test_ker : b25_3d_real_array(0 to 7)(0 to 3)(0 to 3) := (others => (others => (others => ((others => ('0'))))));      -- Specific K
 
 begin
 
   serial_in : process (clock) is
-    variable ozi, oyi, oxi, kzi, kyi, kxi : natural := 0;
+    variable izi, iyi, ixi, kzi, kyi, kxi : natural := 0;
   begin
     if rising_edge(clock) then
       if reset then
-        ozi := 0; oyi := 0; oxi := 0;
-        oa_start <= '0';
-      elsif (start and not oa_start) then
-        img(oz)(oy)(ox) <= rom_serial_i;
-        oxi := oxi + 1;
-        if (oxi > ox) then oyi := oy + 1; oxi := 0; end if;
-        if (oyi > oy) then ozi := oz + 1; oyi := 0; end if;
-        if (ozi > oz) then oa_start <= '1'; end if;
+        izi := 0; iyi := 0; ixi := 0; kzi := 0; kyi := 0; kxi := 0;
+        serial_i_ready <= '0'; serial_k_ready <= '0';
+      elsif start then
+        if not serial_i_ready then
+          img(izi)(iyi)(ixi) <= rom_serial_i;
+          ixi := ixi + 1;
+          if (ixi = ix) then iyi := iyi + 1; ixi := 0; end if;
+          if (iyi = iy) then izi := izi + 1; iyi := 0; end if;
+          if (izi = iz) then serial_i_ready <= '1'; end if;
+        end if;
 
-        ker(kz)(ky)(kx) <= rom_serial_k;
-        kxi := kxi + 1;
-        if (kxi > kx) then kyi := oy + 1; kxi := 0; end if;
-        if (kyi > ky) then kzi := oz + 1; kyi := 0; end if;
-        if (kzi > kz) then oa_start <= '1'; end if;
+        if not serial_k_ready then
+          ker(kzi)(kyi)(kxi) <= rom_serial_k;
+          kxi := kxi + 1;
+          if (kxi = kx) then kyi := kyi + 1; kxi := 0; end if;
+          if (kyi = ky) then kzi := kzi + 1; kyi := 0; end if;
+          if (kzi = kz) then serial_k_ready <= '1'; end if;
+        end if;
       end if;
     end if;
   end process serial_in;
+  oa_start <= serial_i_ready and serial_k_ready;
 
   dut : component hecate_oa
     port map (
@@ -215,18 +219,18 @@ begin
     );
 
   serial_out : process (clock) is
-    variable oz, oy, ox : natural := 0;
+    variable ozi, oyi, oxi : natural := 0;
   begin
     if rising_edge(clock) then
       if reset then
-        oz := 0; oy := 0; ox := 0;
+        ozi := 0; oyi := 0; oxi := 0;
         ready <= '0';
       elsif (start and oa_ready and not ready) then
-        ram_serial <= res(oz)(oy)(ox);
-        ox := ox + 1;
-        if (ox > ix) then oy := oy + 1; ox := 0; end if;
-        if (oy > iy) then oz := oz + 1; oy := 0; end if;
-        if (oz > iz) then ready <= '1'; end if;
+        ram_serial <= res(ozi)(oyi)(oxi);
+        oxi := oxi + 1;
+        if (oxi = ox) then oyi := oyi + 1; oxi := 0; end if;
+        if (oyi = oy) then ozi := ozi + 1; oyi := 0; end if;
+        if (ozi = oz) then ready <= '1'; end if;
       end if;
     end if;
   end process serial_out;

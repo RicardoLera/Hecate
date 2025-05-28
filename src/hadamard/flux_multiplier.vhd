@@ -1,4 +1,5 @@
   use work.hecate_pkg.all;
+  use work.function_rom.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -132,7 +133,7 @@ begin
   -- constant multipliers (kx)
 
   kx_gen : for w in 0 to n_points/4-1 generate
-      kx_sel_if : if (idft_lut(n_idx,w)) generate
+      kx_sel_if : if idft_nmul_lut(n_idx)(w) generate
 
         kx_proc : process (clock) begin
           if rising_edge(clock) then
@@ -150,10 +151,10 @@ begin
         kx_mux_y(w)(49 downto 25) <= (others => '0');
 
         with a_bit select kx_mux_x(w)(24 downto 0) <=
-          k_twiddle(w) when '1',
+          k_twiddle_lut(w) when '1',
           25x"0" when others;
         with b_bit select kx_mux_y(w)(24 downto 0) <=
-          k_twiddle(w) when '1',
+          k_twiddle_lut(w) when '1',
           25x"0" when others;
       
         kx_shift_x(w)(49 downto 1) <= kx_reg_x(w)(48 downto 0);

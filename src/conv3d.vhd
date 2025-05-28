@@ -18,7 +18,7 @@ end entity conv3d;
 
 architecture synth of conv3d is
 
-  constant osize_full : integer := oz*oy*ox;
+  constant osize_full : natural := oz*oy*ox;
 
   signal rdy_sub : std_logic_vector(osize_full-1 downto 0) := (others => '0');
 
@@ -35,7 +35,7 @@ begin
     loop_oy : for oyi in 0 to oy-1 generate
       loop_ox : for oxi in 0 to ox-1 generate
 
-        constant oidx : integer := oxi + oyi*ox + ozi*ox*oy;
+        constant oidx : natural := oxi + oyi*ox + ozi*ox*oy;
 
       begin
 
@@ -54,11 +54,11 @@ begin
           );
         
         macc : process(clk)
-          constant pad_x : integer := kx-1;
-          constant pad_y : integer := ky-1;
-          constant pad_z : integer := kz-1;
-          variable ixi, iyi, izi : integer := 0;
-          variable kxi, kyi, kzi : integer := 0;
+          constant pad_x : natural := kx-1;
+          constant pad_y : natural := ky-1;
+          constant pad_z : natural := kz-1;
+          variable ixi, iyi, izi : natural := 0;
+          variable kxi, kyi, kzi : natural := 0;
         begin
           if (rising_edge(clk)) then
             if (rst) then

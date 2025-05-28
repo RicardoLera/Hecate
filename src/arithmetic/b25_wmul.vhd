@@ -1,4 +1,5 @@
   use work.hecate_pkg.all;
+  use work.function_rom.all;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -17,10 +18,8 @@ end entity b25_wmul;
 
 architecture karatsuba of b25_wmul is -- 3 constant multipliers + 3 adders
 
-  constant wn : b25_complex := twiddle(w);
+  constant wn : b25_complex := twiddle_lut(w);
   signal   s1, k1, k2, k3, re, im : std_logic_vector(24 downto 0);
-  constant s2 : std_logic_vector(24 downto 0) := w_add(wn(0), wn(1)); -- c+d
-  constant s3 : std_logic_vector(24 downto 0) := w_add(wn(1), (not wn(0)(24), wn(0)(23 downto 0))); -- d-c
 
 begin
 
@@ -42,7 +41,7 @@ begin
   
   cmul_k2 : component b25_cmul
     generic map (
-      con => s2
+      con => w_add_lut(w)(0) -- s2 = c+d
     )
     port map (
       a   => i(1),
@@ -51,7 +50,7 @@ begin
 
   cmul_k3 : component b25_cmul
     generic map (
-      con => s3
+      con => w_add_lut(w)(1) -- s3 = d-c
     )
     port map (
       a   => i(0),

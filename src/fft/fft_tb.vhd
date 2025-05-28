@@ -5,6 +5,12 @@ library ieee;
   use std.env.stop;
 
 entity fft_tb is
+  port (
+    inp   : in b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+    ram   : out b25_complex_array(0 to n_points/2);
+    clock : in std_logic := '0';
+    ready : out std_logic := '0'
+  );
 end entity fft_tb;
 
 architecture sim of fft_tb is
@@ -65,3 +71,35 @@ begin
   end process test;
 
 end architecture sim;
+
+
+
+architecture synth of fft_tb is
+  signal res   : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal reset : std_logic := '1';
+  signal start : std_logic := '0';
+begin
+
+  dut : component fft
+    port map (
+      i       => inp,
+      o       => res,
+      clock   => clock,
+      reset   => reset,
+      start   => start,
+      s_ready => ready
+    );
+
+  test : process (clock) begin
+    if rising_edge(clock) then
+      if ready then
+        start <= '0'; reset <= '1';
+        ram <= res;
+      elsif reset then
+        start <= '1'; reset <= '0';
+        ram <= (others => (others => (others => '0')));
+      end if;
+    end if;
+  end process test;
+
+end architecture synth;
