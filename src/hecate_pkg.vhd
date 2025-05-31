@@ -54,10 +54,7 @@ package hecate_pkg is
   type b25_3d_real_array is array (natural range <>) of b25_2d_real_array;
   type b25_2d_complex_array is array (natural range <>) of b25_complex_array;
   type b25_3d_complex_array is array (natural range <>) of b25_2d_complex_array;
-
-  -- Synth TB RAM
-  -- type t_ram is array (natural range <>) of b25_3d_real_array;
-
+  
   -- Hadamard state list
   type t_state is (initial, vector_flux, pre_rot, rot_coef, final);
 
@@ -71,7 +68,8 @@ package hecate_pkg is
   -- Constants (ROM)
 
   -- Flux Mul k-correction
-  constant kcon   : real := 0.2239282404699562528386872156786372562;
+  constant kcon     : real := 0.2239282404699562528386872156786372562;
+  constant b25_kcon : std_logic_vector(24 downto 0) := std_logic_vector(to_unsigned(natural(65536.0*(kcon)), 25));
 
   -- Pi constants for angle normalization
   constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
@@ -110,7 +108,7 @@ package hecate_pkg is
   );
 
   attribute rom_style of 
-    kcon, pi24, two_pi24, half_pi24, three_half_pi24, arctan_lut
+    kcon, b25_kcon, pi24, two_pi24, half_pi24, three_half_pi24, arctan_lut
   : constant is "block";
 
 
@@ -194,7 +192,16 @@ package hecate_pkg is
       clock, reset, start : in  std_logic;
       s_ready             : out std_logic
     );
-  end component fft;
+  end component;
+
+  component ifft is
+    port (
+      i                   : in  b25_complex_array(0 to n_points/2);
+      o                   : out b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+      clock, reset, start : in  std_logic;
+      s_ready             : out std_logic
+    );
+  end component;
 
   component adder_carry is
     port (
@@ -235,22 +242,11 @@ package hecate_pkg is
   end component;
 
   component flux_multiplier is
-    generic (
-      n_idx     : natural := 0
-    );
     port (
-      clock     : in    std_logic;
-      reset     : in    std_logic;
-      run       : in    std_logic;
-      run_coefs : in    std_logic;
-      a         : in    std_logic_vector(23 downto 0);
-      b         : in    std_logic_vector(23 downto 0);
-      a_nex     : in    std_logic_vector(23 downto 0);
-      b_nex     : in    std_logic_vector(23 downto 0);
-      coefs_x   : out   b25_real_array(0 to n_points/4-1);
-      coefs_y   : out   b25_real_array(0 to n_points/4-1);
-      p         : out   std_logic_vector(24 downto 0);
-      ready     : out   std_logic
+      clock, reset, run  : in    std_logic;
+      a, b, a_nex, b_nex : in    std_logic_vector(23 downto 0);
+      p                  : out   std_logic_vector(24 downto 0);
+      ready              : out   std_logic
     );
   end component;
 
@@ -265,29 +261,25 @@ package hecate_pkg is
   end component;
 
   component hadamard is
-    generic (
-      n_idx : natural := 0
-    );
     port (
-      clock     : in  std_logic;
-      reset     : in  std_logic;
-      start     : in  std_logic;
-      x_i       : in  std_logic_vector(24 downto 0);
-      y_i       : in  std_logic_vector(24 downto 0);
-      x_k       : in  std_logic_vector(24 downto 0);
-      y_k       : in  std_logic_vector(24 downto 0);
-      p_coefs_x : out b25_real_array(0 to n_points/4-1);
-      p_coefs_y : out b25_real_array(0 to n_points/4-1);
-      ready     : out std_logic
+      clock : in  std_logic;
+      reset : in  std_logic;
+      start : in  std_logic;
+      x_i   : in  std_logic_vector(24 downto 0);
+      y_i   : in  std_logic_vector(24 downto 0);
+      x_k   : in  std_logic_vector(24 downto 0);
+      y_k   : in  std_logic_vector(24 downto 0);
+      p     : out b25_complex;
+      ready : out std_logic
     );
   end component;
 
   component hecate is
     port (
-      img_transf          : in b25_complex_array(0 to n_points/2);
-      ker_transf          : in b25_complex_array(0 to n_points/2);
-      clock, reset, start : in std_logic;
-      res                 : out b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+      img_transf          : in  b25_complex_array(0 to n_points/2);
+      ker_transf          : in  b25_complex_array(0 to n_points/2);
+      clock, reset, start : in  std_logic;
+      res                 : out b25_complex_array(0 to n_points/2);
       ready               : out std_logic
     );
   end component;
@@ -441,12 +433,16 @@ package body hecate_pkg is
     constant base : real := 2.0*MATH_PI/real(n_points);
     variable x : b25_complex;
   begin
-    if (inp > n_points/4) then
+    if ((inp > n_points/4) and (inp < 3*n_points/4)) then -- R negative
       x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(n_points/2-inp) * base)), 17)));
     else
       x(0) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(inp) * base)), 17)));
     end if;
-    x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
+    if ((inp > n_points/2) and (inp < n_points)) then -- I negative
+      x(1) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(n_points-inp) * base)), 17)));
+    else
+      x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
+    end if;
     return b25_complex(x);
   end function;
 
@@ -493,7 +489,7 @@ package body hecate_pkg is
     variable a_2c, b_2c, r_2c, res : std_logic_vector(24 downto 0);
   begin
   
-    assert (not (a(23) nand b(23))) report "b25_add OVERFLOW" severity warning;
+    assert (not (a(23) nand b(23))) report "synth add OVERFLOW" severity warning;
   
     a_2c := (std_logic_vector(unsigned('1' & not a(23 downto 0)) + 1)) when a(24) else a; 
     b_2c := (std_logic_vector(unsigned('1' & not b(23 downto 0)) + 1)) when b(24) else b; 
@@ -570,9 +566,9 @@ package body hecate_pkg is
   end function build_wmul_idx_rev;
 
   function build_twiddle return b25_complex_array is
-    variable res : b25_complex_array(1 to n_points/2-1);
+    variable res : b25_complex_array(1 to n_points-1);
   begin
-    for n in 1 to n_points/2-1 loop
+    for n in 1 to n_points-1 loop
       res(n) := twiddle(n);
     end loop;
     return res;
@@ -610,9 +606,9 @@ package body hecate_pkg is
   end function build_idft_nmul_idx;
 
   function build_w_add_synth return b25_complex_array is
-    variable res : b25_complex_array(1 to n_points/2-1);
+    variable res : b25_complex_array(1 to n_points-1);
   begin
-    for w in 1 to n_points/2-1 loop
+    for w in 1 to n_points-1 loop
       res(w)(0) := w_add_synth(twiddle(w)(0), twiddle(w)(1)); -- c+d
       res(w)(1) := w_add_synth(twiddle(w)(1), (not twiddle(w)(0)(24) & twiddle(w)(0)(23 downto 0))); -- d-c
     end loop;

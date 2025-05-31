@@ -18,24 +18,29 @@ end entity hecate_oa;
 -- This arch is optimized in terms of area. It uses 1 hecate and 1 fft
 architecture area_opt of hecate_oa is
 
-  constant slice_x            : natural := ix/kx;
-  constant slice_y            : natural := iy/ky;
-  constant slice_z            : natural := iz/kz;
-  signal   sx, sy, sz         : natural := 0;
+  constant slice_x              : natural := ix/kx;
+  constant slice_y              : natural := iy/ky;
+  constant slice_z              : natural := iz/kz;
+  signal   sx, sy, sz           : natural := 0;
 
-  signal acc                  : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
-  signal ker_transf           : b25_complex_array(0 to n_points/2); -- LATCH
-  signal acc_ready, ker_ready : std_logic := '0'; -- LATCH
+  signal acc                    : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
+  signal ker_transf             : b25_complex_array(0 to n_points/2); -- LATCH
+  signal acc_ready, ker_ready   : std_logic := '0'; -- LATCH
 
-  signal fft_in               : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
-  signal fft_out              : b25_complex_array(0 to n_points/2);
-  signal fft_start, fft_ready : std_logic := '0';
-  signal fft_reset            : std_logic := '1';
+  signal fft_in                 : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
+  signal fft_out                : b25_complex_array(0 to n_points/2);
+  signal fft_start, fft_ready   : std_logic := '0';
+  signal fft_reset              : std_logic := '1';
 
-  signal hec_img, hec_ker     : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
-  signal hec_out, hec_acc     : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
-  signal hec_start, hec_ready : std_logic := '0';
-  signal hec_reset            : std_logic := '1';
+  signal hec_img, hec_ker       : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal hec_out                : b25_complex_array(0 to n_points/2);
+  signal hec_start, hec_ready   : std_logic := '0';
+  signal hec_reset              : std_logic := '1';
+
+  signal ifft_in                : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal ifft_out, ifft_acc     : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+  signal ifft_start, ifft_ready : std_logic := '0';
+  signal ifft_reset             : std_logic := '1';
 
 begin
 
@@ -60,6 +65,16 @@ begin
       ready      => hec_ready
     );
 
+  ifft_single : component ifft
+    port map (
+      i       => ifft_in,
+      o       => ifft_out,
+      clock   => clock,
+      reset   => ifft_reset,
+      start   => ifft_start,
+      s_ready => ifft_ready
+    );
+
   gen_oa_adds_z : for z in 0 to nz-1 generate
     gen_oa_adds_y : for y in 0 to ny-1 generate
       gen_oa_adds_x : for x in 0 to nx-1 generate
@@ -71,8 +86,8 @@ begin
         oa_add : component b25_add
           port map (
             a   => temp_acc,
-            b   => hec_out(z)(y)(x),
-            res => hec_acc(z)(y)(x)
+            b   => ifft_out(z)(y)(x),
+            res => ifft_acc(z)(y)(x)
           );
 
       end generate gen_oa_adds_x;
@@ -84,14 +99,15 @@ begin
       if (reset or ready) then
         if reset then ready <= '0'; end if;
         sx <= 0; sy <= 0; sz <= 0;
-        fft_reset <= '1'; hec_reset <= '1'; ker_ready <= '0'; acc_ready <= '0';
+        fft_reset <= '1'; hec_reset <= '1'; ker_ready <= '0'; ifft_reset <= '1'; acc_ready <= '0'; 
         acc <= (others => (others => (others => (others => '0'))));
         ker_transf <= (others => (others => (others => '0')));
       elsif (start) then
 
         if (not ker_ready) then -- Transform kernel
           if (not fft_ready) then
-            fft_in <= ker; fft_start <= '1'; fft_reset <= '0';
+            fft_in <= ker;
+            fft_start <= '1'; fft_reset <= '0';
             -- assignments are instructed to happen every cycle, but I don't see how this would infer more hardware than creating another IF
           else
             fft_start <= '0'; fft_reset <= '1';
@@ -111,21 +127,26 @@ begin
         elsif (not hec_ready) then -- Start hecate
           hec_img <= fft_out; hec_ker <= ker_transf;
           hec_start <= '1'; hec_reset <= '0';
+        
+        elsif (not ifft_ready) then -- Untransform slice
+          ifft_in <= hec_out;
+          ifft_start <= '1'; ifft_reset <= '0';
                 
         elsif (not acc_ready) then -- Update accumulator
           for z in 0 to nz-1 loop
             for y in 0 to ny-1 loop
               for x in 0 to nx-1 loop
-                acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= hec_acc(z)(y)(x);
+                acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= ifft_acc(z)(y)(x);
               end loop;
             end loop;
           end loop;
           acc_ready <= '1';
 
         else -- Next slice / finish
-          fft_start <= '0'; fft_reset <= '1';
-          hec_start <= '0'; hec_reset <= '1';
-          acc_ready <= '0';
+          fft_start  <= '0'; fft_reset <= '1';
+          hec_start  <= '0'; hec_reset <= '1';
+          ifft_start <= '0'; ifft_reset <= '1';
+          acc_ready  <= '0';
           sx <= sx + 1;
           if (sx+1 >= slice_x) then
             sy <= sy + 1; sx <= 0;

@@ -9,13 +9,13 @@ entity b25_wmul is
     w : natural
   );
   port (
-    i : in    b25_complex;
-    o : out   b25_complex
+    i : in  b25_complex;
+    o : out b25_complex
   );
 end entity b25_wmul;
 
 architecture karatsuba of b25_wmul is -- 3 constant multipliers + 3 adders
-  signal   s1, k1, k2, k3, re, im : std_logic_vector(24 downto 0);
+  signal s1, k1, k2, k3, re, im : std_logic_vector(24 downto 0);
 begin
 
   add_s1 : component b25_add

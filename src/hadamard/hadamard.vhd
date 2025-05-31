@@ -4,20 +4,16 @@ library ieee;
   use ieee.numeric_std.all;
 
 entity hadamard is
-  generic (
-    n_idx : natural := 0
-  );
   port (
-    clock     : in  std_logic;
-    reset     : in  std_logic;
-    start     : in  std_logic;
-    x_i       : in  std_logic_vector(24 downto 0);
-    y_i       : in  std_logic_vector(24 downto 0);
-    x_k       : in  std_logic_vector(24 downto 0);
-    y_k       : in  std_logic_vector(24 downto 0);
-    p_coefs_x : out b25_real_array(0 to n_points/4-1);
-    p_coefs_y : out b25_real_array(0 to n_points/4-1);
-    ready     : out std_logic
+    clock : in  std_logic;
+    reset : in  std_logic;
+    start : in  std_logic;
+    x_i   : in  std_logic_vector(24 downto 0);
+    y_i   : in  std_logic_vector(24 downto 0);
+    x_k   : in  std_logic_vector(24 downto 0);
+    y_k   : in  std_logic_vector(24 downto 0);
+    p     : out b25_complex;
+    ready : out std_logic
   );
 end entity hadamard;
 
@@ -26,7 +22,7 @@ architecture synth of hadamard is
   -- Control unit
   signal j_end, mul_ready, rotation : std_logic;
   signal cordic_mode, flux_mode     : std_logic_vector(1 downto 0);
-  signal run_flux, run_coefs        : std_logic := '0';
+  signal run_flux        : std_logic := '0';
 
   -- CORDIC control
   signal j : unsigned(cordic_len_log-1 downto 0) := (others => '0');
@@ -49,20 +45,19 @@ architecture synth of hadamard is
   signal sc_x_out, sc_y_out, sc_z_out : std_logic_vector(24 downto 0);
   signal sc_sig_in, sc_sig_out        : std_logic := '0';
 
-  -- Multiplier
-  signal prod_r, prod_r_l            : std_logic_vector(24 downto 0) := (others => '0');
-  signal prod_z, prod_pi             : std_logic_vector(24 downto 0) := (others => '0');
-  signal prod_z_mod, prod_z_mux      : std_logic_vector(24 downto 0) := (others => '0');
-  signal prod_z_cor, prod_z_cor_l    : std_logic_vector(24 downto 0) := (others => '0');
-  signal mul_a, mul_a_nex            : std_logic_vector(23 downto 0) := (others => '0');
-  signal mul_b, mul_b_nex            : std_logic_vector(23 downto 0) := (others => '0');
-  signal coefs_x, neg_coefs_x        : b25_real_array(0 to n_points/4-1) := (others => (others => '0'));
-  signal coefs_y, neg_coefs_y        : b25_real_array(0 to n_points/4-1) := (others => (others => '0'));
-  signal prod_quadrant               : std_logic_vector(1 downto 0) := (others => '0');
+  -- Multipliers
+  signal prod_r, prod_r_l         : std_logic_vector(24 downto 0) := (others => '0');
+  signal prod_z, prod_pi          : std_logic_vector(24 downto 0) := (others => '0');
+  signal prod_z_mod, prod_z_mux   : std_logic_vector(24 downto 0) := (others => '0');
+  signal prod_z_cor, prod_z_cor_l : std_logic_vector(24 downto 0) := (others => '0');
+  signal mul_a, mul_a_nex         : std_logic_vector(23 downto 0) := (others => '0');
+  signal mul_b, mul_b_nex         : std_logic_vector(23 downto 0) := (others => '0');
+  signal prod_quadrant            : std_logic_vector( 1 downto 0) := (others => '0');
+  signal kmul_in_x, kmul_out_x    : std_logic_vector(24 downto 0) := (others => '0');
+  signal kmul_in_y, kmul_out_y    : std_logic_vector(24 downto 0) := (others => '0');
 
   -- Output
-  signal coefs_x_sel, coefs_y_sel : b25_real_array(0 to n_points/4-1);
-  signal p_coefs_x_s, p_coefs_y_s : b25_real_array(0 to n_points/4-1) := (others => (others => '0'));
+  signal out_x_sel, out_y_sel     : std_logic_vector(24 downto 0);
 
 begin
 
@@ -81,18 +76,14 @@ begin
 
   -- Flux Multiplier
   flux_mul : component flux_multiplier
-    generic map (n_idx)
     port map (
       clock     => clock,
       reset     => (mul_ready and j_end) or reset,
       run       => run_flux,
-      run_coefs => run_coefs,
       a         => mul_a,
       b         => mul_b,
       a_nex     => mul_a_nex,
       b_nex     => mul_b_nex,
-      coefs_x   => coefs_x,
-      coefs_y   => coefs_y,
       p         => prod_r,
       ready     => mul_ready
     );
@@ -127,6 +118,23 @@ begin
       sigma_out => sc_sig_out
     );
 
+  -- K-correction Constant Multipliers
+  kmul_x : component b25_kmul
+    generic map (
+      con => b25_kcon
+    )
+    port map (
+      a   => kmul_in_x,
+      res => kmul_out_x
+    );
+  kmul_y : component b25_kmul
+    generic map (
+      con => b25_kcon
+    )
+    port map (
+      a   => kmul_in_y,
+      res => kmul_out_y
+    );
 
 
   -- i/k normalization to Q1 (signs preserved in input)
@@ -176,24 +184,33 @@ begin
           pc_y_in   <= y_i_abs;
           pc_z_in   <= 25x"0";
           pc_sig_in <= not rotation;
+          kmul_in_x <= (others => '0');
+          kmul_in_y <= (others => '0');
 
         when "10" =>
           pc_x_in   <= pc_x_out;
           pc_y_in   <= pc_y_out;
           pc_z_in   <= pc_z_out;
           pc_sig_in <= pc_sig_out;
+          kmul_in_x <= pc_x_out;      -- Might cause unnecesary power usage
+          kmul_in_y <= pc_y_out;
+
 
         when "11" =>
           pc_x_in   <= prod_r_l;
-          pc_y_in   <= 25x"0";
+          pc_y_in   <= (others => '0');
           pc_z_in   <= prod_z_cor_l;
           pc_sig_in <= not rotation;
+          kmul_in_x <= (others => '0');
+          kmul_in_y <= (others => '0');
 
         when others =>
           pc_x_in   <= pc_x_in;
           pc_y_in   <= pc_y_in;
           pc_z_in   <= pc_z_in;
           pc_sig_in <= pc_sig_in;
+          kmul_in_x <= pc_x_out;
+          kmul_in_y <= pc_y_out;
       end case;
     end if;
   end process pc_cor_pro;
@@ -245,7 +262,6 @@ begin
           mul_a_nex <= 24x"0";
           mul_b_nex <= 24x"0";
           run_flux  <= '0';
-          run_coefs <= '0';
 
         when "01" =>
           mul_a     <= pc_x_in(23 downto 0);
@@ -253,7 +269,6 @@ begin
           mul_a_nex <= pc_x_out(23 downto 0);
           mul_b_nex <= sc_x_out(23 downto 0);
           run_flux  <= '1';
-          run_coefs <= '0';
 
         when "10" =>
           mul_a     <= pc_x_in(23 downto 0);
@@ -261,7 +276,6 @@ begin
           mul_a_nex <= pc_x_out(23 downto 0);
           mul_b_nex <= pc_y_out(23 downto 0);
           run_flux  <= '1';
-          run_coefs <= '1';
 
         when others =>
           mul_a     <= mul_a;
@@ -269,7 +283,6 @@ begin
           mul_a_nex <= mul_a_nex;
           mul_b_nex <= mul_b_nex;
           run_flux  <= '1';
-          run_coefs <= '0';
       end case;
     end if;
   end process flux_pro;
@@ -391,29 +404,20 @@ begin
   
   -- Apply normalization to output
 
-  gen_mul_negs : for i in 0 to n_points/4-1 generate
-    neg_coefs_x(i) <= not coefs_x(i)(24) & coefs_x(i)(23 downto 0);
-    neg_coefs_y(i) <= not coefs_y(i)(24) & coefs_y(i)(23 downto 0);
-  end generate gen_mul_negs;
+  with prod_x select out_x_sel <=
+    kmul_out_x when '0',
+    (not kmul_out_x(24) & kmul_out_x(23 downto 0)) when others;
 
-  with prod_x select coefs_x_sel <=
-    coefs_x when '0',
-    neg_coefs_x when others;
-
-  with prod_y select coefs_y_sel <=
-    coefs_y when '0',
-    neg_coefs_y when others;
+  with prod_y select out_y_sel <=
+    kmul_out_y when '0',
+    (not kmul_out_y(24) & kmul_out_y(23 downto 0)) when others;
 
   outp_reg : process (clock) begin
     if rising_edge(clock) then
       if (ready = '0') then
-        p_coefs_x_s <= coefs_x_sel;
-        p_coefs_y_s <= coefs_y_sel;
+        p <= (out_x_sel, out_y_sel);
       end if;
     end if;
   end process outp_reg;
-
-  p_coefs_x <= p_coefs_x_s;
-  p_coefs_y <= p_coefs_y_s;
 
 end architecture synth;
