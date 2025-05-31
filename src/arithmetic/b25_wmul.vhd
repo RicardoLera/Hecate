@@ -3,7 +3,6 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  use ieee.math_real.all;
 
 entity b25_wmul is
   generic (
@@ -15,12 +14,8 @@ entity b25_wmul is
   );
 end entity b25_wmul;
 
-
 architecture karatsuba of b25_wmul is -- 3 constant multipliers + 3 adders
-
-  constant wn : b25_complex := twiddle_lut(w);
   signal   s1, k1, k2, k3, re, im : std_logic_vector(24 downto 0);
-
 begin
 
   add_s1 : component b25_add
@@ -30,16 +25,16 @@ begin
       res => s1 -- a+b
     );
 
-  cmul_k1 : component b25_cmul
+  cmul_k1 : component b25_kmul
     generic map (
-      con => wn(0)
+      con => twiddle_lut(w)(0)
     )
     port map (
       a   => s1,
       res => k1 -- c*(a+b)
     );
   
-  cmul_k2 : component b25_cmul
+  cmul_k2 : component b25_kmul
     generic map (
       con => w_add_lut(w)(0) -- s2 = c+d
     )
@@ -48,7 +43,7 @@ begin
       res => k2 -- b*(c+d)
     );
 
-  cmul_k3 : component b25_cmul
+  cmul_k3 : component b25_kmul
     generic map (
       con => w_add_lut(w)(1) -- s3 = d-c
     )

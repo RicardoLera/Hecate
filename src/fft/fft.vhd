@@ -39,7 +39,7 @@ begin
 
   -- Generate complex constant multiplers
   gen_wmul : for w in 1 to n_points/2-1 generate -- e.g., w1~w15 for N=32
-    gen_wmul2 : for m in 0 to n_points/4-1 generate
+    gen_wmul2 : for m in 0 to n_points/8-1 generate -- max needed mults for w /= 0 and n_points/4
       gen_wmul3 : if (w /= n_points/4) generate
 
         wmul_sel_if : if (fft_nmul_lut(w)(m)) generate 

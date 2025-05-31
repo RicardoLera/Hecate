@@ -1,15 +1,14 @@
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
 
 entity hadamard_uc is
   port (
-    clock, start, reset    : in     std_logic;
-    mul_ready               : in     std_logic;
-    cordic_mode, flux_mode : out    std_logic_vector(1 downto 0);
-    rotation               : out    std_logic;
-    ready                  : buffer std_logic
+    clock, start, reset    : in  std_logic;
+    mul_ready              : in  std_logic;
+    cordic_mode, flux_mode : out std_logic_vector(1 downto 0);
+    rotation               : out std_logic;
+    ready                  : out std_logic
   );
 end entity hadamard_uc;
 

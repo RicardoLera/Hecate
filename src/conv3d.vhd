@@ -1,5 +1,4 @@
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -54,11 +53,11 @@ begin
           );
         
         macc : process(clk)
-          constant pad_x : natural := kx-1;
-          constant pad_y : natural := ky-1;
-          constant pad_z : natural := kz-1;
-          variable ixi, iyi, izi : natural := 0;
-          variable kxi, kyi, kzi : natural := 0;
+          constant pad_x : integer := kx-1;
+          constant pad_y : integer := ky-1;
+          constant pad_z : integer := kz-1;
+          variable ixi, iyi, izi : integer := 0;
+          variable kxi, kyi, kzi : integer := 0;
         begin
           if (rising_edge(clk)) then
             if (rst) then

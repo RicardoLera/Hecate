@@ -4,38 +4,32 @@ library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
-entity cordic is
-  generic (
-    j_len      : natural := 5;
-    coords_len : natural := 25
-  );
-
-  -- 36, 34, 5, 25
+entity cordic is -- 36, 34, 5, 25
   port (
     sigma_in  : in    std_logic := '0';
     rotation  : in    std_logic;
-    j         : in    std_logic_vector(j_len - 1 downto 0);
-    x_in      : in    std_logic_vector(coords_len - 1 downto 0);
-    y_in      : in    std_logic_vector(coords_len - 1 downto 0);
-    z_in      : in    std_logic_vector(coords_len - 1 downto 0);
-    x_out     : out   std_logic_vector(coords_len - 1 downto 0);
-    y_out     : out   std_logic_vector(coords_len - 1 downto 0);
-    z_out     : out   std_logic_vector(coords_len - 1 downto 0);
+    j         : in    unsigned(cordic_len_log-1 downto 0);
+    x_in      : in    std_logic_vector(24 downto 0);
+    y_in      : in    std_logic_vector(24 downto 0);
+    z_in      : in    std_logic_vector(24 downto 0);
+    x_out     : out   std_logic_vector(24 downto 0);
+    y_out     : out   std_logic_vector(24 downto 0);
+    z_out     : out   std_logic_vector(24 downto 0);
     sigma_out : out   std_logic
   );
 end entity cordic;
 
 architecture synth of cordic is
 
-  signal shifted_x, shifted_y : std_logic_vector(coords_len - 1 downto 0);
-  signal x_add,     y_add     : std_logic_vector(coords_len - 1 downto 0);
-  signal z_add                : std_logic_vector(coords_len - 1 downto 0) := (others => '0');
+  signal shifted_x, shifted_y : std_logic_vector(25 - 1 downto 0);
+  signal x_add,     y_add     : std_logic_vector(25 - 1 downto 0);
+  signal z_add                : std_logic_vector(25 - 1 downto 0) := (others => '0');
 
 begin
 
-  shift_x : component varshiftright
+  shift_x : component var_srl
     generic map (
-      len => coords_len
+      len => 25
     )
     port map (
       data     => x_in,
@@ -43,9 +37,9 @@ begin
       result   => shifted_x
     );
 
-  shift_y : component varshiftright
+  shift_y : component var_srl
     generic map (
-      len => coords_len
+      len => 25
     )
     port map (
       data     => y_in,
@@ -75,12 +69,12 @@ begin
     );
 
   with sigma_in select y_add <=
-    not shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when '0', -- x-s_y when '0',
-    shifted_y(coords_len - 1) & shifted_y(coords_len - 2 downto 0) when others;  -- x+s_y when others;
+    not shifted_y(25 - 1) & shifted_y(25 - 2 downto 0) when '0', -- x-s_y when '0',
+    shifted_y(25 - 1) & shifted_y(25 - 2 downto 0) when others;  -- x+s_y when others;
 
   with sigma_in select x_add <=
-    shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when '0',        -- y+s_x when '0'
-    not shifted_x(coords_len - 1) & shifted_x(coords_len - 2 downto 0) when others; -- y-s_x when others;
+    shifted_x(25 - 1) & shifted_x(25 - 2 downto 0) when '0',        -- y+s_x when '0'
+    not shifted_x(25 - 1) & shifted_x(25 - 2 downto 0) when others; -- y-s_x when others;
 
   with sigma_in select z_add <=
     '1' & std_logic_vector(arctan_lut(to_integer(unsigned(j)))) when '0',    -- z-lut when '0'

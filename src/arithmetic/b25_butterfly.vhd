@@ -5,14 +5,12 @@ library ieee;
 
 entity b25_butterfly is
   port (
-    i_top, i_bot : in    b25_complex;
-    o_top, o_bot : out   b25_complex
+    i_top, i_bot : in  b25_complex;
+    o_top, o_bot : out b25_complex
   );
 end entity b25_butterfly;
 
-architecture synth of b25_butterfly is
-
-begin
+architecture synth of b25_butterfly is begin
 
   add_top1 : component b25_add
     port map (

@@ -1,5 +1,4 @@
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -9,16 +8,16 @@ entity hadamard is
     n_idx : natural := 0
   );
   port (
-    clock     : in    std_logic;
-    reset     : in    std_logic;
-    start     : in    std_logic;
-    x_i       : in    std_logic_vector(24 downto 0);
-    y_i       : in    std_logic_vector(24 downto 0);
-    x_k       : in    std_logic_vector(24 downto 0);
-    y_k       : in    std_logic_vector(24 downto 0);
-    p_coefs_x : out   b25_real_array(0 to n_points/4-1);
-    p_coefs_y : out   b25_real_array(0 to n_points/4-1);
-    ready     : buffer std_logic
+    clock     : in  std_logic;
+    reset     : in  std_logic;
+    start     : in  std_logic;
+    x_i       : in  std_logic_vector(24 downto 0);
+    y_i       : in  std_logic_vector(24 downto 0);
+    x_k       : in  std_logic_vector(24 downto 0);
+    y_k       : in  std_logic_vector(24 downto 0);
+    p_coefs_x : out b25_real_array(0 to n_points/4-1);
+    p_coefs_y : out b25_real_array(0 to n_points/4-1);
+    ready     : out std_logic
   );
 end entity hadamard;
 
@@ -29,8 +28,8 @@ architecture synth of hadamard is
   signal cordic_mode, flux_mode     : std_logic_vector(1 downto 0);
   signal run_flux, run_coefs        : std_logic := '0';
 
-  -- J control
-  signal j : std_logic_vector(4 downto 0) := (others => '0');
+  -- CORDIC control
+  signal j : unsigned(cordic_len_log-1 downto 0) := (others => '0');
 
   -- Sign treatment
   signal x_i_abs, y_i_abs     : std_logic_vector(24 downto 0);
@@ -100,7 +99,6 @@ begin
 
   -- Primary CORDIC
   pri_cordic : component cordic
-    generic map (j_len => 5, coords_len => 25)
     port map (
       sigma_in  => pc_sig_in,
       rotation  => rotation,
@@ -116,7 +114,6 @@ begin
   
   -- Secondary CORDIC     
   sec_cordic : component cordic
-    generic map (j_len => 5, coords_len => 25)
     port map (
       sigma_in  => sc_sig_in,
       rotation  => '0',
@@ -148,18 +145,18 @@ begin
 
       case cordic_mode is
         when "10" =>
-          if (unsigned(j) < to_unsigned(24, 5)) then
-            j <= std_logic_vector(unsigned(j) + to_unsigned(1, 5));
+          if (j < cordic_len-1) then
+            j <= j + 1;
           end if;
-        when "01"   => j <= 5x"0";
-        when "11"   => j <= 5x"0";
+        when "01"   => j <= (others => '0');
+        when "11"   => j <= (others => '0');
         when others => j <= j;
       end case;
 
     end if;
   end process j_control_pro;
 
-  j_end <= '1' when unsigned(j) >= to_unsigned(24, 5) else '0';
+  j_end <= '1' when j = cordic_len-1 else '0';
 
 
 

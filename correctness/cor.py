@@ -46,44 +46,71 @@ arrToHex = np.vectorize(toHex)
 # img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
 # ker = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.int8)
 
-# 3D Test
-# img = np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
-# ker = np.array([1, 0.5, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0], dtype=np.float64)
-
+# 3D Test (2x2x2)
 img = np.array(
   [
-    1, 1, 1, 0, 0,
-    1, 1, 1, 0, 0,
-    1, 1, 1, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    
-    1, 1, 1, 0, 0,
-    1, 1, 1, 0, 0,
-    1, 1, 1, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    
-    1, 1, 1, 0, 0,
-    1, 1, 1, 0, 0,
-    1, 1, 1, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
+    1, 1, 0,
+    1, 1, 0,
+    0, 0, 0,
 
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0,
+    1, 1, 0,
+    1, 1, 0,
+    0, 0, 0,
+    
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0
   ], dtype=np.float64)
 
-ker = img
+ker = np.array(
+  [
+    1, 0.5, 0,
+    1, 1, 0,
+    0, 0, 0,
+
+    1, 1, 0,
+    1, 1, 0,
+    0, 0, 0,
+    
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0
+  ], dtype=np.float64)
+
+# 3D Test (3x3x3)
+# img = np.array(
+#   [
+#     1, 1, 1, 0, 0,
+#     1, 1, 1, 0, 0,
+#     1, 1, 1, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+    
+#     1, 1, 1, 0, 0,
+#     1, 1, 1, 0, 0,
+#     1, 1, 1, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+    
+#     1, 1, 1, 0, 0,
+#     1, 1, 1, 0, 0,
+#     1, 1, 1, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+    
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#     0, 0, 0, 0, 0,
+#   ], dtype=np.float64)
+# ker = img
 
 # Random array test
 # img = np.random.rand(8)
@@ -104,6 +131,8 @@ IMG = np.fft.fft(img, spsize)
 # print(arrToHex(np.imag(IMG)))
 KER = np.fft.fft(ker, spsize)
 # print(arrToHex(np.real(KER)))
+# print(arrToHex(np.imag(KER)))
+
 
 # CORDIC rect -> polar
 mIMG = np.abs(IMG) * kcor
@@ -114,14 +143,14 @@ pKER = np.angle(KER)
 # Hadamard
 mHAD = mIMG * mKER / spsize
 pHAD = pIMG + pKER
-print(arrToHex(np.real(mHAD)))
+# print(arrToHex(np.real(mHAD)))
 
 # CORDIC polar -> rect
 HAD = mHAD * np.exp(1j*pHAD) * kcor
 
 # IFFT
 had = np.fft.ifft(HAD, np.size(HAD)) * spsize /  pow(kcor,3)
-print(arrToHex(np.real(had)))
+# print(arrToHex(np.real(had)))
 
 
 
@@ -174,4 +203,4 @@ axs[2][1].plot(np.linspace(0, np.size(had) - 1, np.size(had)), had, linestyle='-
 axs[2][1].set_xlabel("2*N - 1")
 axs[2][1].grid(True, which="both")
 
-plot.show()
+# plot.show()

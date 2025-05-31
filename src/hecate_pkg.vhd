@@ -29,8 +29,11 @@ package hecate_pkg is
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
   constant the_log        : natural := natural(log2(real(n_points)));
 
+  constant cordic_len     : natural := 25;
+  constant cordic_len_log : natural := natural(ceil(log2(real(cordic_len))));
+
   attribute rom_style of 
-    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, n_points_nopad, n_points, the_log
+    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
 : constant is "block";
 
   -- I/O
@@ -119,7 +122,7 @@ package hecate_pkg is
 
   -- Component declarations
 
-  component b25_cmul is
+  component b25_kmul is
     generic (
       con : std_logic_vector(24 downto 0)
     );
@@ -162,13 +165,13 @@ package hecate_pkg is
     );
   end component b25_butterfly;
 
-  component varshiftright is
+  component var_srl is
     generic (
       len : natural := 8
     );
     port (
       data     : in    std_logic_vector(len - 1 downto 0);
-      distance : in    std_logic_vector(natural(ceil(log2(real(len)))) - 1 downto 0);
+      distance : in    unsigned(cordic_len_log-1 downto 0);
       result   : out   std_logic_vector(len - 1 downto 0)
     );
   end component;
@@ -195,28 +198,23 @@ package hecate_pkg is
 
   component adder_carry is
     port (
-      a   : in    std_logic_vector(49 downto 0);
-      b   : in    std_logic_vector(49 downto 0);
+      a, b: in    std_logic_vector(48 downto 0);
       cin : in    std_logic;
-      o   : out   std_logic_vector(49 downto 0)
+      o   : out   std_logic_vector(48 downto 0)
     );
   end component;
 
   component cordic is
-    generic (
-      j_len      : natural := 5;
-      coords_len : natural := 25
-    );
     port (
-      sigma_in  : in    std_logic;
+      sigma_in  : in    std_logic := '0';
       rotation  : in    std_logic;
-      j         : in    std_logic_vector(j_len - 1 downto 0);
-      x_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      y_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      z_in      : in    std_logic_vector(coords_len - 1 downto 0);
-      x_out     : out   std_logic_vector(coords_len - 1 downto 0);
-      y_out     : out   std_logic_vector(coords_len - 1 downto 0);
-      z_out     : out   std_logic_vector(coords_len - 1 downto 0);
+      j         : in    unsigned(cordic_len_log-1 downto 0);
+      x_in      : in    std_logic_vector(24 downto 0);
+      y_in      : in    std_logic_vector(24 downto 0);
+      z_in      : in    std_logic_vector(24 downto 0);
+      x_out     : out   std_logic_vector(24 downto 0);
+      y_out     : out   std_logic_vector(24 downto 0);
+      z_out     : out   std_logic_vector(24 downto 0);
       sigma_out : out   std_logic
     );
   end component;
@@ -227,9 +225,9 @@ package hecate_pkg is
       reset_s  : in    std_logic;
       reset_as : in    std_logic;
       load     : in    std_logic;
-      inp      : in    std_logic_vector(23 downto 0);
-      nex      : in    std_logic_vector(23 downto 0);
-      outp     : out   std_logic_vector(23 downto 0);
+      inp      : in    std_logic_vector(cordic_len-2 downto 0);
+      nex      : in    std_logic_vector(cordic_len-2 downto 0);
+      outp     : out   std_logic_vector(cordic_len-2 downto 0);
       new_bit  : out   std_logic;
       ready    : out   std_logic;
       erro     : out   std_logic
@@ -258,11 +256,11 @@ package hecate_pkg is
 
   component hadamard_uc is
     port (
-      clock, start, reset    : in     std_logic;
-      mul_ready              : in     std_logic;
-      cordic_mode, flux_mode : out    std_logic_vector(1 downto 0);
-      rotation               : out    std_logic;
-      ready                  : buffer std_logic
+      clock, start, reset    : in  std_logic;
+      mul_ready              : in  std_logic;
+      cordic_mode, flux_mode : out std_logic_vector(1 downto 0);
+      rotation               : out std_logic;
+      ready                  : out std_logic
     );
   end component;
 
@@ -271,16 +269,16 @@ package hecate_pkg is
       n_idx : natural := 0
     );
     port (
-      clock     : in    std_logic;
-      reset     : in    std_logic;
-      start     : in    std_logic;
-      x_i       : in    std_logic_vector(24 downto 0);
-      y_i       : in    std_logic_vector(24 downto 0);
-      x_k       : in    std_logic_vector(24 downto 0);
-      y_k       : in    std_logic_vector(24 downto 0);
-      p_coefs_x : out   b25_real_array(0 to n_points/4-1);
-      p_coefs_y : out   b25_real_array(0 to n_points/4-1);
-      ready     : buffer std_logic
+      clock     : in  std_logic;
+      reset     : in  std_logic;
+      start     : in  std_logic;
+      x_i       : in  std_logic_vector(24 downto 0);
+      y_i       : in  std_logic_vector(24 downto 0);
+      x_k       : in  std_logic_vector(24 downto 0);
+      y_k       : in  std_logic_vector(24 downto 0);
+      p_coefs_x : out b25_real_array(0 to n_points/4-1);
+      p_coefs_y : out b25_real_array(0 to n_points/4-1);
+      ready     : out std_logic
     );
   end component;
 
@@ -465,7 +463,7 @@ package body hecate_pkg is
   function fft_nmul_idx (w, m : natural) return boolean is
     variable valid_gen : boolean := false;
   begin
-    for s in 1 to the_log-2 loop
+    for s in 0 to the_log-2 loop
       if ((w mod (2**s) = 0) and (m < 2**s)) then
         valid_gen := true;
       end if;
@@ -492,28 +490,17 @@ package body hecate_pkg is
 
   -- b25 w add function (synth-time)
   function w_add_synth (a, b : std_logic_vector(24 downto 0)) return std_logic_vector is
-    variable sa, sb, add : signed(23 downto 0);
-    variable res : std_logic_vector(24 downto 0);
+    variable a_2c, b_2c, r_2c, res : std_logic_vector(24 downto 0);
   begin
-    sa := 
-      -signed(a(23 downto 0))
-        when (a(24)) else
-      signed(a(23 downto 0));
-
-    sb :=
-      -signed(b(23 downto 0))
-        when (b(24)) else
-      signed(b(23 downto 0));
-    
-    add := sa + sb;
-
-    res(23 downto 0) :=
-      std_logic_vector(-add)
-        when add(add'left) else
-      std_logic_vector(add);
-        
-    res(24) := add(add'left);
-    return res;
+  
+    assert (not (a(23) nand b(23))) report "b25_add OVERFLOW" severity warning;
+  
+    a_2c := (std_logic_vector(unsigned('1' & not a(23 downto 0)) + 1)) when a(24) else a; 
+    b_2c := (std_logic_vector(unsigned('1' & not b(23 downto 0)) + 1)) when b(24) else b; 
+    r_2c := std_logic_vector(unsigned(a_2c) + unsigned(b_2c));      
+    res  := (std_logic_vector(unsigned('1' & not r_2c(23 downto 0)) + 1)) when r_2c(24) else r_2c; 
+  
+    return std_logic_vector(res);
   end function;
 
 
@@ -601,10 +588,10 @@ package body hecate_pkg is
   end function build_k_twiddle;
 
   function build_fft_nmul_idx return bool_2d_array is
-    variable res : bool_2d_array(1 to n_points/2-1)(0 to n_points/4-1);
+    variable res : bool_2d_array(1 to n_points/2-1)(0 to n_points/8-1);
   begin
     for w in 1 to n_points/2-1 loop
-      for m in 0 to n_points/4-1 loop
+      for m in 0 to n_points/8-1 loop
         res(w)(m) := fft_nmul_idx(w,m);
       end loop;
     end loop;

@@ -2,11 +2,10 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std_unsigned.all;
-  use std.env.stop;
 
 entity fft_tb is
   port (
-    inp   : in b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+    inp   : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     ram   : out b25_complex_array(0 to n_points/2);
     clock : in std_logic := '0';
     ready : out std_logic := '0'
@@ -66,7 +65,7 @@ begin
     start <= '0';
     wait for 1 ms;
     simulate <= '0';
-    stop;
+    wait;
 
   end process test;
 

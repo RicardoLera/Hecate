@@ -49,7 +49,7 @@ else
     top_module="dft_tb"
   
   elif [ "$1" = "fft" ] ; then
-    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd fft_rom.vhd"
+    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd function_rom.vhd"
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
@@ -79,8 +79,8 @@ else
 
   ghdl -i --std=08 $comp_files
   ghdl -m --std=08 $top_module
-  ghdl -e --std=08 $top_module
-  ghdl -r --std=08 $top_module --ieee-asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
+  ghdl -e --std=08 $top_module 
+  ghdl -r --std=08 $top_module --asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
   rm *.o
   rm "$(echo $top_module | awk '{print $1;}')"-"$(echo $top_module | awk '{print $2;}')"
 

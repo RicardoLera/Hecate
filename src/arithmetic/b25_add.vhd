@@ -1,41 +1,80 @@
+-- Adding sign-magnitude to two's-complement
+
+-- Example: [-3 + 2 = -1] = b3_111 + b3_010 = b3_101
+-- b3_111 => 2c3_001 [b3(sign) = 1 -> 1'00' +1 = 2c3_101]
+-- b3_010 => 2c3_010 [b3(sign) = 0 -> b3_010 = 2c3_010]
+-- 2c3_101 + 2c3_010 = 2c3_111
+-- 2c3_111 => b3_101 [2c3(sign) = 1 -> 1'00' +1 = b3_101]
+
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
 entity b25_add is
   port (
-    a   : in    std_logic_vector(24 downto 0);
-    b   : in    std_logic_vector(24 downto 0);
-    res : out   std_logic_vector(24 downto 0)
+    a, b : in  std_logic_vector(24 downto 0); -- 25-bit_sign-magnitude [SMM]
+    res  : out std_logic_vector(24 downto 0)  -- 25-bit_sign-magnitude [SMM] (overflow bit ignored)
   );
 end entity b25_add;
 
-architecture arch of b25_add is
-
-  signal sa, sb, add : signed(23 downto 0);
-
+architecture synth of b25_add is
+  signal a_2c, b_2c, r_2c : std_logic_vector(24 downto 0); -- [SCC]
 begin
-
-  sa <= 
-    -signed(a(23 downto 0))
-      when (a(24)) else
-    signed(a(23 downto 0));
-
-  sb <=
-    -signed(b(23 downto 0))
-      when (b(24)) else
-    signed(b(23 downto 0));
   
-  add <= sa + sb;
+  assert (not (a(23) nand b(23))) report "b25_add OVERFLOW" severity warning;
+  
+  a_2c <= (std_logic_vector(unsigned('1' & not a(23 downto 0)) + 1)) when a(24) else a; 
+  b_2c <= (std_logic_vector(unsigned('1' & not b(23 downto 0)) + 1)) when b(24) else b; 
+  r_2c <= std_logic_vector(unsigned(a_2c) + unsigned(b_2c));      
+  res  <= (std_logic_vector(unsigned('1' & not r_2c(23 downto 0)) + 1)) when r_2c(24) else r_2c; 
 
-  res(23 downto 0) <=
-    std_logic_vector(-add)
-      when add(add'left) else
-    std_logic_vector(add);
-      
-  res(24) <= add(add'left);
+end architecture synth;
 
-end architecture arch;
+
+
+
+  -- -- [convert sm_xbit to 2c_xbit]
+  -- a_2c <=
+  --   ('1' & std_logic_vector(resize(unsigned(not  a(a'left-1 downto 0)  )+1, a'length-1)))
+  --     when a(a'left) else
+  --   a;
+  -- b_2c <=
+  --   ('1' & std_logic_vector(resize(unsigned(not  b(b'left-1 downto 0)  )+1, b'length-1)))
+  --     when b(b'left) else
+  --   b;
+
+  -- -- [2c_(x+1)bit = 2c_xbit + 2c_xbit]
+  -- r_2c <= std_logic_vector(unsigned(a_2c) + unsigned(b_2c));
+
+  -- -- [convert 2c_(x+1)bit to sm_xbit (overflow ignores highest magnitude bit)]
+  -- res <=
+  --   ('1' & std_logic_vector(resize(unsigned(not  r_2c(r_2c'left-1 downto 0)  )+1, r_2c'length-1)))
+  --     when r_2c(r_2c'left) else
+  --   r_2c; 
+
+  -- --assert () report "b25_add OVERFLOW" severity warning;
+
+  -- -- r_sm <= (r_2c(r_2c'left) & signed(resize(unsigned(not r_2c(r_2c'left-1 downto 0))+1, r_2c'length-1)));
+  -- -- res  <= std_logic_vector(resize(r_sm, r_sm'length-1));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

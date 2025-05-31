@@ -1,5 +1,4 @@
   use work.hecate_pkg.all;
-  
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -7,7 +6,7 @@ library ieee;
 
 entity hecate_oa_tb is
   generic (
-    test_n : natural := 1
+    test_n : natural := 2
   );
   port (
     rom_serial_i : in  std_logic_vector(24 downto 0) := (others => '0');
