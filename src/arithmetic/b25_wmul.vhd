@@ -25,7 +25,7 @@ begin
       res => s1 -- a+b
     );
 
-  cmul_k1 : component b25_kmul
+  kmul_k1 : component b25_kmul
     generic map (
       con => twiddle_lut(w)(0)
     )
@@ -34,7 +34,7 @@ begin
       res => k1 -- c*(a+b)
     );
   
-  cmul_k2 : component b25_kmul
+  kmul_k2 : component b25_kmul
     generic map (
       con => w_add_lut(w)(0) -- s2 = c+d
     )
@@ -43,7 +43,7 @@ begin
       res => k2 -- b*(c+d)
     );
 
-  cmul_k3 : component b25_kmul
+  kmul_k3 : component b25_kmul
     generic map (
       con => w_add_lut(w)(1) -- s3 = d-c
     )

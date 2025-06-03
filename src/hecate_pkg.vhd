@@ -38,7 +38,7 @@ package hecate_pkg is
 
   attribute rom_style of 
     ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
-: constant is "block";
+  : constant is "block";
 
   -- I/O
   -- type b8_array is array (natural range <>) of std_logic_vector(7 downto 0);  -- maybe make these into records
