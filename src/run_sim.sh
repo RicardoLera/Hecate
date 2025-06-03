@@ -45,11 +45,11 @@ else
     top_module="lsp_tb"
 
   elif [ "$1" = "dft" ] ; then
-    comp_files="hecate_pkg.vhd dft/dft.vhd dft/dft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd"
+    comp_files="hecate_pkg.vhd dft/dft.vhd dft/dft_tb.vhd arithmetic/b25_kmul.vhd arithmetic/b25_add.vhd"
     top_module="dft_tb"
   
   elif [ "$1" = "fft" ] ; then
-    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_cmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd function_rom.vhd"
+    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/b25_kmul.vhd arithmetic/b25_add.vhd arithmetic/b25_wmul.vhd arithmetic/b25_butterfly.vhd function_rom.vhd"
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
