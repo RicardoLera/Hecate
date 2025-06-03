@@ -24,16 +24,18 @@ end entity hecate_oa_tb;
 
 architecture sim of hecate_oa_tb is
 
-  signal clk, sta : std_logic := '0';
-  signal rst      : std_logic := '1';
-  signal img      : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal ker      : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+  signal clk, sta  : std_logic := '0';
+  signal rst       : std_logic := '1';
+  signal img       : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal ker       : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+  signal slice_rdy : std_logic;
 
   signal res, gold        : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
   signal o_ready, g_ready : std_logic;
 
   signal keep_simulating  : std_logic := '0';
   constant clockperiod    : time      := 1 ns;
+  constant seed : natural := 0;
 
   impure function rand_slv(len : natural; s1 : natural; s2 : natural) return std_logic_vector is
     variable r : real;
@@ -69,7 +71,8 @@ begin
       reset => rst,
       start => sta,
       res   => res,
-      ready => o_ready
+      ready => o_ready,
+      slice_ready => slice_rdy
     );
 
   golden : component conv3d
@@ -84,7 +87,8 @@ begin
     );
 
   test : process
-    variable t1, t2, test_time, t_mean, t_max, t_min : time := 0 ns;
+    variable t1, t2, test_time,  t_mean, t_max, t_min : time := 0 ns;
+    variable s1, s2, slice_time, s_mean, s_max, s_min : time := 0 ns;
     variable test_res, pnt : natural  := 0;
     variable err, err_mean : std_logic_vector(23 downto 0) := (others => '0');
   begin
@@ -92,24 +96,24 @@ begin
     rst <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      -- rand_arr(img, n+1, iz, iy, ix);
-      -- rand_arr(ker, n+2, kz, ky, kx);
+      rand_arr(img, seed+n+1, iz, iy, ix);
+      rand_arr(ker, seed+n+2, kz, ky, kx);
 
-      img_loop_z : for z in 0 to iz-1 loop
-        img_loop_y : for y in 0 to iy-1 loop
-          img_loop_x : for x in 0 to ix-1 loop
-            img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-          end loop img_loop_x;
-        end loop img_loop_y;
-      end loop img_loop_z;
+      -- img_loop_z : for z in 0 to iz-1 loop
+      --   img_loop_y : for y in 0 to iy-1 loop
+      --     img_loop_x : for x in 0 to ix-1 loop
+      --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --     end loop img_loop_x;
+      --   end loop img_loop_y;
+      -- end loop img_loop_z;
 
-      ker_loop_z : for z in 0 to kz-1 loop
-        ker_loop_y : for y in 0 to ky-1 loop
-          ker_loop_x : for x in 0 to kx-1 loop
-            ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-          end loop ker_loop_x;
-        end loop ker_loop_y;
-      end loop ker_loop_z;
+      -- ker_loop_z : for z in 0 to kz-1 loop
+      --   ker_loop_y : for y in 0 to ky-1 loop
+      --     ker_loop_x : for x in 0 to kx-1 loop
+      --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --     end loop ker_loop_x;
+      --   end loop ker_loop_y;
+      -- end loop ker_loop_z;
 
       -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
       -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
@@ -117,8 +121,20 @@ begin
       wait for 5 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;
 
-      wait until (o_ready and g_ready); t2 := now;
+      calc_slice_z : for z in 0 to slice_z-1 loop
+        calc_slice_y : for y in 0 to slice_y-1 loop
+          calc_slice_x : for x in 0 to slice_x-1 loop
+            s1 := now; wait until (slice_rdy); s2 := now;
+            slice_time := s2-s1;
+            s_mean := s_mean + slice_time;
+            if (slice_time > s_max) then s_max := slice_time; end if;
+            if (slice_time < s_min or s_min = 0 ns) then s_min := slice_time; end if;
+            report "test(" & natural'image(n) & ") slice(" & natural'image(z) & ")(" & natural'image(y) & ")(" & natural'image(x) & ")" & "   Time = " & natural'image(slice_time / clockperiod ) & " cycles";
+          end loop calc_slice_x;
+        end loop calc_slice_y;
+      end loop calc_slice_z;
 
+      wait until (o_ready and g_ready); t2 := now;
       test_time := t2-t1;
       t_mean := t_mean + test_time;
       if (test_time > t_max) then t_max := test_time; end if;
@@ -149,12 +165,17 @@ begin
     end loop test_loop;
 
     t_mean   := t_mean / test_n;
+    s_mean := s_mean / (test_n*slice_x*slice_y*slice_z);
+
     err_mean := std_logic_vector(unsigned(err_mean) / to_unsigned(oz*oy*ox, 24));
 
     report "Passed tests = " & natural'image(test_res) & " out of " & natural'image(test_n);
     report "Max test time = " & natural'image(t_max / clockperiod ) & " cycles";
     report "Min test time = " & natural'image(t_min / clockperiod ) & " cycles";
-    report "Average test time = " & real'image(real(t_mean / (1 fs)) * 1.0/1000000.0) & " cycles";
+    report "Average test time = " & natural'image(natural((real(t_mean / (1 fs)) * 1.0/1000000.0))) & " cycles";
+    report "Max slice time = " & natural'image(s_max / clockperiod ) & " cycles";
+    report "Min slice time = " & natural'image(s_min / clockperiod ) & " cycles";
+    report "Average slice time = " & natural'image(natural((real(s_mean / (1 fs)) * 1.0/1000000.0))) & " cycles";
     report "Average precision error = " & to_hstring(err_mean(23 downto 16)) & "." & to_hstring(err_mean(15 downto 0));
 
     keep_simulating <= '0';

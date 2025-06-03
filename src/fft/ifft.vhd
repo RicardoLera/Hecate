@@ -18,10 +18,10 @@ architecture synth of ifft is
 
   signal state : natural range 0 to the_log+1 := 0; -- state 1 is synchronous start
 
-  signal in_raster         : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
-  signal bfly_in, bfly_out : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
-  signal wmul_in, wmul_out : b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/4-1) := (others => (others => (others => (others => '0'))));
-  signal out_buff          : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal in_raster, in_scramble : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal bfly_in, bfly_out      : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
+  signal wmul_in, wmul_out      : b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/4-1) := (others => (others => (others => (others => '0'))));
+  signal out_buff               : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
 begin
 
@@ -84,6 +84,7 @@ begin
       in_raster(n)(0) <= i(n_points-n)(0);
       in_raster(n)(1) <= (not i(n_points-n)(1)(24) & i(n_points-n)(1)(23 downto 0));
     end generate gen_n_if;
+    in_scramble(scramble_lut(n)) <= in_raster(n);
   end generate gen_n;
 
   -- MUX Arrays
@@ -108,7 +109,7 @@ begin
 
       with state select bfly_in(b)(tb) <=
         (others => (others => '0')) when 0,
-        in_raster(bfly_lut_rev(1)(b)(tb)) when 1,
+        in_scramble(bfly_lut_rev(1)(b)(tb)) when 1,
         bfly_in_reg when others;
 
     end generate gen_mux_bfly2;
@@ -146,13 +147,13 @@ begin
     '1' when (state=the_log+1) else
     '0';
 
-  --Output Layer (unrasterize and unscramble)
+  --Output Layer (unrasterize)
   gen_z : for z in 0 to nz-1 generate
     gen_y : for y in 0 to ny-1 generate
       gen_x : for x in 0 to nx-1 generate
         constant idx : natural := x + y*nx + z*nx*ny;
       begin
-        o(z)(y)(x) <= out_buff(scramble_lut(idx))(0) when s_ready = '1' else (others => '0');
+        o(z)(y)(x) <= out_buff(idx)(0) when s_ready = '1' else (others => '0');
       end generate gen_x;
     end generate gen_y;
   end generate gen_z;

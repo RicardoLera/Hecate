@@ -9,7 +9,8 @@ entity hecate_oa is
     ker                 : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clock, reset, start : in std_logic;
     res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-    ready               : out std_logic := '0'
+    ready               : out std_logic := '0';
+    slice_ready         : out std_logic := '0'
   );
 end entity hecate_oa;
 
@@ -18,9 +19,6 @@ end entity hecate_oa;
 -- This arch is optimized in terms of area. It uses 1 hecate and 1 fft
 architecture area_opt of hecate_oa is
 
-  constant slice_x              : natural := ix/kx;
-  constant slice_y              : natural := iy/ky;
-  constant slice_z              : natural := iz/kz;
   signal   sx, sy, sz           : natural := 0;
 
   signal acc                    : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
@@ -163,6 +161,7 @@ begin
       end if;
     end if;
   end process proc_slice;
+  slice_ready <= acc_ready;
   res <= acc;
 
 end architecture area_opt;

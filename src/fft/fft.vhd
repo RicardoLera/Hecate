@@ -5,7 +5,7 @@ library ieee;
   use ieee.numeric_std.all;
   use ieee.math_real.all;
 
--- Note: this FFT returns the complex conjugate compared to cor.py. It's a matter twiddle factor selection (counterclockwise vs clockwise) and it cancels out in the IDFT, but it's worth noting
+-- Note: this FFT returns the complex conjugate compared to cor.py. It's a matter twiddle factor selection (counterclockwise vs clockwise) and it cancels out in the IFFT, but it's worth noting
 entity fft is
   port (
     i                   : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);

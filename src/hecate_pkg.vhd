@@ -25,15 +25,19 @@ package hecate_pkg is
   constant ny : natural := (2*ky-1);
   constant nz : natural := (2*kz-1);
 
+  constant slice_x : natural := ix/kx;
+  constant slice_y : natural := iy/ky;
+  constant slice_z : natural := iz/kz;
+
   constant n_points_nopad : natural := nx*ny*nz;
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
   constant the_log        : natural := natural(log2(real(n_points)));
 
-  constant cordic_len     : natural := 25;
+  constant cordic_len     : natural := 20;
   constant cordic_len_log : natural := natural(ceil(log2(real(cordic_len))));
 
   attribute rom_style of 
-    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
+    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
 : constant is "block";
 
   -- I/O
@@ -290,7 +294,8 @@ package hecate_pkg is
       ker                 : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
       clock, reset, start : in std_logic;
       res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-      ready               : out std_logic := '0'
+      ready               : out std_logic := '0';
+      slice_ready         : out std_logic := '0'
     );
   end component;
 
