@@ -33,47 +33,42 @@ package hecate_pkg is
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
   constant the_log        : natural := natural(log2(real(n_points)));
 
-  constant cordic_len     : natural := 20;
+  constant cordic_len     : natural := 25;
   constant cordic_len_log : natural := natural(ceil(log2(real(cordic_len))));
 
   attribute rom_style of 
     ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
   : constant is "block";
 
-  -- I/O
-  -- type b8_array is array (natural range <>) of std_logic_vector(7 downto 0);  -- maybe make these into records
-  -- type b8_2d_array is array (natural range <>) of b8_array;
-  -- type b8_3d_array is array (natural range <>) of b8_2d_array;
-  -- type b8_array_signed is array (natural range <>) of signed(7 downto 0);
-  -- type b8_2d_array_signed is array (natural range <>) of b8_array_signed;
-  -- type b8_3d_array_signed is array (natural range <>) of b8_2d_array_signed;
+  -- Signed 25-bit types
+  type s25_real_array is array (natural range <>) of signed(24 downto 0);
+  type s25_double_array is array (natural range <>) of signed(49 downto 0);
+  type s25_complex is array (0 to 1) of signed(24 downto 0);
+  type s25_complex_array is array (natural range <>) of s25_complex;
+  type s25_2d_real_array is array (natural range <>) of s25_real_array;
+  type s25_3d_real_array is array (natural range <>) of s25_2d_real_array;
+  type s25_2d_complex_array is array (natural range <>) of s25_complex_array;
+  type s25_3d_complex_array is array (natural range <>) of s25_2d_complex_array;
 
-  -- 25-bit types
+  -- SLV 25-bit types
   type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);
   type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
   type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
-  type b25_complex_array is array (natural range <>) of b25_complex;
-
-  type b25_2d_real_array is array (natural range <>) of b25_real_array;
-  type b25_3d_real_array is array (natural range <>) of b25_2d_real_array;
-  type b25_2d_complex_array is array (natural range <>) of b25_complex_array;
-  type b25_3d_complex_array is array (natural range <>) of b25_2d_complex_array;
+  type b25_complex_array is array (natural range <>) of s25_complex;
+  type b25_2d_real_array is array (natural range <>) of s25_real_array;
+  type b25_3d_real_array is array (natural range <>) of s25_2d_real_array;
+  type b25_2d_complex_array is array (natural range <>) of s25_complex_array;
+  type b25_3d_complex_array is array (natural range <>) of s25_2d_complex_array;
   
   -- Hadamard state list
-  type t_state is (initial, vector_flux, pre_rot, rot_coef, final);
+  type t_state is (initial, vector_flux, pre_rot, rot_kmul, final);
 
 
-
-
-
-
-
-
-  -- Constants (ROM)
+    -- Constants (ROM)
 
   -- Flux Mul k-correction
   constant kcon     : real := 0.2239282404699562528386872156786372562;
-  constant b25_kcon : std_logic_vector(24 downto 0) := std_logic_vector(to_unsigned(natural(65536.0*(kcon)), 25));
+  constant b25_kcon : std_logic_vector(24 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*(kcon)), 25));
 
   -- Pi constants for angle normalization
   constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
@@ -124,75 +119,53 @@ package hecate_pkg is
 
   -- Component declarations
 
-  component b25_kmul is
-    generic (
-      con : std_logic_vector(24 downto 0)
-    );
-    port (
-      a   : in  std_logic_vector(24 downto 0);
-      res : out std_logic_vector(24 downto 0)
-    );
-  end component;
-
-  component b25_wmul is
-    generic (
-      w : natural
-    );
-    port (
-      i : in  b25_complex;
-      o : out b25_complex
-    );
-  end component b25_wmul;
-
-  component b25_mul is
-    port (
-      a   : in  std_logic_vector(24 downto 0);
-      b   : in  std_logic_vector(24 downto 0);
-      res : out std_logic_vector(24 downto 0)
-    );
-  end component;
-
   component b25_add is
     port (
       a   : in  std_logic_vector(24 downto 0);
       b   : in  std_logic_vector(24 downto 0);
       res : out std_logic_vector(24 downto 0)
     );
-  end component;
+    end component;
 
-  component b25_butterfly is
-    port (
-      i_top, i_bot : in  b25_complex;
-      o_top, o_bot : out b25_complex
+  component b25_kmul is
+    generic (
+      con : std_logic_vector(24 downto 0)
     );
-  end component b25_butterfly;
+    port (
+      a   : in    std_logic_vector(24 downto 0);
+      res : out   std_logic_vector(24 downto 0)
+    );
+  end component b25_kmul;
+
+  component s25_wmul is
+    generic (
+      w : natural
+    );
+    port (
+      i : in  s25_complex;
+      o : out s25_complex
+    );
+  end component s25_wmul;
+
+  component s25_butterfly is
+    port (
+      i_top, i_bot : in  s25_complex;
+      o_top, o_bot : out s25_complex
+    );
+  end component s25_butterfly;
 
   component var_srl is
-    generic (
-      len : natural := 8
-    );
     port (
-      data     : in    std_logic_vector(len - 1 downto 0);
+      data     : in    std_logic_vector(24 downto 0);
       distance : in    unsigned(cordic_len_log-1 downto 0);
-      result   : out   std_logic_vector(len - 1 downto 0)
-    );
-  end component;
-
-  component dft is
-    port (
-      i       : in    b25_real_array(0 to 7);
-      o       : out   b25_complex_array(0 to 16);
-      clock   : in    std_logic;
-      start   : in    std_logic;
-      reset   : in    std_logic;
-      s_ready : out   std_logic
+      result   : out   std_logic_vector(24 downto 0)
     );
   end component;
 
   component fft is
     port (
-      i                   : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-      o                   : out b25_complex_array(0 to n_points/2);
+      i                   : in  s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+      o                   : out s25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
       s_ready             : out std_logic
     );
@@ -200,8 +173,8 @@ package hecate_pkg is
 
   component ifft is
     port (
-      i                   : in  b25_complex_array(0 to n_points/2);
-      o                   : out b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+      i                   : in  s25_complex_array(0 to n_points/2);
+      o                   : out s25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
       clock, reset, start : in  std_logic;
       s_ready             : out std_logic
     );
@@ -256,11 +229,10 @@ package hecate_pkg is
 
   component hadamard_uc is
     port (
-      clock, start, reset    : in  std_logic;
-      mul_ready              : in  std_logic;
-      cordic_mode, flux_mode : out std_logic_vector(1 downto 0);
-      rotation               : out std_logic;
-      ready                  : out std_logic
+      clock, start, reset               : in  std_logic;
+      polar_latch_ready, j_end          : in  std_logic;
+      cordic_mode                       : out std_logic_vector(1 downto 0);
+      ready, rotation, flux_run, kx_run : out std_logic
     );
   end component;
 
@@ -269,31 +241,29 @@ package hecate_pkg is
       clock : in  std_logic;
       reset : in  std_logic;
       start : in  std_logic;
-      x_i   : in  std_logic_vector(24 downto 0);
-      y_i   : in  std_logic_vector(24 downto 0);
-      x_k   : in  std_logic_vector(24 downto 0);
-      y_k   : in  std_logic_vector(24 downto 0);
-      p     : out b25_complex;
+      img   : in  s25_complex;
+      ker   : in  s25_complex;
+      p     : out s25_complex;
       ready : out std_logic
     );
   end component;
 
   component hecate is
     port (
-      img_transf          : in  b25_complex_array(0 to n_points/2);
-      ker_transf          : in  b25_complex_array(0 to n_points/2);
+      img_transf          : in  s25_complex_array(0 to n_points/2);
+      ker_transf          : in  s25_complex_array(0 to n_points/2);
       clock, reset, start : in  std_logic;
-      res                 : out b25_complex_array(0 to n_points/2);
+      res                 : out s25_complex_array(0 to n_points/2);
       ready               : out std_logic
     );
   end component;
 
   component hecate_oa is
     port (
-      img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-      ker                 : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+      img                 : in s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+      ker                 : in s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
       clock, reset, start : in std_logic;
-      res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
+      res                 : out s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
       ready               : out std_logic := '0';
       slice_ready         : out std_logic := '0'
     );
@@ -301,12 +271,12 @@ package hecate_pkg is
 
   component conv3d is
     port (
-      img : in  b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-      ker : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+      img : in  s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+      ker : in  s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
       clk : in  std_logic;
       rst : in  std_logic;
       run : in  std_logic;
-      res : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
+      res : out s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
       rdy : out std_logic
     );
   end component conv3d;
@@ -337,22 +307,21 @@ package hecate_pkg is
   function wmul_idx      (s, n     : natural) return natural_trio;
   function bfly_idx_rev  (s, b, tb : natural) return natural;
   function wmul_idx_rev  (s, w, m  : natural) return natural;
-  function twiddle       (inp      : natural) return b25_complex;
-  function k_twiddle     (inp      : natural) return std_logic_vector;
+  function twiddle       (inp      : natural) return s25_complex;
+  function k_twiddle     (inp      : natural) return signed;
   function fft_nmul_idx  (w, m     : natural) return boolean;
   function idft_nmul_idx (n, w     : natural) return boolean;
-  function w_add_synth   (a, b     : std_logic_vector(24 downto 0)) return std_logic_vector;
 
   function build_scramble_idx  return natural_array;
   function build_bfly_idx      return natural_pair_2d_array;
   function build_wmul_idx      return natural_trio_2d_array;
   function build_bfly_idx_rev  return natural_3d_array;
   function build_wmul_idx_rev  return natural_3d_array;
-  function build_twiddle       return b25_complex_array;
-  function build_k_twiddle     return b25_real_array;
+  function build_twiddle       return s25_complex_array;
+  function build_k_twiddle     return s25_real_array;
   function build_fft_nmul_idx  return bool_2d_array;
   function build_idft_nmul_idx return bool_2d_array;
-  function build_w_add_synth   return b25_complex_array;
+  function build_w_add_synth   return s25_complex_array;
 
 end package hecate_pkg;
 
@@ -434,29 +403,21 @@ package body hecate_pkg is
   end function;
 
   -- Generic twiddle function
-  function twiddle (inp : natural) return b25_complex is
+  function twiddle (inp : natural) return s25_complex is
     constant base : real := 2.0*MATH_PI/real(n_points);
-    variable x : b25_complex;
+    variable x : s25_complex;
   begin
-    if ((inp > n_points/4) and (inp < 3*n_points/4)) then -- R negative
-      x(0) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(n_points/2-inp) * base)), 17)));
-    else
-      x(0) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*cos(real(inp) * base)), 17)));
-    end if;
-    if ((inp > n_points/2) and (inp < n_points)) then -- I negative
-      x(1) := ('1', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(n_points-inp) * base)), 17)));
-    else
-      x(1) := ('0', "0000000", std_logic_vector(to_unsigned(natural(65536.0*sin(real(inp) * base)), 17)));
-    end if;
-    return b25_complex(x);
+    x(0) := to_signed(integer((2.0**16)*cos(real(inp) * base)), 25);
+    x(1) := to_signed(integer((2.0**16)*sin(real(inp) * base)), 25);
+    return s25_complex(x);
   end function;
 
   -- K-corrected twiddle function
-  function k_twiddle (inp : natural) return std_logic_vector is
+  function k_twiddle (inp : natural) return signed is
     constant base : real := MATH_PI/real(n_points/2);
-    variable x : std_logic_vector(24 downto 0);
+    variable x : signed(24 downto 0);
   begin
-    x := '0' & std_logic_vector(to_unsigned(natural(65536.0*(cos(real(inp) * base) * kcon)), 24));
+    x := to_signed(natural((2.0**16)*(cos(real(inp) * base) * kcon)), 25);
     return x;
   end function;
 
@@ -487,21 +448,6 @@ package body hecate_pkg is
       end if;
     end loop;
     return valid_gen;
-  end function;
-
-  -- b25 w add function (synth-time)
-  function w_add_synth (a, b : std_logic_vector(24 downto 0)) return std_logic_vector is
-    variable a_2c, b_2c, r_2c, res : std_logic_vector(24 downto 0);
-  begin
-  
-    assert (not (a(23) nand b(23))) report "synth add OVERFLOW" severity warning;
-  
-    a_2c := (std_logic_vector(unsigned('1' & not a(23 downto 0)) + 1)) when a(24) else a; 
-    b_2c := (std_logic_vector(unsigned('1' & not b(23 downto 0)) + 1)) when b(24) else b; 
-    r_2c := std_logic_vector(unsigned(a_2c) + unsigned(b_2c));      
-    res  := (std_logic_vector(unsigned('1' & not r_2c(23 downto 0)) + 1)) when r_2c(24) else r_2c; 
-  
-    return std_logic_vector(res);
   end function;
 
 
@@ -570,8 +516,8 @@ package body hecate_pkg is
     return res;
   end function build_wmul_idx_rev;
 
-  function build_twiddle return b25_complex_array is
-    variable res : b25_complex_array(1 to n_points-1);
+  function build_twiddle return s25_complex_array is
+    variable res : s25_complex_array(1 to n_points-1);
   begin
     for n in 1 to n_points-1 loop
       res(n) := twiddle(n);
@@ -579,8 +525,8 @@ package body hecate_pkg is
     return res;
   end function build_twiddle;
 
-  function build_k_twiddle return b25_real_array is
-    variable res : b25_real_array(0 to n_points/4-1);
+  function build_k_twiddle return s25_real_array is
+    variable res : s25_real_array(0 to n_points/4-1);
   begin
     for n in 0 to n_points/4-1 loop
       res(n) := k_twiddle(n);
@@ -610,12 +556,12 @@ package body hecate_pkg is
     return res;
   end function build_idft_nmul_idx;
 
-  function build_w_add_synth return b25_complex_array is
-    variable res : b25_complex_array(1 to n_points-1);
+  function build_w_add_synth return s25_complex_array is
+    variable res : s25_complex_array(1 to n_points-1);
   begin
     for w in 1 to n_points-1 loop
-      res(w)(0) := w_add_synth(twiddle(w)(0), twiddle(w)(1)); -- c+d
-      res(w)(1) := w_add_synth(twiddle(w)(1), (not twiddle(w)(0)(24) & twiddle(w)(0)(23 downto 0))); -- d-c
+      res(w)(0) := twiddle(w)(0) + twiddle(w)(1); -- c+d
+      res(w)(1) := twiddle(w)(1) - twiddle(w)(0); -- d-c
     end loop;
     return res;
   end function build_w_add_synth;

@@ -16,13 +16,13 @@ entity ram_3d is
     addr0        : in  std_logic_vector(integer(ceil(log2(real(num_addr))))   downto 0);
     addr1        : in  std_logic_vector(integer(ceil(log2(real(num_rams))))   downto 0);
     addr2        : in  std_logic_vector(integer(ceil(log2(real(num_blocks)))) downto 0);
-    din          : in  std_logic_vector(24 downto 0);
-    dout         : out std_logic_vector(24 downto 0)
+    din          : in  signed(24 downto 0);
+    dout         : out signed(24 downto 0)
   );
 end ram_3d;
 
 architecture arch of ram_3d is
-  signal mem : b25_3d_real_array(num_blocks-1 downto 0)(num_rams-1 downto 0)(num_addr-1 downto 0);
+  signal mem : s25_3d_real_array(num_blocks-1 downto 0)(num_rams-1 downto 0)(num_addr-1 downto 0);
 begin
   dout <= mem(to_integer(unsigned(addr2)))(to_integer(unsigned(addr1)))(to_integer(unsigned(addr0))) when ena else (others => '0');
   process (clk) begin

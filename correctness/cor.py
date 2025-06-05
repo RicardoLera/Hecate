@@ -64,7 +64,7 @@ img = np.array(
 
 ker = np.array(
   [
-    1, 0.5, 0,
+    1, 1, 0,
     1, 1, 0,
     0, 0, 0,
 
@@ -139,6 +139,8 @@ mIMG = np.abs(IMG) * kcor
 pIMG = np.angle(IMG)
 mKER = np.abs(KER) * kcor
 pKER = np.angle(KER)
+# print(arrToHex(mIMG))
+# print(arrToHex(pIMG))
 
 # Hadamard
 mHAD = mIMG * mKER / spsize
@@ -146,10 +148,13 @@ pHAD = pIMG + pKER
 # print(arrToHex(np.real(mHAD)))
 
 # CORDIC polar -> rect
-HAD = mHAD * np.exp(1j*pHAD) * kcor
+HAD = mHAD * np.exp(1j*pHAD) * kcor / pow(kcor,3)
+print(arrToHex(np.real(HAD)))
+print(arrToHex(np.imag(HAD)))
+
 
 # IFFT
-had = np.fft.ifft(HAD, np.size(HAD)) * spsize /  pow(kcor,3)
+had = np.fft.ifft(HAD, np.size(HAD)) * spsize / pow(kcor,3)
 # print(arrToHex(np.real(had)))
 
 

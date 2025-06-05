@@ -1,10 +1,9 @@
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
-entity cordic is -- 36, 34, 5, 25
+entity cordic is
   port (
     sigma_in  : in    std_logic := '0';
     rotation  : in    std_logic;
@@ -28,9 +27,6 @@ architecture synth of cordic is
 begin
 
   shift_x : component var_srl
-    generic map (
-      len => 25
-    )
     port map (
       data     => x_in,
       distance => j,
@@ -38,9 +34,6 @@ begin
     );
 
   shift_y : component var_srl
-    generic map (
-      len => 25
-    )
     port map (
       data     => y_in,
       distance => j,

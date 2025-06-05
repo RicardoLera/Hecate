@@ -9,9 +9,9 @@ entity hecate_oa_tb is
     test_n : natural := 2
   );
   port (
-    rom_serial_i : in  std_logic_vector(24 downto 0) := (others => '0');
-    rom_serial_k : in  std_logic_vector(24 downto 0) := (others => '0');
-    ram_serial   : out std_logic_vector(24 downto 0) := (others => '0');
+    rom_serial_i : in  signed(24 downto 0) := (others => '0');
+    rom_serial_k : in  signed(24 downto 0) := (others => '0');
+    ram_serial   : out signed(24 downto 0) := (others => '0');
     clock, start : in  std_logic := '0';
     reset        : in  std_logic := '1';
     ready        : out std_logic := '0'
@@ -26,20 +26,20 @@ architecture sim of hecate_oa_tb is
 
   signal clk, sta  : std_logic := '0';
   signal rst       : std_logic := '1';
-  signal img       : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal ker       : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+  signal img       : s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal ker       : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
   signal slice_rdy : std_logic;
 
-  signal res, gold        : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
+  signal res, gold        : s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
   signal o_ready, g_ready : std_logic;
 
   signal keep_simulating  : std_logic := '0';
   constant clockperiod    : time      := 1 ns;
   constant seed : natural := 0;
 
-  impure function rand_slv(len : natural; s1 : natural; s2 : natural) return std_logic_vector is
+  impure function rand_slv(len : natural; s1 : natural; s2 : natural) return signed is
     variable r : real;
-    variable slv : std_logic_vector(len - 1 downto 0);
+    variable slv : signed(len - 1 downto 0);
     variable seed1 : positive := s1;
     variable seed2 : positive := s2;
   begin
@@ -50,7 +50,7 @@ architecture sim of hecate_oa_tb is
     return slv;
   end function;
 
-  procedure rand_arr(signal arr : out b25_3d_real_array; constant offset, size_z, size_y, size_x : in natural) is begin
+  procedure rand_arr(signal arr : out s25_3d_real_array; constant offset, size_z, size_y, size_x : in natural) is begin
     for z in 0 to size_z-1 loop
       for y in 0 to size_y-1 loop
         for x in 0 to size_x-1 loop
@@ -90,41 +90,41 @@ begin
     variable t1, t2, test_time,  t_mean, t_max, t_min : time := 0 ns;
     variable s1, s2, slice_time, s_mean, s_max, s_min : time := 0 ns;
     variable test_res, pnt : natural  := 0;
-    variable err, err_mean : std_logic_vector(23 downto 0) := (others => '0');
+    variable err, err_mean : unsigned(24 downto 0) := (others => '0');
   begin
     keep_simulating <= '1';
     rst <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      rand_arr(img, seed+n+1, iz, iy, ix);
-      rand_arr(ker, seed+n+2, kz, ky, kx);
+      -- rand_arr(img, seed+n+1, iz, iy, ix);
+      -- rand_arr(ker, seed+n+2, kz, ky, kx);
 
-      -- img_loop_z : for z in 0 to iz-1 loop
-      --   img_loop_y : for y in 0 to iy-1 loop
-      --     img_loop_x : for x in 0 to ix-1 loop
-      --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-      --     end loop img_loop_x;
-      --   end loop img_loop_y;
-      -- end loop img_loop_z;
+      img_loop_z : for z in 0 to iz-1 loop
+        img_loop_y : for y in 0 to iy-1 loop
+          img_loop_x : for x in 0 to ix-1 loop
+            img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+          end loop img_loop_x;
+        end loop img_loop_y;
+      end loop img_loop_z;
 
-      -- ker_loop_z : for z in 0 to kz-1 loop
-      --   ker_loop_y : for y in 0 to ky-1 loop
-      --     ker_loop_x : for x in 0 to kx-1 loop
-      --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-      --     end loop ker_loop_x;
-      --   end loop ker_loop_y;
-      -- end loop ker_loop_z;
+      ker_loop_z : for z in 0 to kz-1 loop
+        ker_loop_y : for y in 0 to ky-1 loop
+          ker_loop_x : for x in 0 to kx-1 loop
+            ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+          end loop ker_loop_x;
+        end loop ker_loop_y;
+      end loop ker_loop_z;
 
       -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
       -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
 
-      wait for 5 * clockperiod;
+      wait for 4 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;
 
       calc_slice_z : for z in 0 to slice_z-1 loop
         calc_slice_y : for y in 0 to slice_y-1 loop
           calc_slice_x : for x in 0 to slice_x-1 loop
-            s1 := now; wait until (slice_rdy); s2 := now;
+            s1 := now; wait until (slice_rdy) for 10 ms; s2 := now;
             slice_time := s2-s1;
             s_mean := s_mean + slice_time;
             if (slice_time > s_max) then s_max := slice_time; end if;
@@ -134,7 +134,7 @@ begin
         end loop calc_slice_y;
       end loop calc_slice_z;
 
-      wait until (o_ready and g_ready); t2 := now;
+      wait until (o_ready and g_ready) for 10 ms; t2 := now;
       test_time := t2-t1;
       t_mean := t_mean + test_time;
       if (test_time > t_max) then t_max := test_time; end if;
@@ -144,8 +144,8 @@ begin
       calc_error_z : for z in 0 to oz-1 loop
         calc_error_y : for y in 0 to oy-1 loop
           calc_error_x : for x in 0 to ox-1 loop
-            err := std_logic_vector(abs(signed(gold(z)(y)(x)(23 downto 0)) - signed(res(z)(y)(x)(23 downto 0))));
-            err_mean := std_logic_vector(unsigned(err_mean) + unsigned(err));
+            err := unsigned(abs(gold(z)(y)(x) - res(z)(y)(x)));
+            err_mean := unsigned(err_mean) + unsigned(err);
 
             if (unsigned(err) < x"1000") then
               pnt := pnt + 1;
@@ -160,14 +160,13 @@ begin
       end if;
 
       rst <= '1'; sta <= '0';
-      wait for 5 * clockperiod;
       
     end loop test_loop;
 
     t_mean   := t_mean / test_n;
     s_mean := s_mean / (test_n*slice_x*slice_y*slice_z);
 
-    err_mean := std_logic_vector(unsigned(err_mean) / to_unsigned(oz*oy*ox, 24));
+    err_mean := unsigned(err_mean) / to_unsigned(oz*oy*ox, 25);
 
     report "Passed tests = " & natural'image(test_res) & " out of " & natural'image(test_n);
     report "Max test time = " & natural'image(t_max / clockperiod ) & " cycles";
@@ -176,7 +175,7 @@ begin
     report "Max slice time = " & natural'image(s_max / clockperiod ) & " cycles";
     report "Min slice time = " & natural'image(s_min / clockperiod ) & " cycles";
     report "Average slice time = " & natural'image(natural((real(s_mean / (1 fs)) * 1.0/1000000.0))) & " cycles";
-    report "Average precision error = " & to_hstring(err_mean(23 downto 16)) & "." & to_hstring(err_mean(15 downto 0));
+    report "Average precision error = " & to_hstring(err_mean(24 downto 16)) & "." & to_hstring(err_mean(15 downto 0));
 
     keep_simulating <= '0';
     wait;
@@ -190,12 +189,12 @@ end architecture sim;
 
 architecture synth of hecate_oa_tb is
 
-  signal img : b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal ker : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-  signal res : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
+  signal img : s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal ker : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+  signal res : s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
   signal oa_ready, oa_start, serial_i_ready, serial_k_ready : std_logic := '0';
 
-  -- constant test_ker : b25_3d_real_array(0 to 7)(0 to 3)(0 to 3) := (others => (others => (others => ((others => ('0'))))));      -- Specific K
+  -- constant test_ker : s25_3d_real_array(0 to 7)(0 to 3)(0 to 3) := (others => (others => (others => ((others => ('0'))))));      -- Specific K
 
 begin
 

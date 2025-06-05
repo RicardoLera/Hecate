@@ -6,19 +6,17 @@ library ieee;
 
 entity hecate is
   port (
-    img_transf          : in  b25_complex_array(0 to n_points/2);
-    ker_transf          : in  b25_complex_array(0 to n_points/2);
+    img_transf          : in  s25_complex_array(0 to n_points/2);
+    ker_transf          : in  s25_complex_array(0 to n_points/2);
     clock, reset, start : in  std_logic;
-    res                 : out b25_complex_array(0 to n_points/2);
+    res                 : out s25_complex_array(0 to n_points/2);
     ready               : out std_logic
   );
 end entity hecate;
 
 architecture synth of hecate is
-
   signal ready_had           : std_logic_vector(0 to n_points/2);
   signal hads_ready, s_ready : std_logic := '0';
-
 begin
 
   hads_ready  <= and(ready_had);
@@ -36,15 +34,13 @@ begin
   gen_calc_vals : for id in 0 to n_points/2 generate
     had : component hadamard
       port map (
-        clock     => clock,
-        reset     => reset,
-        start     => start,
-        x_i       => img_transf(id)(0),
-        y_i       => img_transf(id)(1),
-        x_k       => ker_transf(id)(0),
-        y_k       => ker_transf(id)(1),
-        p         => res(id),
-        ready     => ready_had(id)
+        clock => clock,
+        reset => reset,
+        start => start,
+        img   => img_transf(id),
+        ker   => ker_transf(id),
+        p     => res(id),
+        ready => ready_had(id)
       );
   end generate gen_calc_vals;
 

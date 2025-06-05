@@ -5,10 +5,10 @@ library ieee;
   
 entity hecate_oa is
   port (
-    img                 : in b25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-    ker                 : in b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    img                 : in s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+    ker                 : in s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clock, reset, start : in std_logic;
-    res                 : out b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
+    res                 : out s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
     ready               : out std_logic := '0';
     slice_ready         : out std_logic := '0'
   );
@@ -21,22 +21,22 @@ architecture area_opt of hecate_oa is
 
   signal   sx, sy, sz           : natural := 0;
 
-  signal acc                    : b25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
-  signal ker_transf             : b25_complex_array(0 to n_points/2); -- LATCH
+  signal acc                    : s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
+  signal ker_transf             : s25_complex_array(0 to n_points/2); -- LATCH
   signal acc_ready, ker_ready   : std_logic := '0'; -- LATCH
 
-  signal fft_in                 : b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
-  signal fft_out                : b25_complex_array(0 to n_points/2);
+  signal fft_in                 : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
+  signal fft_out                : s25_complex_array(0 to n_points/2);
   signal fft_start, fft_ready   : std_logic := '0';
   signal fft_reset              : std_logic := '1';
 
-  signal hec_img, hec_ker       : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
-  signal hec_out                : b25_complex_array(0 to n_points/2);
+  signal hec_img, hec_ker       : s25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal hec_out                : s25_complex_array(0 to n_points/2);
   signal hec_start, hec_ready   : std_logic := '0';
   signal hec_reset              : std_logic := '1';
 
-  signal ifft_in                : b25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
-  signal ifft_out, ifft_acc     : b25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+  signal ifft_in                : s25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal ifft_out, ifft_acc     : s25_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
   signal ifft_start, ifft_ready : std_logic := '0';
   signal ifft_reset             : std_logic := '1';
 
@@ -76,18 +76,7 @@ begin
   gen_oa_adds_z : for z in 0 to nz-1 generate
     gen_oa_adds_y : for y in 0 to ny-1 generate
       gen_oa_adds_x : for x in 0 to nx-1 generate
-        signal temp_acc : std_logic_vector(24 downto 0);
-      begin
-
-        temp_acc <= acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
-
-        oa_add : component b25_add
-          port map (
-            a   => temp_acc,
-            b   => ifft_out(z)(y)(x),
-            res => ifft_acc(z)(y)(x)
-          );
-
+        ifft_acc(z)(y)(x) <= ifft_out(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
       end generate gen_oa_adds_x;
     end generate gen_oa_adds_y;
   end generate gen_oa_adds_z;
@@ -188,17 +177,17 @@ end architecture area_opt;
 --   constant hec_y : natural := iy/2;
 --   constant hec_z : natural := iz/2;
 
---   signal ker_transf : b25_complex_array(0 to 16);
+--   signal ker_transf : s25_complex_array(0 to 16);
 --   signal ready_ker  : std_logic;
 
 --   signal trigger_arr : std_logic_vector(0 to hec_x*hec_y*hec_z-1);
 --   signal trigger     : std_logic;
 --   signal ready_arr   : std_logic_vector(0 to ox*oy*oz-1) := (others => '0');
 
---   type b25_4d_real_array is array (natural range <>) of b25_3d_real_array;
---   type b25_5d_real_array is array (natural range <>) of b25_4d_real_array;
---   type b25_6d_real_array is array (natural range <>) of b25_5d_real_array;
---   signal hec : b25_6d_real_array(0 to hec_z-1)(0 to hec_y-1)(0 to hec_x-1)(0 to 2)(0 to 2)(0 to 2);
+--   type s25_4d_real_array is array (natural range <>) of s25_3d_real_array;
+--   type s25_5d_real_array is array (natural range <>) of s25_4d_real_array;
+--   type s25_6d_real_array is array (natural range <>) of s25_5d_real_array;
+--   signal hec : s25_6d_real_array(0 to hec_z-1)(0 to hec_y-1)(0 to hec_x-1)(0 to 2)(0 to 2)(0 to 2);
   
 -- begin
 
@@ -216,7 +205,7 @@ end architecture area_opt;
 --   gen_hec_z : for hz in 0 to hec_z-1 generate
 --     gen_hec_y : for hy in 0 to hec_y-1 generate
 --       gen_hec_x : for hx in 0 to hec_x-1 generate
---         signal slice : b25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
+--         signal slice : s25_3d_real_array(0 to 1)(0 to 1)(0 to 1);
 --       begin
 --         slice <= (
 --           ( ( img(hz*2  )(hy*2  )(hx*2  ),

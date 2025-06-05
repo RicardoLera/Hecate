@@ -9,35 +9,26 @@ end entity hadamard_tb;
 architecture sim of hadamard_tb is
 
   signal reset, start : std_logic;
-  signal x_i          : std_logic_vector(24 downto 0);
-  signal y_i          : std_logic_vector(24 downto 0);
-  signal x_k          : std_logic_vector(24 downto 0);
-  signal y_k          : std_logic_vector(24 downto 0);
-  signal p_coefs_x    : b25_real_array(0 to n_points/4-1);
-  signal p_coefs_y    : b25_real_array(0 to n_points/4-1);
+  signal img, ker, p  : s25_complex;
   signal ready        : std_logic;
 
   signal   clk             : std_logic := '0';
   signal   keep_simulating : std_logic := '0';
-  constant clockperiod     : time      := 1 ms;
+  constant clockperiod     : time      := 1 ns;
 
 begin
 
   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hadamard
-    generic map (1)
     port map (
-      clock     => clk,
-      reset     => reset,
-      start     => start,
-      x_i       => x_i,
-      y_i       => y_i,
-      x_k       => x_k,
-      y_k       => y_k,
-      p_coefs_x => p_coefs_x,
-      p_coefs_y => p_coefs_y,
-      ready     => ready
+      clock => clk,
+      reset => reset,
+      start => start,
+      img   => img,
+      ker   => ker,
+      p     => p,
+      ready => ready
     );
 
   -- values going into hadamard at n_idx=1

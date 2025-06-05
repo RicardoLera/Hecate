@@ -8,8 +8,8 @@ library ieee;
 -- Note: this FFT returns the complex conjugate compared to cor.py. It's a matter twiddle factor selection (counterclockwise vs clockwise) and it cancels out in the IFFT, but it's worth noting
 entity fft is
   port (
-    i                   : in  b25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-    o                   : out b25_complex_array(0 to n_points/2);
+    i                   : in  s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    o                   : out s25_complex_array(0 to n_points/2);
     clock, reset, start : in  std_logic;
     s_ready             : out std_logic
   );
@@ -19,16 +19,16 @@ architecture synth of fft is
 
   signal state : natural range 0 to the_log+1 := 0; -- state 1 is synchronous start
 
-  signal in_raster, in_scramble : b25_real_array(0 to n_points-1) := (others => (others => '0'));
-  signal bfly_in, bfly_out      : b25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
-  signal wmul_in, wmul_out      : b25_2d_complex_array(0 to n_points/2-1)(0 to n_points/4-1) := (others => (others => (others => (others => '0'))));
-  signal out_buff               : b25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal in_raster, in_scramble : s25_real_array(0 to n_points-1) := (others => (others => '0'));
+  signal bfly_in, bfly_out      : s25_2d_complex_array(0 to n_points/2-1)(0 to 1) := (others => (others => (others => (others => '0')))); -- 0-top; 1-bottom
+  signal wmul_in, wmul_out      : s25_2d_complex_array(0 to n_points/2-1)(0 to n_points/4-1) := (others => (others => (others => (others => '0'))));
+  signal out_buff               : s25_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
 begin
 
   -- Generate butterflies
   gen_bfly : for b in 0 to n_points/2-1 generate
-    bfly : component b25_butterfly
+    bfly : component s25_butterfly
       port map (
         i_top => bfly_in(b)(0),
         i_bot => bfly_in(b)(1),
@@ -43,7 +43,7 @@ begin
       gen_wmul3 : if (w /= n_points/4) generate
 
         wmul_sel_if : if (fft_nmul_lut(w)(m)) generate 
-            wmul : component b25_wmul
+            wmul : component s25_wmul
               generic map (w)
               port map (
                 i => wmul_in(w)(m),
@@ -56,9 +56,9 @@ begin
   end generate gen_wmul;
   
   gen_wmul4 : for m in 0 to n_points/4-1 generate -- to cover, e.g., w8 for N=32, of which there are a maximum of 7 instances active at once
-    wmul_out(n_points/4)(m) <= (                                                    -- (a + bi)*i = 
-    ((not wmul_in(n_points/4)(m)(1)(24)) & wmul_in(n_points/4)(m)(1)(23 downto 0)), -- -b
-    wmul_in(n_points/4)(m)(0)                                                       -- +ai
+    wmul_out(n_points/4)(m) <= ( -- (a + bi)*i = 
+    -wmul_in(n_points/4)(m)(1),  -- -b
+    wmul_in(n_points/4)(m)(0)    -- +ai
     );
   end generate gen_wmul4;
 
@@ -95,7 +95,7 @@ begin
   -- MUX Arrays
   gen_mux_bfly1 : for b in 0 to n_points/2-1 generate
     gen_mux_bfly2 : for tb in 0 to 1 generate
-      signal bfly_in_reg : b25_complex := (others => (others => '0'));
+      signal bfly_in_reg : s25_complex := (others => (others => '0'));
     begin
 
       latch_bfly_in_reg : process (clock) is
@@ -122,7 +122,7 @@ begin
 
   gen_mux_wmul1 : for w in 0 to n_points/2-1 generate
     gen_mux_wmul2 : for m in 0 to n_points/4-1 generate
-      signal wmul_in_sel : b25_complex_array(1 to the_log-1);
+      signal wmul_in_sel : s25_complex_array(1 to the_log-1);
     begin
 
       gen_sel_wmul : for s in 1 to the_log-1 generate
