@@ -29,14 +29,16 @@ architecture synth of hadamard is
   signal j : unsigned(cordic_len_log-1 downto 0) := (others => '0');
 
   -- Primary CORDIC
-  signal pc_x_in, pc_y_in, pc_z_in    : std_logic_vector(24 downto 0) := (others => '0');
-  signal pc_x_out, pc_y_out, pc_z_out : std_logic_vector(24 downto 0);
-  signal pc_sig_in, pc_sig_out        : std_logic := '0';
+  signal pc_x_in, pc_y_in      : std_logic_vector(24 downto 0) := (others => '0');
+  signal pc_x_out, pc_y_out    : std_logic_vector(24 downto 0);
+  signal pc_sig_in, pc_sig_out : std_logic := '0';
+  signal pc_z_in, pc_z_out     : std_logic_vector(15 downto 0);
 
   -- Secondary CORDIC
-  signal sc_x_in, sc_y_in, sc_z_in    : std_logic_vector(24 downto 0) := (others => '0');
-  signal sc_x_out, sc_y_out, sc_z_out : std_logic_vector(24 downto 0);
-  signal sc_sig_in, sc_sig_out        : std_logic := '0';
+  signal sc_x_in, sc_y_in      : std_logic_vector(24 downto 0) := (others => '0');
+  signal sc_x_out, sc_y_out    : std_logic_vector(24 downto 0);
+  signal sc_sig_in, sc_sig_out : std_logic := '0';
+  signal sc_z_in, sc_z_out     : std_logic_vector(15 downto 0);
 
   -- Flux Multiplier
   signal flux_a, flux_a_nex : std_logic_vector(24 downto 0) := (others => '0');
@@ -45,23 +47,15 @@ architecture synth of hadamard is
   signal flux_out           : std_logic_vector(24 downto 0) := (others => '0');
 
   -- Feedback latches
-  signal img_z_l, ker_z_l : std_logic_vector(23 downto 0) := (others => '0');
+  signal img_z_l, ker_z_l : std_logic_vector(15 downto 0) := (others => '0');
   signal prod_l           : std_logic_vector(24 downto 0) := (others => '0');
 
-  -- Sign treatment - img & ker
-  signal img_x_abs, img_y_abs   : std_logic_vector(24 downto 0);
-  signal ker_x_abs, ker_y_abs   : std_logic_vector(24 downto 0);
-  signal img_pi, ker_pi         : std_logic_vector(24 downto 0);
-  signal img_z_cor, ker_z_cor   : std_logic_vector(24 downto 0);
-  signal img_z_sign, ker_z_sign : std_logic;
-
-  -- Sign treatment - product
-  signal prod_z, prod_pi          : std_logic_vector(24 downto 0) := (others => '0');
-  signal prod_z_mod, prod_z_sel   : std_logic_vector(24 downto 0) := (others => '0');
-  signal prod_z_mod_sel           : std_logic_vector(23 downto 0) := (others => '0');
-  signal prod_quadrant            : std_logic_vector( 1 downto 0) := (others => '0');
-  signal prod_z_cor               : std_logic_vector(24 downto 0) := (others => '0');
-  signal prod_x_flip, prod_y_flip : std_logic;
+  -- Sign treatment
+  signal img_x_abs, img_y_abs : std_logic_vector(24 downto 0);
+  signal ker_x_abs, ker_y_abs : std_logic_vector(24 downto 0);
+  signal img_z_cor, ker_z_cor : std_logic_vector(15 downto 0);
+  signal prod_z, prod_z_q1    : std_logic_vector(15 downto 0) := (others => '0');
+  signal img_quad, ker_quad   : std_logic_vector( 1 downto 0);
 
   -- K-correction Constant Multipliers
   signal kmul_in_x, kmul_out_x : std_logic_vector(24 downto 0) := (others => '0');
@@ -196,7 +190,7 @@ begin
         when "11" =>
           pc_x_in   <= prod_l;
           pc_y_in   <= (others => '0');
-          pc_z_in   <= prod_z_cor;
+          pc_z_in   <= prod_z_q1;
           pc_sig_in <= not rotation;
 
         when others =>
@@ -260,8 +254,8 @@ begin
     if rising_edge(clock) then
       if (flux_run and flux_ready) then
         prod_l  <= flux_out;
-        img_z_l <= pc_z_out(23 downto 0); -- or in?
-        ker_z_l <= sc_z_out(23 downto 0); -- or in?
+        img_z_l <= pc_z_out;
+        ker_z_l <= sc_z_out;
         polar_latch_ready <= '1';
       else 
         polar_latch_ready <= '0';
@@ -280,113 +274,44 @@ begin
 
 
   -- Post-vectorization i/k correction to Q1~4
+  img_quad <= (img(1)(24), img(0)(24) xor img(1)(24));
+  ker_quad <= (ker(1)(24), ker(0)(24) xor ker(1)(24));
 
-  with std_logic_vector'(img(0)(24) & img(1)(24)) select img_z_sign <=
-    '0' when "00",   -- QTR
-    '1' when "10",   -- QTL
-    '0' when "11",   -- QBL
-    '1' when others; -- QBR
-
-  with std_logic_vector'(ker(0)(24) & ker(1)(24)) select ker_z_sign <=
-    '0' when "00",   -- QTR
-    '1' when "10",   -- QTL
-    '0' when "11",   -- QBL
-    '1' when others; -- QBR
-
-  with std_logic_vector'(img(0)(24) & img(1)(24)) select img_pi <=
-    '0' & 24b"0"   when "00",   -- QTR
-    '0' & pi24     when "10",   -- QTL
-    '0' & pi24     when "11",   -- QBL
-    '0' & two_pi24 when others; -- QBR
-
-  with std_logic_vector'(ker(0)(24) & ker(1)(24)) select ker_pi <=
-    '0' & 24b"0"   when "00",   -- QTR
-    '0' & pi24     when "10",   -- QTL
-    '0' & pi24     when "11",   -- QBL
-    '0' & two_pi24 when others; -- QBR
-
-  img_correction : component b25_add
+  img_q : component pfb_q
     port map (
-      a   => img_z_sign & img_z_l,
-      b   => img_pi,
+      a   => img_z_l,
+      qt  => img_quad,
       res => img_z_cor
     );
 
-  ker_correction : component b25_add
+  ker_q : component pfb_q
     port map (
-      a   => ker_z_sign & ker_z_l,
-      b   => ker_pi,
+      a   => ker_z_l,
+      qt  => ker_quad,
       res => ker_z_cor
     );
 
 
   -- Polar Multiplication (angle z) -- Normalization to Q1
+  prod_z <= std_logic_vector(signed(img_z_cor) + signed(ker_z_cor));
 
-  z_pmul : component b25_add
-    port map (
-      a   => img_z_cor,
-      b   => ker_z_cor,
-      res => prod_z
-    );
-
-  z_pi_mod : component b25_add
+  prod_q : component pfb_q
     port map (
       a   => prod_z,
-      b   => '1' & two_pi24,
-      res => prod_z_mod
+      qt  => "00",
+      res => prod_z_q1
     );
 
-  z_corr : component b25_add
-    port map (
-      a   => prod_z_sel,
-      b   => prod_pi,
-      res => prod_z_cor
-    );
 
-  prod_z_mod_sel <=
-    prod_z_mod(23 downto 0) when (prod_z > ('0' & two_pi24)) else
-    prod_z(23 downto 0);
-
-  prod_quadrant <=
-    "00" when prod_z_mod_sel < half_pi24       else
-    "01" when prod_z_mod_sel < pi24            else
-    "10" when prod_z_mod_sel < three_half_pi24 else
-    "11";
-  
-  with prod_quadrant select prod_z_sel <=
-    '0' & prod_z_mod_sel when "00",
-    '1' & prod_z_mod_sel when "01",
-    '0' & prod_z_mod_sel when "10",
-    '1' & prod_z_mod_sel when others;
-  
-  with prod_quadrant select prod_pi <=
-    '0' & 24b"0"   when "00",
-    '0' & pi24     when "01",
-    '1' & pi24     when "10",
-    '0' & two_pi24 when others;
-
-  
   -- Apply normalization to output
 
-  with prod_quadrant select prod_x_flip <=
-    '0' when "00",
-    '1' when "01",
-    '1' when "10",
-    '0' when others;
+  with (prod_z(15) xor prod_z(14)) select out_x_sel <= -- q01 and q10
+    (not kmul_out_x(24) & kmul_out_x(23 downto 0)) when '1',
+    kmul_out_x when others;
 
-  with prod_quadrant select prod_y_flip <=
-    '0' when "00",
-    '0' when "01",
-    '1' when "10",
-    '1' when others;
-
-  with prod_x_flip select out_x_sel <=
-    kmul_out_x when '0',
-    (not kmul_out_x(24) & kmul_out_x(23 downto 0)) when others;
-
-  with prod_y_flip select out_y_sel <=
-    kmul_out_y when '0',
-    (not kmul_out_y(24) & kmul_out_y(23 downto 0)) when others;
+  with (prod_z(15)) select out_y_sel <= -- q10 and q11
+    (not kmul_out_y(24) & kmul_out_y(23 downto 0)) when '1',
+    kmul_out_y when others;
 
   p_slv <= (out_x_sel, out_y_sel);
 

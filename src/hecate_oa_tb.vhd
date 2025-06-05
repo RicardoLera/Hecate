@@ -6,7 +6,7 @@ library ieee;
 
 entity hecate_oa_tb is
   generic (
-    test_n : natural := 2
+    test_n : natural := 1
   );
   port (
     rom_serial_i : in  signed(24 downto 0) := (others => '0');
@@ -96,24 +96,24 @@ begin
     rst <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      -- rand_arr(img, seed+n+1, iz, iy, ix);
-      -- rand_arr(ker, seed+n+2, kz, ky, kx);
+      rand_arr(img, seed+n+1, iz, iy, ix);
+      rand_arr(ker, seed+n+2, kz, ky, kx);
 
-      img_loop_z : for z in 0 to iz-1 loop
-        img_loop_y : for y in 0 to iy-1 loop
-          img_loop_x : for x in 0 to ix-1 loop
-            img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-          end loop img_loop_x;
-        end loop img_loop_y;
-      end loop img_loop_z;
+      -- img_loop_z : for z in 0 to iz-1 loop
+      --   img_loop_y : for y in 0 to iy-1 loop
+      --     img_loop_x : for x in 0 to ix-1 loop
+      --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --     end loop img_loop_x;
+      --   end loop img_loop_y;
+      -- end loop img_loop_z;
 
-      ker_loop_z : for z in 0 to kz-1 loop
-        ker_loop_y : for y in 0 to ky-1 loop
-          ker_loop_x : for x in 0 to kx-1 loop
-            ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-          end loop ker_loop_x;
-        end loop ker_loop_y;
-      end loop ker_loop_z;
+      -- ker_loop_z : for z in 0 to kz-1 loop
+      --   ker_loop_y : for y in 0 to ky-1 loop
+      --     ker_loop_x : for x in 0 to kx-1 loop
+      --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --     end loop ker_loop_x;
+      --   end loop ker_loop_y;
+      -- end loop ker_loop_z;
 
       -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
       -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";

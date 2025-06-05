@@ -33,17 +33,22 @@ package hecate_pkg is
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
   constant the_log        : natural := natural(log2(real(n_points)));
 
-  constant cordic_len     : natural := 25;
+  constant cordic_len     : natural := 18;
   constant cordic_len_log : natural := natural(ceil(log2(real(cordic_len))));
 
   attribute rom_style of 
     ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
   : constant is "block";
 
+  -- Subtypes
+  subtype s25 is signed(24 downto 0);
+  subtype b25 is std_logic_vector(24 downto 0);
+  subtype p16 is std_logic_vector(15 downto 0);
+
   -- Signed 25-bit types
-  type s25_real_array is array (natural range <>) of signed(24 downto 0);
+  type s25_real_array is array (natural range <>) of s25;
   type s25_double_array is array (natural range <>) of signed(49 downto 0);
-  type s25_complex is array (0 to 1) of signed(24 downto 0);
+  type s25_complex is array (0 to 1) of s25;
   type s25_complex_array is array (natural range <>) of s25_complex;
   type s25_2d_real_array is array (natural range <>) of s25_real_array;
   type s25_3d_real_array is array (natural range <>) of s25_2d_real_array;
@@ -51,9 +56,9 @@ package hecate_pkg is
   type s25_3d_complex_array is array (natural range <>) of s25_2d_complex_array;
 
   -- SLV 25-bit types
-  type b25_real_array is array (natural range <>) of std_logic_vector(24 downto 0);
+  type b25_real_array is array (natural range <>) of b25;
   type b25_double_array is array (natural range <>) of std_logic_vector(49 downto 0);
-  type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
+  type b25_complex is array (0 to 1) of b25;
   type b25_complex_array is array (natural range <>) of s25_complex;
   type b25_2d_real_array is array (natural range <>) of s25_real_array;
   type b25_3d_real_array is array (natural range <>) of s25_2d_real_array;
@@ -66,9 +71,9 @@ package hecate_pkg is
 
     -- Constants (ROM)
 
-  -- Flux Mul k-correction
-  constant kcon     : real := 0.2239282404699562528386872156786372562;
-  constant b25_kcon : std_logic_vector(24 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*(kcon)), 25));
+  -- CORDIC k-correction -> (Product[Sqrt[1+2^(-2x)],{x,0,16-1}])^-3
+  constant kcon     : real := 0.22392824057423056779858936992391541750457092029889299944181236773520544649;
+  constant b25_kcon : b25 := std_logic_vector(to_unsigned(natural((2.0**16)*(kcon)), 25));
 
   -- Pi constants for angle normalization
   constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
@@ -77,33 +82,33 @@ package hecate_pkg is
   constant three_half_pi24 : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**15)*3.0*MATH_PI),24));
 
   -- CORDIC arctangent LUT
-  type t_arctan_lut is array (0 to 24) of std_logic_vector(23 downto 0);
+  type t_arctan_lut is array (0 to 24) of p16;
   constant arctan_lut : t_arctan_lut := (
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -0.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -1.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -2.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -3.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -4.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -5.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -6.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -7.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -8.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** ( -9.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-10.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-11.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-12.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-13.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-14.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-15.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-16.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-17.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-18.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-19.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-20.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-21.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-22.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-23.0)))), 24)),
-    std_logic_vector(to_unsigned(natural(65536.0*(arctan(2.0 ** (-24.0)))), 24))
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -0.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -1.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -2.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -3.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -4.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -5.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -6.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -7.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -8.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -9.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-10.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-11.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-12.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-13.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-14.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-15.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-16.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-17.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-18.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-19.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-20.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-21.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-22.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-23.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-24.0)))/(2.0*MATH_PI)), 16))
   );
 
   attribute rom_style of 
@@ -121,19 +126,19 @@ package hecate_pkg is
 
   component b25_add is
     port (
-      a   : in  std_logic_vector(24 downto 0);
-      b   : in  std_logic_vector(24 downto 0);
-      res : out std_logic_vector(24 downto 0)
+      a   : in  b25;
+      b   : in  b25;
+      res : out b25
     );
     end component;
 
   component b25_kmul is
     generic (
-      con : std_logic_vector(24 downto 0)
+      con : b25
     );
     port (
-      a   : in    std_logic_vector(24 downto 0);
-      res : out   std_logic_vector(24 downto 0)
+      a   : in    b25;
+      res : out   b25
     );
   end component b25_kmul;
 
@@ -156,11 +161,19 @@ package hecate_pkg is
 
   component var_srl is
     port (
-      data     : in    std_logic_vector(24 downto 0);
+      data     : in    b25;
       distance : in    unsigned(cordic_len_log-1 downto 0);
-      result   : out   std_logic_vector(24 downto 0)
+      result   : out   b25
     );
   end component;
+
+  component pfb_q is
+    port (
+      a   : in p16;
+      qt  : in std_logic_vector(1 downto 0);
+      res : out p16
+    );
+  end component pfb_q;
 
   component fft is
     port (
@@ -193,12 +206,12 @@ package hecate_pkg is
       sigma_in  : in    std_logic := '0';
       rotation  : in    std_logic;
       j         : in    unsigned(cordic_len_log-1 downto 0);
-      x_in      : in    std_logic_vector(24 downto 0);
-      y_in      : in    std_logic_vector(24 downto 0);
-      z_in      : in    std_logic_vector(24 downto 0);
-      x_out     : out   std_logic_vector(24 downto 0);
-      y_out     : out   std_logic_vector(24 downto 0);
-      z_out     : out   std_logic_vector(24 downto 0);
+      x_in      : in    b25;
+      y_in      : in    b25;
+      z_in      : in    p16;
+      x_out     : out   b25;
+      y_out     : out   b25;
+      z_out     : out   p16;
       sigma_out : out   std_logic
     );
   end component;
@@ -222,7 +235,7 @@ package hecate_pkg is
     port (
       clock, reset, run  : in    std_logic;
       a, b, a_nex, b_nex : in    std_logic_vector(23 downto 0);
-      p                  : out   std_logic_vector(24 downto 0);
+      p                  : out   b25;
       ready              : out   std_logic
     );
   end component;
@@ -415,7 +428,7 @@ package body hecate_pkg is
   -- K-corrected twiddle function
   function k_twiddle (inp : natural) return signed is
     constant base : real := MATH_PI/real(n_points/2);
-    variable x : signed(24 downto 0);
+    variable x : s25;
   begin
     x := to_signed(natural((2.0**16)*(cos(real(inp) * base) * kcon)), 25);
     return x;

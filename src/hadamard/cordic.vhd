@@ -10,10 +10,10 @@ entity cordic is
     j         : in    unsigned(cordic_len_log-1 downto 0);
     x_in      : in    std_logic_vector(24 downto 0);
     y_in      : in    std_logic_vector(24 downto 0);
-    z_in      : in    std_logic_vector(24 downto 0);
+    z_in      : in    std_logic_vector(15 downto 0);
     x_out     : out   std_logic_vector(24 downto 0);
     y_out     : out   std_logic_vector(24 downto 0);
-    z_out     : out   std_logic_vector(24 downto 0);
+    z_out     : out   std_logic_vector(15 downto 0);
     sigma_out : out   std_logic
   );
 end entity cordic;
@@ -22,7 +22,7 @@ architecture synth of cordic is
 
   signal shifted_x, shifted_y : std_logic_vector(25 - 1 downto 0);
   signal x_add,     y_add     : std_logic_vector(25 - 1 downto 0);
-  signal z_add                : std_logic_vector(25 - 1 downto 0) := (others => '0');
+  signal z_add                : std_logic_vector(16 - 1 downto 0) := (others => '0');
 
 begin
 
@@ -54,12 +54,7 @@ begin
       res => y_out
     );
 
-  zadd : component b25_add
-    port map (
-      a   => z_in,
-      b   => z_add,
-      res => z_out
-    );
+  z_out <= std_logic_vector(signed(z_in) + signed(z_add));
 
   with sigma_in select y_add <=
     not shifted_y(25 - 1) & shifted_y(25 - 2 downto 0) when '0', -- x-s_y when '0',
@@ -70,8 +65,8 @@ begin
     not shifted_x(25 - 1) & shifted_x(25 - 2 downto 0) when others; -- y-s_x when others;
 
   with sigma_in select z_add <=
-    '1' & std_logic_vector(arctan_lut(to_integer(unsigned(j)))) when '0',    -- z-lut when '0'
-    '0' & std_logic_vector(arctan_lut(to_integer(unsigned(j)))) when others; -- z+lut when others;
+    std_logic_vector(-signed(arctan_lut(to_integer(unsigned(j))))) when '0',   -- z-lut when '0'
+    std_logic_vector(signed(arctan_lut(to_integer(unsigned(j))))) when others; -- z+lut when others;
 
   with rotation select sigma_out <=
     z_out(z_out'length - 1) when '1',

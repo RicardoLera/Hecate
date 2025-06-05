@@ -154,7 +154,7 @@ print(arrToHex(np.imag(HAD)))
 
 
 # IFFT
-had = np.fft.ifft(HAD, np.size(HAD)) * spsize / pow(kcor,3)
+had = np.fft.ifft(HAD, np.size(HAD)) * spsize # / pow(kcor,3)
 # print(arrToHex(np.real(had)))
 
 
