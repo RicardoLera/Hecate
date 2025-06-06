@@ -16,8 +16,8 @@ entity ram_3d is
     addr0        : in  std_logic_vector(integer(ceil(log2(real(num_addr))))   downto 0);
     addr1        : in  std_logic_vector(integer(ceil(log2(real(num_rams))))   downto 0);
     addr2        : in  std_logic_vector(integer(ceil(log2(real(num_blocks)))) downto 0);
-    din          : in  signed(24 downto 0);
-    dout         : out signed(24 downto 0)
+    din          : in  s25;
+    dout         : out s25
   );
 end ram_3d;
 

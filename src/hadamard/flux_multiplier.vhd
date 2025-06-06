@@ -8,7 +8,7 @@ entity flux_multiplier is
   port (
     clock, reset, run  : in    std_logic;
     a, b, a_nex, b_nex : in    std_logic_vector(23 downto 0);
-    p                  : out   std_logic_vector(24 downto 0);
+    p                  : out   b25;
     ready              : out   std_logic
   );
 end entity flux_multiplier;
@@ -135,7 +135,7 @@ end architecture synth;
 --   b_nex     : in    std_logic_vector(23 downto 0);
 --   coefs_x   : out   b25_real_array(0 to n_points/4-1);
 --   coefs_y   : out   b25_real_array(0 to n_points/4-1);
---   p         : out   std_logic_vector(24 downto 0);
+--   p         : out   b25;
 --   ready     : out   std_logic
 -- );
 

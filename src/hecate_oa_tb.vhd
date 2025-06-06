@@ -9,9 +9,9 @@ entity hecate_oa_tb is
     test_n : natural := 1
   );
   port (
-    rom_serial_i : in  signed(24 downto 0) := (others => '0');
-    rom_serial_k : in  signed(24 downto 0) := (others => '0');
-    ram_serial   : out signed(24 downto 0) := (others => '0');
+    rom_serial_i : in  s25 := (others => '0');
+    rom_serial_k : in  s25 := (others => '0');
+    ram_serial   : out s25 := (others => '0');
     clock, start : in  std_logic := '0';
     reset        : in  std_logic := '1';
     ready        : out std_logic := '0'

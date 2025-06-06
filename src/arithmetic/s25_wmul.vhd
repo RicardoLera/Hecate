@@ -15,7 +15,7 @@ entity s25_wmul is
 end entity s25_wmul;
 
 architecture karatsuba of s25_wmul is -- 3 constant multipliers + 3 adders
-  signal s1, k1, k2, k3, re, im : signed(24 downto 0);
+  signal s1, k1, k2, k3, re, im : s25;
 begin
   s1 <= i(0) + i(1); -- a+b
   k1 <= resize((s1   * twiddle_lut(w)(0)) sra 16, 25); -- c*(a+b)

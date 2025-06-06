@@ -9,13 +9,13 @@ package hecate_pkg is
   attribute rom_style : string;
 
   -- Main parameters
-  constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
-  constant iy : natural := 2;
-  constant iz : natural := 2;
+  constant ix : natural := 3; -- assumes i mod k = 0, use assert in the testbench
+  constant iy : natural := 3;
+  constant iz : natural := 3;
 
-  constant kx : natural := 2;
-  constant ky : natural := 2;
-  constant kz : natural := 2;
+  constant kx : natural := 3;
+  constant ky : natural := 3;
+  constant kz : natural := 3;
 
   constant ox : natural := (ix+kx-1);
   constant oy : natural := (iy+ky-1);

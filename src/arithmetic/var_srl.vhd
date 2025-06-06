@@ -6,9 +6,9 @@ library ieee;
 
 entity var_srl is -- variable logical shift right
   port (
-    data     : in    std_logic_vector(24 downto 0);
+    data     : in    b25;
     distance : in    unsigned(cordic_len_log-1 downto 0);
-    result   : out   std_logic_vector(24 downto 0)
+    result   : out   b25
   );
 end entity var_srl;
 

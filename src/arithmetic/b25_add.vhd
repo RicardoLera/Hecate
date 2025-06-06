@@ -12,13 +12,13 @@ library ieee;
 
 entity b25_add is
   port (
-    a, b : in  std_logic_vector(24 downto 0); -- 25-bit_sign-magnitude [SMM]
-    res  : out std_logic_vector(24 downto 0)  -- 25-bit_sign-magnitude [SMM] (overflow bit ignored)
+    a, b : in  b25; -- 25-bit_sign-magnitude [SMM]
+    res  : out b25  -- 25-bit_sign-magnitude [SMM] (overflow bit ignored)
   );
 end entity b25_add;
 
 architecture synth of b25_add is
-  signal a_2c, b_2c, r_2c : signed(24 downto 0); -- [SCC]
+  signal a_2c, b_2c, r_2c : s25; -- [SCC]
 begin
   assert (not (a(23) nand b(23))) report "b25_add OVERFLOW" severity warning;
   
@@ -38,7 +38,7 @@ end architecture synth;
 -- Both of the following implementations infer 4 adders instead of 1 (3 used for sm -> 2c conversions)
 
 -- architecture synth of b25_add is
---   signal a_2c, b_2c, r_2c : signed(24 downto 0); -- [SCC]
+--   signal a_2c, b_2c, r_2c : s25; -- [SCC]
 -- begin
 --   assert (not (a(23) nand b(23))) report "b25_add OVERFLOW" severity warning;
   
@@ -50,7 +50,7 @@ end architecture synth;
 -- end architecture synth;
 
 -- architecture literal of b25_add is
---   signal a_2c, b_2c, r_2c : std_logic_vector(24 downto 0); -- [SCC]
+--   signal a_2c, b_2c, r_2c : b25; -- [SCC]
 -- begin
   
 --   assert (not (a(23) nand b(23))) report "b25_add OVERFLOW" severity warning;

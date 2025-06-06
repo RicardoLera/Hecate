@@ -4,11 +4,11 @@ library ieee;
 
 entity b25_kmul is
   generic (
-    con : std_logic_vector(24 downto 0)
+    con : b25
   );
   port (
-    a   : in    std_logic_vector(24 downto 0);
-    res : out   std_logic_vector(24 downto 0)
+    a   : in    b25;
+    res : out   b25
   );
 end entity b25_kmul;
 

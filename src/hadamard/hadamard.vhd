@@ -29,38 +29,38 @@ architecture synth of hadamard is
   signal j : unsigned(cordic_len_log-1 downto 0) := (others => '0');
 
   -- Primary CORDIC
-  signal pc_x_in, pc_y_in      : std_logic_vector(24 downto 0) := (others => '0');
-  signal pc_x_out, pc_y_out    : std_logic_vector(24 downto 0);
+  signal pc_x_in, pc_y_in      : b25 := (others => '0');
+  signal pc_x_out, pc_y_out    : b25;
   signal pc_sig_in, pc_sig_out : std_logic := '0';
-  signal pc_z_in, pc_z_out     : std_logic_vector(15 downto 0);
+  signal pc_z_in, pc_z_out     : p16;
 
   -- Secondary CORDIC
-  signal sc_x_in, sc_y_in      : std_logic_vector(24 downto 0) := (others => '0');
-  signal sc_x_out, sc_y_out    : std_logic_vector(24 downto 0);
+  signal sc_x_in, sc_y_in      : b25 := (others => '0');
+  signal sc_x_out, sc_y_out    : b25;
   signal sc_sig_in, sc_sig_out : std_logic := '0';
-  signal sc_z_in, sc_z_out     : std_logic_vector(15 downto 0);
+  signal sc_z_in, sc_z_out     : p16;
 
   -- Flux Multiplier
-  signal flux_a, flux_a_nex : std_logic_vector(24 downto 0) := (others => '0');
-  signal flux_b, flux_b_nex : std_logic_vector(24 downto 0) := (others => '0');
+  signal flux_a, flux_a_nex : b25 := (others => '0');
+  signal flux_b, flux_b_nex : b25 := (others => '0');
   signal flux_ready         : std_logic;
-  signal flux_out           : std_logic_vector(24 downto 0) := (others => '0');
+  signal flux_out           : b25 := (others => '0');
 
   -- Feedback latches
-  signal img_z_l, ker_z_l : std_logic_vector(15 downto 0) := (others => '0');
-  signal prod_l           : std_logic_vector(24 downto 0) := (others => '0');
+  signal img_z_l, ker_z_l : p16 := (others => '0');
+  signal prod_l           : b25 := (others => '0');
 
   -- Sign treatment
-  signal img_x_abs, img_y_abs : std_logic_vector(24 downto 0);
-  signal ker_x_abs, ker_y_abs : std_logic_vector(24 downto 0);
-  signal img_z_cor, ker_z_cor : std_logic_vector(15 downto 0);
-  signal prod_z, prod_z_q1    : std_logic_vector(15 downto 0) := (others => '0');
+  signal img_x_abs, img_y_abs : b25;
+  signal ker_x_abs, ker_y_abs : b25;
+  signal img_z_cor, ker_z_cor : p16;
+  signal prod_z, prod_z_q1    : p16 := (others => '0');
   signal img_quad, ker_quad   : std_logic_vector( 1 downto 0);
 
   -- K-correction Constant Multipliers
-  signal kmul_in_x, kmul_out_x : std_logic_vector(24 downto 0) := (others => '0');
-  signal kmul_in_y, kmul_out_y : std_logic_vector(24 downto 0) := (others => '0');
-  signal out_x_sel, out_y_sel  : std_logic_vector(24 downto 0);
+  signal kmul_in_x, kmul_out_x : b25 := (others => '0');
+  signal kmul_in_y, kmul_out_y : b25 := (others => '0');
+  signal out_x_sel, out_y_sel  : b25;
 
 begin
 

@@ -18,7 +18,7 @@ architecture sim of lsp is
   constant the_log : integer := integer(ceil(log2(real(n_points))));
 
   -- would records fix this?
-  type b25_complex is array (0 to 1) of std_logic_vector(24 downto 0);
+  type b25_complex is array (0 to 1) of b25;
   --type b25_complex_matrix is array (natural range <>, natural range <>) of b25_complex; -- this is a multidimensional 2D array of b25_complex
   type b25_complex_array is array (integer range <>) of b25_complex;
   type b25_2d_complex_array is array (integer range <>) of b25_complex_array;             -- this is a once-nested array of b25_complex

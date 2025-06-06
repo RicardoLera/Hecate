@@ -4,9 +4,9 @@ library ieee;
 
 entity b25_mul is
   port (
-    a   : in    std_logic_vector(24 downto 0);
-    b   : in    std_logic_vector(24 downto 0);
-    res : out   std_logic_vector(24 downto 0)
+    a   : in    b25;
+    b   : in    b25;
+    res : out   b25
   );
 end entity b25_mul;
 

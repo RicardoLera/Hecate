@@ -8,12 +8,12 @@ entity cordic is
     sigma_in  : in    std_logic := '0';
     rotation  : in    std_logic;
     j         : in    unsigned(cordic_len_log-1 downto 0);
-    x_in      : in    std_logic_vector(24 downto 0);
-    y_in      : in    std_logic_vector(24 downto 0);
-    z_in      : in    std_logic_vector(15 downto 0);
-    x_out     : out   std_logic_vector(24 downto 0);
-    y_out     : out   std_logic_vector(24 downto 0);
-    z_out     : out   std_logic_vector(15 downto 0);
+    x_in      : in    b25;
+    y_in      : in    b25;
+    z_in      : in    p16;
+    x_out     : out   b25;
+    y_out     : out   b25;
+    z_out     : out   p16;
     sigma_out : out   std_logic
   );
 end entity cordic;
