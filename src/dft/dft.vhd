@@ -7,7 +7,6 @@
 -- For quick implementation, we can use a simplified method that uses 33 mults and 34 adders, along 32 cycles
 
   use work.hecate_pkg.all;
-
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;

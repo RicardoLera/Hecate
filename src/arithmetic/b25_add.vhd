@@ -6,6 +6,7 @@
 -- 2c3_101 + 2c3_010 = 2c3_111
 -- 2c3_111 => b3_101 [2c3(sign) = 1 -> 1'00' +1 = b3_101]
 
+  use work.hecate_pkg.all;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
