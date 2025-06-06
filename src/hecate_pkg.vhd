@@ -73,7 +73,7 @@ package hecate_pkg is
 
   -- CORDIC k-correction -> (Product[Sqrt[1+2^(-2x)],{x,0,16-1}])^-3
   constant kcon     : real := 0.22392824057423056779858936992391541750457092029889299944181236773520544649;
-  constant b25_kcon : b25 := std_logic_vector(to_unsigned(natural((2.0**16)*(kcon)), 25));
+  constant s25_kcon : s25 := to_signed(natural((2.0**16)*(kcon)), 25);
 
   -- Pi constants for angle normalization
   constant pi24            : std_logic_vector(23 downto 0) := std_logic_vector(to_unsigned(natural((2.0**16)*MATH_PI)    ,24));
@@ -83,36 +83,63 @@ package hecate_pkg is
 
   -- CORDIC arctangent LUT
   type t_arctan_lut is array (0 to 24) of p16;
-  constant arctan_lut : t_arctan_lut := (
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -0.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -1.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -2.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -3.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -4.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -5.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -6.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -7.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -8.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** ( -9.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-10.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-11.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-12.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-13.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-14.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-15.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-16.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-17.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-18.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-19.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-20.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-21.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-22.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-23.0)))/(2.0*MATH_PI)), 16)),
-    std_logic_vector(to_unsigned(natural((2.0**16)*(arctan(2.0 ** (-24.0)))/(2.0*MATH_PI)), 16))
+  type t_arctan_lut_signed is array (0 to 1) of t_arctan_lut; -- 0 is positive, 1 is negative
+  constant arctan_lut : t_arctan_lut_signed := (
+  ( std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -0.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -1.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -2.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -3.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -4.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -5.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -6.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -7.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -8.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** ( -9.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-10.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-11.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-12.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-13.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-14.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-15.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-16.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-17.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-18.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-19.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-20.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-21.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-22.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-23.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(to_signed(natural((2.0**16)*(arctan(2.0 ** (-24.0)))/(2.0*MATH_PI)), 16))  ),
+
+  ( std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -0.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -1.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -2.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -3.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -4.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -5.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -6.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -7.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -8.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** ( -9.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-10.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-11.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-12.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-13.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-14.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-15.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-16.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-17.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-18.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-19.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-20.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-21.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-22.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-23.0)))/(2.0*MATH_PI)), 16)),
+    std_logic_vector(-to_signed(natural((2.0**16)*(arctan(2.0 ** (-24.0)))/(2.0*MATH_PI)), 16)) )
   );
 
   attribute rom_style of 
-    kcon, b25_kcon, pi24, two_pi24, half_pi24, three_half_pi24, arctan_lut
+    kcon, s25_kcon, pi24, two_pi24, half_pi24, three_half_pi24, arctan_lut
   : constant is "block";
 
 
@@ -159,11 +186,11 @@ package hecate_pkg is
     );
   end component s25_butterfly;
 
-  component var_srl is
+  component var_sra is
     port (
-      data     : in    b25;
+      data     : in    s25;
       distance : in    unsigned(cordic_len_log-1 downto 0);
-      result   : out   b25
+      result   : out   s25
     );
   end component;
 
@@ -195,9 +222,9 @@ package hecate_pkg is
 
   component adder_carry is
     port (
-      a, b: in    std_logic_vector(48 downto 0);
+      a, b: in    unsigned(48 downto 0);
       cin : in    std_logic;
-      o   : out   std_logic_vector(48 downto 0)
+      o   : out   unsigned(48 downto 0)
     );
   end component;
 
@@ -206,11 +233,11 @@ package hecate_pkg is
       sigma_in  : in    std_logic := '0';
       rotation  : in    std_logic;
       j         : in    unsigned(cordic_len_log-1 downto 0);
-      x_in      : in    b25;
-      y_in      : in    b25;
+      x_in      : in    s25;
+      y_in      : in    s25;
       z_in      : in    p16;
-      x_out     : out   b25;
-      y_out     : out   b25;
+      x_out     : out   s25;
+      y_out     : out   s25;
       z_out     : out   p16;
       sigma_out : out   std_logic
     );
@@ -222,9 +249,9 @@ package hecate_pkg is
       reset_s  : in    std_logic;
       reset_as : in    std_logic;
       load     : in    std_logic;
-      inp      : in    std_logic_vector(cordic_len-2 downto 0);
-      nex      : in    std_logic_vector(cordic_len-2 downto 0);
-      outp     : out   std_logic_vector(cordic_len-2 downto 0);
+      inp      : in    unsigned(cordic_len-2 downto 0);
+      nex      : in    unsigned(cordic_len-2 downto 0);
+      outp     : out   unsigned(cordic_len-2 downto 0);
       new_bit  : out   std_logic;
       ready    : out   std_logic;
       erro     : out   std_logic
@@ -234,8 +261,8 @@ package hecate_pkg is
   component flux_multiplier is
     port (
       clock, reset, run  : in    std_logic;
-      a, b, a_nex, b_nex : in    std_logic_vector(23 downto 0);
-      p                  : out   b25;
+      a, b, a_nex, b_nex : in    s25;
+      p                  : out   s25;
       ready              : out   std_logic
     );
   end component;

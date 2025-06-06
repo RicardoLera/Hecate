@@ -5,9 +5,9 @@ library ieee;
 
 entity b25_mul is
   port (
-    a   : in    b25;
-    b   : in    b25;
-    res : out   b25
+    a   : in    s25;
+    b   : in    s25;
+    res : out   s25
   );
 end entity b25_mul;
 

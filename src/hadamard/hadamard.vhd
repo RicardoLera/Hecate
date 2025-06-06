@@ -17,9 +17,6 @@ end entity hadamard;
 
 architecture synth of hadamard is
 
-  -- I/O conversion
-  signal img_slv, ker_slv, p_slv : b25_complex;
-
   -- Control unit
   signal j_end, rotation, polar_latch_ready : std_logic;
   signal cordic_mode                        : std_logic_vector(1 downto 0);
@@ -29,50 +26,40 @@ architecture synth of hadamard is
   signal j : unsigned(cordic_len_log-1 downto 0) := (others => '0');
 
   -- Primary CORDIC
-  signal pc_x_in, pc_y_in      : b25 := (others => '0');
-  signal pc_x_out, pc_y_out    : b25;
+  signal pc_x_in, pc_y_in      : s25 := (others => '0');
+  signal pc_x_out, pc_y_out    : s25;
   signal pc_sig_in, pc_sig_out : std_logic := '0';
   signal pc_z_in, pc_z_out     : p16;
 
   -- Secondary CORDIC
-  signal sc_x_in, sc_y_in      : b25 := (others => '0');
-  signal sc_x_out, sc_y_out    : b25;
+  signal sc_x_in, sc_y_in      : s25 := (others => '0');
+  signal sc_x_out, sc_y_out    : s25;
   signal sc_sig_in, sc_sig_out : std_logic := '0';
   signal sc_z_in, sc_z_out     : p16;
 
   -- Flux Multiplier
-  signal flux_a, flux_a_nex : b25 := (others => '0');
-  signal flux_b, flux_b_nex : b25 := (others => '0');
+  signal flux_a, flux_a_nex : s25 := (others => '0');
+  signal flux_b, flux_b_nex : s25 := (others => '0');
   signal flux_ready         : std_logic;
-  signal flux_out           : b25 := (others => '0');
+  signal flux_out           : s25 := (others => '0');
 
   -- Feedback latches
   signal img_z_l, ker_z_l : p16 := (others => '0');
-  signal prod_l           : b25 := (others => '0');
+  signal prod_l           : s25 := (others => '0');
 
   -- Sign treatment
-  signal img_x_abs, img_y_abs : b25;
-  signal ker_x_abs, ker_y_abs : b25;
+  signal img_x_abs, img_y_abs : s25;
+  signal ker_x_abs, ker_y_abs : s25;
   signal img_z_cor, ker_z_cor : p16;
   signal prod_z, prod_z_q1    : p16 := (others => '0');
-  signal img_quad, ker_quad   : std_logic_vector( 1 downto 0);
+  signal img_quad, ker_quad   : std_logic_vector(1 downto 0);
 
   -- K-correction Constant Multipliers
-  signal kmul_in_x, kmul_out_x : b25 := (others => '0');
-  signal kmul_in_y, kmul_out_y : b25 := (others => '0');
-  signal out_x_sel, out_y_sel  : b25;
+  signal kmul_in_x, kmul_out_x : s25 := (others => '0');
+  signal kmul_in_y, kmul_out_y : s25 := (others => '0');
+  signal out_x_sel, out_y_sel  : s25;
 
 begin
-
-  -- Input conversions (4 k-adders)
-  img_slv(0)(24)          <= img(0)(24) ;
-  img_slv(1)(24)          <= img(1)(24);
-  img_slv(0)(23 downto 0) <= std_logic_vector(-img(0)(23 downto 0)) when img(0)(24) else std_logic_vector(img(0)(23 downto 0));
-  img_slv(1)(23 downto 0) <= std_logic_vector(-img(1)(23 downto 0)) when img(1)(24) else std_logic_vector(img(1)(23 downto 0));
-  ker_slv(0)(24)          <= ker(0)(24) ;
-  ker_slv(1)(24)          <= ker(1)(24);
-  ker_slv(0)(23 downto 0) <= std_logic_vector(-ker(0)(23 downto 0)) when ker(0)(24) else std_logic_vector(ker(0)(23 downto 0));
-  ker_slv(1)(23 downto 0) <= std_logic_vector(-ker(1)(23 downto 0)) when ker(1)(24) else std_logic_vector(ker(1)(23 downto 0));
 
   -- Control Unit
   uc : component hadamard_uc
@@ -95,10 +82,10 @@ begin
       clock => clock,
       reset => reset,
       run   => flux_run,
-      a     => flux_a(23 downto 0),
-      b     => flux_b(23 downto 0),
-      a_nex => flux_a_nex(23 downto 0),
-      b_nex => flux_b_nex(23 downto 0),
+      a     => flux_a,
+      b     => flux_b,
+      a_nex => flux_a_nex,
+      b_nex => flux_b_nex,
       p     => flux_out,
       ready => flux_ready
     );
@@ -134,24 +121,8 @@ begin
     );
 
   -- K-correction Constant Multipliers
-  k_corr_x : component b25_kmul
-    generic map (
-      con => b25_kcon
-    )
-    port map (
-      a   => kmul_in_x,
-      res => kmul_out_x
-    );
-
-  k_corr_y : component b25_kmul
-    generic map (
-      con => b25_kcon
-    )
-    port map (
-      a   => kmul_in_y,
-      res => kmul_out_y
-    );
-
+  kmul_out_x <= resize((kmul_in_x * s25_kcon) sra 16, 25);
+  kmul_out_y <= resize((kmul_in_y * s25_kcon) sra 16, 25);
 
   -- J control (both CORDICs)
   j_control_pro : process (clock) begin
@@ -267,11 +238,10 @@ begin
   --=== SIGN NORMALIZATION ===--
   
   -- Pre-CORDIC i/k normalization to Q1 (signs preserved in input)
-  img_x_abs <= '0' & img_slv(0)(23 downto 0);
-  img_y_abs <= '0' & img_slv(1)(23 downto 0);
-  ker_x_abs <= '0' & ker_slv(0)(23 downto 0);
-  ker_y_abs <= '0' & ker_slv(1)(23 downto 0);
-
+  img_x_abs <= abs(img(0));
+  img_y_abs <= abs(img(1));
+  ker_x_abs <= abs(ker(0));
+  ker_y_abs <= abs(ker(1));
 
   -- Post-vectorization i/k correction to Q1~4
   img_quad <= (img(1)(24), img(0)(24) xor img(1)(24));
@@ -291,7 +261,6 @@ begin
       res => ker_z_cor
     );
 
-
   -- Polar Multiplication (angle z) -- Normalization to Q1
   prod_z <= std_logic_vector(signed(img_z_cor) + signed(ker_z_cor));
 
@@ -302,20 +271,14 @@ begin
       res => prod_z_q1
     );
 
-
   -- Apply normalization to output
-
   with (prod_z(15) xor prod_z(14)) select out_x_sel <= -- q01 and q10
-    (not kmul_out_x(24) & kmul_out_x(23 downto 0)) when '1',
+    -kmul_out_x when '1',
     kmul_out_x when others;
 
   with (prod_z(15)) select out_y_sel <= -- q10 and q11
-    (not kmul_out_y(24) & kmul_out_y(23 downto 0)) when '1',
+    -kmul_out_y when '1',
     kmul_out_y when others;
 
-  p_slv <= (out_x_sel, out_y_sel);
-
-  p(0) <= resize(-signed(p_slv(0)(23 downto 0)), 25) when p_slv(0)(24) else resize(signed(p_slv(0)(23 downto 0)), 25);
-  p(1) <= resize(-signed(p_slv(1)(23 downto 0)), 25) when p_slv(1)(24) else resize(signed(p_slv(1)(23 downto 0)), 25);
-
+  p <= (out_x_sel, out_y_sel);
 end architecture synth;

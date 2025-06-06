@@ -9,9 +9,9 @@ entity flux_inverter is
     reset_s  : in    std_logic;
     reset_as : in    std_logic;
     load     : in    std_logic;
-    inp      : in    std_logic_vector(cordic_len-2 downto 0);
-    nex      : in    std_logic_vector(cordic_len-2 downto 0);
-    outp     : out   std_logic_vector(cordic_len-2 downto 0);
+    inp      : in    unsigned(cordic_len-2 downto 0);
+    nex      : in    unsigned(cordic_len-2 downto 0);
+    outp     : out   unsigned(cordic_len-2 downto 0);
     new_bit  : out   std_logic;
     ready    : out   std_logic;
     erro     : out   std_logic
@@ -20,17 +20,17 @@ end entity flux_inverter;
 
 architecture synth of flux_inverter is
 
-  signal m_n                : std_logic_vector(cordic_len-1 downto 0);
-  signal b                  : std_logic_vector(cordic_len-2 downto 0);
-  signal filtered           : std_logic_vector(cordic_len-2 downto 0) := (others => '0');
-  signal filtered_or        : std_logic_vector(cordic_len-2 downto 0);
-  signal compared           : std_logic_vector(cordic_len-2 downto 0);
-  signal compared_or        : std_logic_vector(cordic_len-2 downto 0);
+  signal m_n                : unsigned(cordic_len-1 downto 0);
+  signal b                  : unsigned(cordic_len-2 downto 0);
+  signal filtered           : unsigned(cordic_len-2 downto 0) := (others => '0');
+  signal filtered_or        : unsigned(cordic_len-2 downto 0);
+  signal compared           : unsigned(cordic_len-2 downto 0);
+  signal compared_or        : unsigned(cordic_len-2 downto 0);
   signal s_ready,   s_error : std_logic;
 
-  constant m_0              : std_logic_vector(cordic_len-1 downto 0) := (0 => '1', others => '0');
-  signal   m                : std_logic_vector(cordic_len-1 downto 0) := m_0;
-  signal   inp_inv, nex_inv : std_logic_vector(cordic_len-2 downto 0);
+  constant m_0              : unsigned(cordic_len-1 downto 0) := (0 => '1', others => '0');
+  signal   m                : unsigned(cordic_len-1 downto 0) := m_0;
+  signal   inp_inv, nex_inv : unsigned(cordic_len-2 downto 0);
 
 begin
 
