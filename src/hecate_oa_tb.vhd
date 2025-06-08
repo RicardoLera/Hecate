@@ -5,9 +5,6 @@ library ieee;
   use ieee.math_real.all;
 
 entity hecate_oa_tb is
-  generic (
-    test_n : natural := 4
-  );
   port (
     rom_serial_i : in  s25 := (others => '0');
     rom_serial_k : in  s25 := (others => '0');
