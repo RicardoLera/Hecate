@@ -17,6 +17,12 @@ package hecate_pkg is
   constant ky : natural := 3;
   constant kz : natural := 3;
 
+  constant cordic_len : natural := 18;
+
+  constant test_seed1 : positive := 3928;
+  constant test_seed2 : positive := 11;
+
+  -- Derived parameters
   constant ox : natural := (ix+kx-1);
   constant oy : natural := (iy+ky-1);
   constant oz : natural := (iz+kz-1);
@@ -33,11 +39,10 @@ package hecate_pkg is
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
   constant the_log        : natural := natural(log2(real(n_points)));
 
-  constant cordic_len     : natural := 18;
   constant cordic_len_log : natural := natural(ceil(log2(real(cordic_len))));
 
   attribute rom_style of 
-    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log
+    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log, test_seed1, test_seed2
   : constant is "block";
 
   -- Subtypes

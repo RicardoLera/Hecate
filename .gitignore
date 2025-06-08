@@ -5,10 +5,12 @@ src/fft/references
 work-obj*.cf
 *.code-workspace
 *.txt
+!/pub/i3epds/results/*.txt
 *.json
 *.toml
 **/build
 *.ghw
+*.edn
 
 
 ## Core latex/pdflatex auxiliary files

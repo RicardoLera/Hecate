@@ -1,0 +1,552 @@
+ID: 1ab0810f5c0093e014afcbb0ec0d169e257ca01b
+
+  hecate_oa -- 2x2x2
+
+== SYNTHESIS -- Default == 
+
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   49 Bit       Adders := 17    
+	   2 Input   31 Bit       Adders := 3     
+	   2 Input   25 Bit       Adders := 233   
+	   3 Input   25 Bit       Adders := 172   
+	   2 Input   18 Bit       Adders := 17    
+	   2 Input   16 Bit       Adders := 51    
+	   2 Input   14 Bit       Adders := 51    
+	   2 Input    5 Bit       Adders := 17    
+	   2 Input    3 Bit       Adders := 2     
+	   3 Input    1 Bit       Adders := 51    
++---XORs : 
+	   2 Input     17 Bit         XORs := 34    
+	   2 Input      1 Bit         XORs := 51    
++---Registers : 
+	               49 Bit    Registers := 17    
+	               31 Bit    Registers := 3     
+	               25 Bit    Registers := 486   
+	               18 Bit    Registers := 34    
+	               16 Bit    Registers := 68    
+	                5 Bit    Registers := 17    
+	                3 Bit    Registers := 17    
+	                1 Bit    Registers := 61    
++---Muxes : 
+	   2 Input   25 Bit        Muxes := 1152  
+	   3 Input   25 Bit        Muxes := 98    
+	   4 Input   25 Bit        Muxes := 300   
+	   7 Input   25 Bit        Muxes := 16    
+	   6 Input   25 Bit        Muxes := 44    
+	   5 Input   25 Bit        Muxes := 12    
+	  10 Input   25 Bit        Muxes := 12    
+	   2 Input   24 Bit        Muxes := 68    
+	   2 Input   18 Bit        Muxes := 34    
+	   2 Input   17 Bit        Muxes := 34    
+	   2 Input   16 Bit        Muxes := 34    
+	   4 Input   16 Bit        Muxes := 17    
+	   3 Input   16 Bit        Muxes := 17    
+	   2 Input   14 Bit        Muxes := 51    
+	   5 Input    5 Bit        Muxes := 82    
+	   4 Input    5 Bit        Muxes := 17    
+	   5 Input    4 Bit        Muxes := 80    
+	   3 Input    4 Bit        Muxes := 6     
+	   4 Input    4 Bit        Muxes := 60    
+	   2 Input    4 Bit        Muxes := 14    
+	   3 Input    3 Bit        Muxes := 8     
+	   4 Input    3 Bit        Muxes := 32    
+	   5 Input    3 Bit        Muxes := 32    
+	   2 Input    3 Bit        Muxes := 76    
+	   4 Input    2 Bit        Muxes := 41    
+	   5 Input    2 Bit        Muxes := 16    
+	   3 Input    2 Bit        Muxes := 2     
+	   2 Input    2 Bit        Muxes := 2     
+	   3 Input    1 Bit        Muxes := 27    
+	   4 Input    1 Bit        Muxes := 137   
+	   5 Input    1 Bit        Muxes := 98    
+	   2 Input    1 Bit        Muxes := 377   
+---------------------------------------------------------------------------------
+
+Total LUTs:          47581
+LUTs minus I/O:      ?
+DSPs:                162
+  (Bonded IOB: 1080)  
+Max delay:           10.17 -- ifft_single/gen_wmul[6].gen_wmul2[1].gen_wmul3.wmul_sel_if.wmul/ARG__0_5[7]
+                              ifft_single/gen_wmul[6].gen_wmul2[1].gen_wmul3.wmul_sel_if.wmul/gen_mux_bfly1[10].gen_mux_bfly2[1].bfly_in_reg[0][7]_i_9__0/I0
+Total on-chip power: 1.577 W
+
+
+
+  hecate_oa -- 2x2x2
+
+== SYNTHESIS -- Flow_AreaOptimized_high == 
+
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   49 Bit       Adders := 17    
+	   2 Input   31 Bit       Adders := 3     
+	   2 Input   25 Bit       Adders := 233   
+	   3 Input   25 Bit       Adders := 172   
+	   2 Input   18 Bit       Adders := 17    
+	   2 Input   16 Bit       Adders := 51    
+	   2 Input   14 Bit       Adders := 51    
+	   2 Input    5 Bit       Adders := 17    
+	   2 Input    3 Bit       Adders := 2     
+	   3 Input    1 Bit       Adders := 51    
++---XORs : 
+	   2 Input     17 Bit         XORs := 34    
+	   2 Input      1 Bit         XORs := 51    
++---Registers : 
+	               49 Bit    Registers := 17    
+	               31 Bit    Registers := 3     
+	               25 Bit    Registers := 486   
+	               18 Bit    Registers := 34    
+	               16 Bit    Registers := 68    
+	                5 Bit    Registers := 17    
+	                3 Bit    Registers := 17    
+	                1 Bit    Registers := 61    
++---Muxes : 
+	   2 Input   25 Bit        Muxes := 1152  
+	   4 Input   25 Bit        Muxes := 300   
+	   5 Input   25 Bit        Muxes := 12    
+	   6 Input   25 Bit        Muxes := 44    
+	   7 Input   25 Bit        Muxes := 16    
+	   3 Input   25 Bit        Muxes := 98    
+	  10 Input   25 Bit        Muxes := 12    
+	   2 Input   24 Bit        Muxes := 68    
+	   2 Input   18 Bit        Muxes := 34    
+	   2 Input   17 Bit        Muxes := 34    
+	   2 Input   16 Bit        Muxes := 34    
+	   4 Input   16 Bit        Muxes := 17    
+	   3 Input   16 Bit        Muxes := 17    
+	   2 Input   14 Bit        Muxes := 51    
+	   5 Input    5 Bit        Muxes := 82    
+	   4 Input    5 Bit        Muxes := 17    
+	   3 Input    4 Bit        Muxes := 6     
+	   5 Input    4 Bit        Muxes := 80    
+	   4 Input    4 Bit        Muxes := 58    
+	   2 Input    4 Bit        Muxes := 14    
+	   4 Input    3 Bit        Muxes := 30    
+	   5 Input    3 Bit        Muxes := 30    
+	   3 Input    3 Bit        Muxes := 8     
+	   2 Input    3 Bit        Muxes := 76    
+	   4 Input    2 Bit        Muxes := 39    
+	   5 Input    2 Bit        Muxes := 16    
+	   2 Input    2 Bit        Muxes := 2     
+	   3 Input    2 Bit        Muxes := 2     
+	   4 Input    1 Bit        Muxes := 135   
+	   5 Input    1 Bit        Muxes := 94    
+	   2 Input    1 Bit        Muxes := 377   
+	   3 Input    1 Bit        Muxes := 27    
+---------------------------------------------------------------------------------
+
+Total LUTs:          45882
+LUTs minus I/O:      ?
+DSPs:                162
+  (Bonded IOB: 1080)  
+Max delay:           10.363 -- ifft_single/gen_mux_bfly1[9].gen_mux_bfly2[1].bfly_in_reg_reg[1][24]/D
+Total on-chip power: 1.081 W
+
+
+
+  hecate_oa -- 2x2x2
+
+== SYNTHESIS -- Flow_PerfOptimized_high ==
+
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   49 Bit       Adders := 17    
+	   2 Input   31 Bit       Adders := 3     
+	   2 Input   25 Bit       Adders := 199   
+	   3 Input   25 Bit       Adders := 104   
+	   2 Input   18 Bit       Adders := 17    
+	   2 Input   16 Bit       Adders := 51    
+	   2 Input    5 Bit       Adders := 17    
+	   2 Input    3 Bit       Adders := 2     
+	   3 Input    1 Bit       Adders := 51    
++---XORs : 
+	   2 Input     17 Bit         XORs := 34    
+	   2 Input      1 Bit         XORs := 51    
++---Registers : 
+	               49 Bit    Registers := 17    
+	               31 Bit    Registers := 6     
+	               25 Bit    Registers := 486   
+	               18 Bit    Registers := 34    
+	               16 Bit    Registers := 68    
+	                5 Bit    Registers := 17    
+	                3 Bit    Registers := 17    
+	                1 Bit    Registers := 61    
++---Muxes : 
+	   2 Input   25 Bit        Muxes := 1152  
+	   3 Input   25 Bit        Muxes := 98    
+	   4 Input   25 Bit        Muxes := 300   
+	   7 Input   25 Bit        Muxes := 16    
+	   6 Input   25 Bit        Muxes := 44    
+	   5 Input   25 Bit        Muxes := 12    
+	  10 Input   25 Bit        Muxes := 12    
+	   2 Input   24 Bit        Muxes := 68    
+	   2 Input   18 Bit        Muxes := 34    
+	   2 Input   17 Bit        Muxes := 34    
+	   2 Input   16 Bit        Muxes := 34    
+	   4 Input   16 Bit        Muxes := 17    
+	   3 Input   16 Bit        Muxes := 17    
+	   2 Input   14 Bit        Muxes := 51    
+	   5 Input    5 Bit        Muxes := 82    
+	   4 Input    5 Bit        Muxes := 17    
+	   5 Input    4 Bit        Muxes := 80    
+	   3 Input    4 Bit        Muxes := 6     
+	   4 Input    4 Bit        Muxes := 60    
+	   2 Input    4 Bit        Muxes := 14    
+	   3 Input    3 Bit        Muxes := 8     
+	   4 Input    3 Bit        Muxes := 32    
+	   5 Input    3 Bit        Muxes := 32    
+	   2 Input    3 Bit        Muxes := 76    
+	   4 Input    2 Bit        Muxes := 41    
+	   5 Input    2 Bit        Muxes := 16    
+	   3 Input    2 Bit        Muxes := 2     
+	   2 Input    2 Bit        Muxes := 2     
+	   3 Input    1 Bit        Muxes := 27    
+	   4 Input    1 Bit        Muxes := 137   
+	   5 Input    1 Bit        Muxes := 98    
+	   2 Input    1 Bit        Muxes := 377   
+---------------------------------------------------------------------------------
+
+Total LUTs:          54889
+LUTs minus I/O:      ?
+DSPs:                162
+  (Bonded IOB: 1080)  
+Max delay:           9.966 -- ifft_single/gen_mux_bfly1[11].gen_mux_bfly2[1].bfly_in_reg_reg[0][23]/D
+Total on-chip power: 1.636 W
+
+
+
+
+
+
+
+
+
+
+  hecate_oa -- 3x3x3
+
+== SYNTHESIS -- Default ==
+
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   49 Bit       Adders := 65    
+	   2 Input   31 Bit       Adders := 3     
+	   3 Input   25 Bit       Adders := 804   
+	   2 Input   25 Bit       Adders := 1059  
+	   2 Input   18 Bit       Adders := 65    
+	   2 Input   16 Bit       Adders := 195   
+	   2 Input   14 Bit       Adders := 195   
+	   2 Input    5 Bit       Adders := 65    
+	   2 Input    4 Bit       Adders := 2     
+	   3 Input    1 Bit       Adders := 195   
++---XORs : 
+	   2 Input     17 Bit         XORs := 130   
+	   2 Input      1 Bit         XORs := 195   
++---Registers : 
+	               49 Bit    Registers := 65    
+	               31 Bit    Registers := 3     
+	               25 Bit    Registers := 1899  
+	               18 Bit    Registers := 130   
+	               16 Bit    Registers := 260   
+	                5 Bit    Registers := 65    
+	                4 Bit    Registers := 2     
+	                3 Bit    Registers := 65    
+	                1 Bit    Registers := 205   
++---Multipliers : 
+	               3x32  Multipliers := 3     
++---Muxes : 
+	   2 Input   25 Bit        Muxes := 5223  
+	   6 Input   25 Bit        Muxes := 852   
+	  11 Input   25 Bit        Muxes := 60    
+	   9 Input   25 Bit        Muxes := 64    
+	  10 Input   25 Bit        Muxes := 144   
+	   4 Input   25 Bit        Muxes := 427   
+	   3 Input   25 Bit        Muxes := 376   
+	   2 Input   24 Bit        Muxes := 260   
+	   2 Input   18 Bit        Muxes := 130   
+	   2 Input   17 Bit        Muxes := 130   
+	   2 Input   16 Bit        Muxes := 130   
+	   4 Input   16 Bit        Muxes := 65    
+	   3 Input   16 Bit        Muxes := 65    
+	   2 Input   14 Bit        Muxes := 195   
+	   7 Input    7 Bit        Muxes := 234   
+	   7 Input    6 Bit        Muxes := 246   
+	   6 Input    6 Bit        Muxes := 290   
+	   2 Input    6 Bit        Muxes := 12    
+	   3 Input    6 Bit        Muxes := 8     
+	   5 Input    6 Bit        Muxes := 10    
+	   4 Input    6 Bit        Muxes := 6     
+	   6 Input    5 Bit        Muxes := 74    
+	   7 Input    5 Bit        Muxes := 50    
+	   2 Input    5 Bit        Muxes := 6     
+	   3 Input    5 Bit        Muxes := 2     
+	   4 Input    5 Bit        Muxes := 65    
+	   6 Input    4 Bit        Muxes := 48    
+	   7 Input    4 Bit        Muxes := 32    
+	   2 Input    4 Bit        Muxes := 2     
+	   6 Input    3 Bit        Muxes := 34    
+	   7 Input    3 Bit        Muxes := 32    
+	   3 Input    3 Bit        Muxes := 4     
+	   2 Input    3 Bit        Muxes := 262   
+	   6 Input    2 Bit        Muxes := 22    
+	   3 Input    2 Bit        Muxes := 2     
+	   7 Input    2 Bit        Muxes := 16    
+	   2 Input    2 Bit        Muxes := 2     
+	   4 Input    2 Bit        Muxes := 65    
+	   2 Input    1 Bit        Muxes := 1109  
+	   7 Input    1 Bit        Muxes := 284   
+	   6 Input    1 Bit        Muxes := 214   
+	   3 Input    1 Bit        Muxes := 75    
+	   4 Input    1 Bit        Muxes := 305   
+---------------------------------------------------------------------------------
+
+Total LUTs:          501255
+LUTs minus I/O:      ?
+DSPs:                1026
+  (Bonded IOB: 4480)  
+Max delay:           11.465 -- fft_single/gen_wmul[7].gen_wmul2[0].gen_wmul3.wmul_sel_if.wmul/gen_mux_bfly1[7].gen_mux_bfly2[1].bfly_in_reg[1][12]_i_30/O
+Total on-chip power: 8.859 W
+
+
+
+
+  hecate_oa -- 3x3x3
+
+== SYNTHESIS -- Flow_AreaOptimized_high ==
+
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   49 Bit       Adders := 65    
+	   2 Input   31 Bit       Adders := 3     
+	   3 Input   25 Bit       Adders := 804   
+	   2 Input   25 Bit       Adders := 1059  
+	   2 Input   18 Bit       Adders := 65    
+	   2 Input   16 Bit       Adders := 195   
+	   2 Input   14 Bit       Adders := 195   
+	   2 Input    5 Bit       Adders := 65    
+	   2 Input    4 Bit       Adders := 2     
+	   3 Input    1 Bit       Adders := 195   
++---XORs : 
+	   2 Input     17 Bit         XORs := 130   
+	   2 Input      1 Bit         XORs := 195   
++---Registers : 
+	               49 Bit    Registers := 65    
+	               31 Bit    Registers := 3     
+	               25 Bit    Registers := 1899  
+	               18 Bit    Registers := 130   
+	               16 Bit    Registers := 260   
+	                5 Bit    Registers := 65    
+	                4 Bit    Registers := 2     
+	                3 Bit    Registers := 65    
+	                1 Bit    Registers := 205   
++---Multipliers : 
+	               3x32  Multipliers := 3     
++---Muxes : 
+	   2 Input   25 Bit        Muxes := 5223  
+	   6 Input   25 Bit        Muxes := 852   
+	   4 Input   25 Bit        Muxes := 427   
+	   3 Input   25 Bit        Muxes := 376   
+	   9 Input   25 Bit        Muxes := 64    
+	  10 Input   25 Bit        Muxes := 144   
+	  11 Input   25 Bit        Muxes := 60    
+	   2 Input   24 Bit        Muxes := 260   
+	   2 Input   18 Bit        Muxes := 130   
+	   2 Input   17 Bit        Muxes := 130   
+	   2 Input   16 Bit        Muxes := 130   
+	   4 Input   16 Bit        Muxes := 65    
+	   3 Input   16 Bit        Muxes := 65    
+	   2 Input   14 Bit        Muxes := 195   
+	   7 Input    7 Bit        Muxes := 234   
+	   6 Input    6 Bit        Muxes := 290   
+	   7 Input    6 Bit        Muxes := 246   
+	   3 Input    6 Bit        Muxes := 8     
+	   5 Input    6 Bit        Muxes := 10    
+	   4 Input    6 Bit        Muxes := 6     
+	   2 Input    6 Bit        Muxes := 12    
+	   6 Input    5 Bit        Muxes := 74    
+	   7 Input    5 Bit        Muxes := 50    
+	   2 Input    5 Bit        Muxes := 6     
+	   3 Input    5 Bit        Muxes := 2     
+	   4 Input    5 Bit        Muxes := 65    
+	   7 Input    4 Bit        Muxes := 32    
+	   6 Input    4 Bit        Muxes := 48    
+	   2 Input    4 Bit        Muxes := 2     
+	   6 Input    3 Bit        Muxes := 34    
+	   3 Input    3 Bit        Muxes := 4     
+	   7 Input    3 Bit        Muxes := 30    
+	   2 Input    3 Bit        Muxes := 262   
+	   3 Input    2 Bit        Muxes := 2     
+	   6 Input    2 Bit        Muxes := 22    
+	   7 Input    2 Bit        Muxes := 16    
+	   2 Input    2 Bit        Muxes := 2     
+	   4 Input    2 Bit        Muxes := 65    
+	   7 Input    1 Bit        Muxes := 284   
+	   6 Input    1 Bit        Muxes := 210   
+	   2 Input    1 Bit        Muxes := 1109  
+	   3 Input    1 Bit        Muxes := 75    
+	   4 Input    1 Bit        Muxes := 305   
+---------------------------------------------------------------------------------
+[same except MUXes]
+
+Total LUTs:          
+LUTs minus I/O:      ?
+DSPs:                
+  (Bonded IOB: 1080)  
+Max delay:           
+Total on-chip power: 
+
+
+
+
+
+
+
+
+== SIMULATION DATA ==
+
+2x2x2 x 2x2x2 -- 128 tests -- cor_length=18
+Passed tests = 128 out of 128
+Max test time = 82 cycles
+Min test time = 64 cycles
+Average test time = 71 cycles
+Max slice time = 81 cycles
+Min slice time = 63 cycles
+Average slice time = 70 cycles
+Max precision error = 000.0B99      -- < 2^12
+Average precision error = 000.0142  -- < 2^9
+
+4x4x4 x 2x2x2 -- 16 tests -- cor_length=18
+Passed tests = 16 out of 16
+Max test time = 600 cycles
+Min test time = 463 cycles
+Average test time = 517 cycles
+Max slice time = 81 cycles
+Min slice time = 57 cycles
+Average slice time = 65 cycles
+Max precision error = 000.0C6D     -- < 2^12
+Average precision error = 000.00CE -- < 2^8
+
+8x8x8 x 2x2x2 -- 2 tests -- cor_length=18
+Passed tests = 2 out of 2
+Max test time = 4744 cycles
+Min test time = 3939 cycles
+Average test time = 4342 cycles
+Max slice time = 81 cycles
+Min slice time = 57 cycles
+Average slice time = 68 cycles
+Max precision error = 000.00AC     -- < 2^8
+Average precision error = 000.0033 -- < 2^6
+
+3x3x3 x 3x3x3 -- 32 tests -- cor_length=18
+Passed tests = 32 out of 32
+Max test time = 88 cycles
+Min test time = 71 cycles
+Average test time = 84 cycles
+Max slice time = 87 cycles
+Min slice time = 70 cycles
+Average slice time = 83 cycles
+Max precision error = 000.02A7     -- < 2^10
+Average precision error = 000.0042 -- < 2^7
+
+6x6x6 x 3x3x3 -- 4 tests -- cor_length=18
+Passed tests = 4 out of 4
+Max test time = 634 cycles
+Min test time = 586 cycles
+Average test time = 613 cycles
+Max slice time = 87 cycles
+Min slice time = 66 cycles
+Average slice time = 77 cycles
+Max precision error = 000.034E     -- < 2^10
+Average precision error = 000.0072 -- < 2^7
+
+7x3x3 x 7x3x3 -- 2 tests -- cor_length=18
+Passed tests = 2 out of 2
+Max test time = 94 cycles
+Min test time = 93 cycles
+Average test time = 94 cycles
+Max slice time = 93 cycles
+Min slice time = 92 cycles
+Average slice time = 93 cycles
+Max precision error = 000.01E9     -- < 2^9
+Average precision error = 000.004E -- < 2^7
+
+
+I        K        tests    N      slices    cycles (avrg slice)    I rate    I grow    K rate    K grow    worst precision   
+2x2x2    2x2x2    128      32     128       70                     1x        1x        1x        1x        < 2^12
+4x4x4    2x2x2    16       32     128       65                     8x        0.93x     1x        --        < 2^12
+8x8x8    2x2x2    2        32     128       68                     64x       
+3x3x3    3x3x3    32       128    32        83                     1x        1x        3.375x    1.19x     < 2^10
+6x6x6    3x3x3    4        128    32        77                     8x        0.93x     3.375x    --        < 2^10
+7x3x3    7x3x3    2        512    2 (8)     93                     --        --        7.875x    1.33x     < 2^9
+* "grow" means how much the per-slice time increased proportinal to I or K
+
+
+I        K        tests    N      slices    cycles (avrg test)     I rate    I grow    K rate    K grow    worst precision   
+2x2x2    2x2x2    128      32     128       71                     1x        1x        1x        1x        < 2^12
+4x4x4    2x2x2    16       32     128       517                    8x        7.28x     1x        --        < 2^12
+3x3x3    3x3x3    32       128    32        84                     1x        1x        3.375x    1.18x     < 2^10
+6x6x6    3x3x3    4        128    32        613                    8x        7.30x     3.375x    --        < 2^10
+7x3x3    7x3x3    2        512    2 (8)     94                     --        --        7.875x    1.32x     < 2^9
+* "grow" means how much the per-test time increased proportinal to I or K
+** note that it takes 1 cycle for tests to finish, hence why test time doesn't match slice time when there's 1 slice, causing a minor inacuracy
+
+== ==
+
+
+
+
+
+
+
+
+
+
+
+Default-synth 2x2x2 vs 3x3x3
+
+Total LUTs:          54889       -> 501255      x9.13
+LUTs minus I/O:      ?           -> ?           
+DSPs:                162         -> 1026        x6.33
+Max delay:           9.966--ifft -> 11.465--fft x1.15
+Aprox. freq:         100.34 MHz  -> 87.22 MHz   x0.87
+Total on-chip power: 1.636 W     -> 8.859 W     x5.42
+(Bonded IOB: 1080 -> 4480)
+
+Expected component growth: (128×log₂(128)) ÷ (32×log₂(32)) = x5.6
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

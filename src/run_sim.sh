@@ -67,8 +67,8 @@ else
 
   ghdl -i --std=08 $comp_files
   ghdl -m --std=08 $top_module
-  ghdl -e --std=08 $top_module 
-  ghdl -r --std=08 $top_module --asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
+  ghdl -e --std=08 $top_module
+  ghdl -r --std=08 $top_module --max-stack-alloc=4096 --asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
   rm *.o
   rm "$(echo $top_module | awk '{print $1;}')"-"$(echo $top_module | awk '{print $2;}')"
 

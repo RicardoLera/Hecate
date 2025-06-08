@@ -6,7 +6,7 @@ library ieee;
 
 entity hecate_oa_tb is
   generic (
-    test_n : natural := 1
+    test_n : natural := 4
   );
   port (
     rom_serial_i : in  s25 := (others => '0');
@@ -35,30 +35,6 @@ architecture sim of hecate_oa_tb is
 
   signal keep_simulating  : std_logic := '0';
   constant clockperiod    : time      := 1 ns;
-  constant seed : natural := 0;
-
-  impure function rand_slv(len : natural; s1 : natural; s2 : natural) return signed is
-    variable r : real;
-    variable slv : signed(len - 1 downto 0);
-    variable seed1 : positive := s1;
-    variable seed2 : positive := s2;
-  begin
-    for i in slv'range loop
-      uniform(seed1, seed2, r);
-      slv(i) := '1' when r > 0.5 else '0';
-    end loop;
-    return slv;
-  end function;
-
-  procedure rand_arr(signal arr : out s25_3d_real_array; constant offset, size_z, size_y, size_x : in natural) is begin
-    for z in 0 to size_z-1 loop
-      for y in 0 to size_y-1 loop
-        for x in 0 to size_x-1 loop
-          arr(z)(y)(x) <= '0' & "00000000" & rand_slv(16, x+y+z+1, x+y+z+1+offset);
-        end loop;
-      end loop;
-    end loop;
-  end procedure;
 
 begin
   clk <= (not clk) and keep_simulating after clockperiod / 2;
@@ -90,14 +66,34 @@ begin
     variable t1, t2, test_time,  t_mean, t_max, t_min : time := 0 ns;
     variable s1, s2, slice_time, s_mean, s_max, s_min : time := 0 ns;
     variable test_res, pnt : natural  := 0;
-    variable err, err_mean : unsigned(24 downto 0) := (others => '0');
+    variable err, err_mean, err_worst : unsigned(24 downto 0) := (others => '0');
+
+    variable r     : real;
+    variable seed1 : positive := test_seed1;
+    variable seed2 : positive := test_seed2;
   begin
     keep_simulating <= '1';
     rst <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
-      rand_arr(img, seed+n+1, iz, iy, ix);
-      rand_arr(ker, seed+n+2, kz, ky, kx);
+
+      for z in 0 to iz-1 loop
+        for y in 0 to iy-1 loop
+          for x in 0 to ix-1 loop
+            uniform(seed1, seed2, r);
+            img(z)(y)(x) <= to_signed(integer(floor(r * 2.0**16)), 25);
+          end loop;
+        end loop;
+      end loop;
+
+      for z in 0 to kz-1 loop
+        for y in 0 to ky-1 loop
+          for x in 0 to kx-1 loop
+            uniform(seed1, seed2, r);
+            ker(z)(y)(x) <= to_signed(integer(floor(r * 2.0**16)), 25);
+          end loop;
+        end loop;
+      end loop;
 
       -- img_loop_z : for z in 0 to iz-1 loop
       --   img_loop_y : for y in 0 to iy-1 loop
@@ -145,8 +141,8 @@ begin
         calc_error_y : for y in 0 to oy-1 loop
           calc_error_x : for x in 0 to ox-1 loop
             err := unsigned(abs(gold(z)(y)(x) - res(z)(y)(x)));
+            if (err > err_worst) then err_worst := err; end if;
             err_mean := unsigned(err_mean) + unsigned(err);
-
             if (unsigned(err) < x"1000") then
               pnt := pnt + 1;
             else
@@ -163,10 +159,9 @@ begin
       
     end loop test_loop;
 
-    t_mean   := t_mean / test_n;
+    t_mean := t_mean / test_n;
     s_mean := s_mean / (test_n*slice_x*slice_y*slice_z);
-
-    err_mean := unsigned(err_mean) / to_unsigned(oz*oy*ox, 25);
+    err_mean := unsigned(err_mean) / to_unsigned(oz*oy*ox*test_n, 25);
 
     report "Passed tests = " & natural'image(test_res) & " out of " & natural'image(test_n);
     report "Max test time = " & natural'image(t_max / clockperiod ) & " cycles";
@@ -175,7 +170,8 @@ begin
     report "Max slice time = " & natural'image(s_max / clockperiod ) & " cycles";
     report "Min slice time = " & natural'image(s_min / clockperiod ) & " cycles";
     report "Average slice time = " & natural'image(natural((real(s_mean / (1 fs)) * 1.0/1000000.0))) & " cycles";
-    report "Average precision error = " & to_hstring(err_mean(24 downto 16)) & "." & to_hstring(err_mean(15 downto 0));
+    report "Max precision error = " & to_hstring(err_worst(23 downto 16)) & "." & to_hstring(err_worst(15 downto 0));
+    report "Average precision error = " & to_hstring(err_mean(23 downto 16)) & "." & to_hstring(err_mean(15 downto 0));
 
     keep_simulating <= '0';
     wait;
