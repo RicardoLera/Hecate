@@ -21,15 +21,16 @@ end entity hecate_oa_tb;
 
 architecture sim of hecate_oa_tb is
 
-  signal clk, sta  : std_logic := '0';
-  signal rst       : std_logic := '1';
-  signal img       : s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-  signal ker       : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-  signal slice_rdy : std_logic;
+  signal clk, sta : std_logic := '0';
+  signal rst      : std_logic := '1';
+  signal img      : s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+  signal ker      : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+  signal slice_rdy, ker_rdy : std_logic;
 
   signal res, gold        : s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
   signal o_ready, g_ready : std_logic;
 
+  signal sig_n            : integer;
   signal keep_simulating  : std_logic := '0';
   constant clockperiod    : time      := 1 ns;
 
@@ -45,6 +46,7 @@ begin
       start => sta,
       res   => res,
       ready => o_ready,
+      ker_ready   => ker_rdy,
       slice_ready => slice_rdy
     );
 
@@ -73,12 +75,13 @@ begin
     rst <= '1';
 
     test_loop : for n in 0 to test_n-1 loop
+      sig_n <= n; -- track test_n on waveform
 
       for z in 0 to iz-1 loop
         for y in 0 to iy-1 loop
           for x in 0 to ix-1 loop
             uniform(seed1, seed2, r);
-            img(z)(y)(x) <= to_signed(integer(floor(r * 2.0**16)), 25);
+            img(z)(y)(x) <= to_signed(integer(floor(r * (2.0**16))), 25);
           end loop;
         end loop;
       end loop;
@@ -87,7 +90,7 @@ begin
         for y in 0 to ky-1 loop
           for x in 0 to kx-1 loop
             uniform(seed1, seed2, r);
-            ker(z)(y)(x) <= to_signed(integer(floor(r * 2.0**16)), 25);
+            ker(z)(y)(x) <= to_signed(integer(floor(r * (2.0**16))), 25);
           end loop;
         end loop;
       end loop;
@@ -117,6 +120,7 @@ begin
       calc_slice_z : for z in 0 to slice_z-1 loop
         calc_slice_y : for y in 0 to slice_y-1 loop
           calc_slice_x : for x in 0 to slice_x-1 loop
+            if (not ker_rdy) then wait until (ker_rdy) for 1 ms; end if;
             s1 := now; wait until (slice_rdy) for 10 ms; s2 := now;
             slice_time := s2-s1;
             s_mean := s_mean + slice_time;
@@ -143,7 +147,7 @@ begin
             if (unsigned(err) < x"1000") then
               pnt := pnt + 1;
             else
-              report "Error exceeded at (" & natural'image(z) & ")(" & natural'image(y) & ")(" & natural'image(x) & ")" & "   Total error = " & to_hstring(err);
+              report "Error exceeded at (" & natural'image(z) & ")(" & natural'image(y) & ")(" & natural'image(x) & ")" & "   Total error = " & to_hstring(err(23 downto 0));
             end if;
           end loop calc_error_x;
         end loop calc_error_y;

@@ -112,6 +112,37 @@ ker = np.array(
 #   ], dtype=np.float64)
 # ker = img
 
+# "Test 77" -- random test edge case
+img = np.array(
+  [
+    0x0547, 0x188F, 0,
+    0x9D4B, 0xC1EB, 0,
+    0, 0, 0,
+
+    0xF60C, 0x050D, 0,
+    0x5E0D, 0x9096, 0,
+    0, 0, 0,
+    
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0
+  ], dtype=np.float64)
+
+ker = np.array(
+  [
+    0x681B, 0xA361, 0,
+    0xF218, 0x67B9, 0,
+    0, 0, 0,
+
+    0x8D84, 0x3A29, 0,
+    0x1B6D, 0xF2A4, 0,
+    0, 0, 0,
+    
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0
+  ], dtype=np.float64)
+
 # Random array test
 # img = np.random.rand(8)
 # ker = np.random.rand(8)
@@ -126,10 +157,10 @@ spsize =2**(math.ceil(math.log(np.size(img), 2))) # next power of 2
 
 
 # FFT
-IMG = np.fft.fft(img, spsize)
+IMG = np.fft.fft(img / pow(2, 16), spsize)
 # print(arrToHex(np.real(IMG)))
 # print(arrToHex(np.imag(IMG)))
-KER = np.fft.fft(ker, spsize)
+KER = np.fft.fft(ker / pow(2, 16), spsize)
 # print(arrToHex(np.real(KER)))
 # print(arrToHex(np.imag(KER)))
 
@@ -149,8 +180,8 @@ pHAD = pIMG + pKER
 
 # CORDIC polar -> rect
 HAD = mHAD * np.exp(1j*pHAD) * kcor / pow(kcor,3)
-print(arrToHex(np.real(HAD)))
-print(arrToHex(np.imag(HAD)))
+# print(arrToHex(np.real(HAD)))
+# print(arrToHex(np.imag(HAD)))
 
 
 # IFFT

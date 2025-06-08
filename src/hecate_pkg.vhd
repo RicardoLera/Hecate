@@ -9,15 +9,15 @@ package hecate_pkg is
   attribute rom_style : string;
 
   -- Main parameters
-  constant ix : natural := 3; -- assumes i mod k = 0, use assert in the testbench
-  constant iy : natural := 3;
-  constant iz : natural := 3;
+  constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
+  constant iy : natural := 2;
+  constant iz : natural := 2;
 
-  constant kx : natural := 3;
-  constant ky : natural := 3;
-  constant kz : natural := 3;
+  constant kx : natural := 2;
+  constant ky : natural := 2;
+  constant kz : natural := 2;
 
-  constant test_n     : natural  := 4;
+  constant test_n     : natural  := 128;
   constant test_seed1 : positive := 3928;
   constant test_seed2 : positive := 11;
 
@@ -311,6 +311,7 @@ package hecate_pkg is
       clock, reset, start : in std_logic;
       res                 : out s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
       ready               : out std_logic := '0';
+      ker_ready           : out std_logic := '0';
       slice_ready         : out std_logic := '0'
     );
   end component;

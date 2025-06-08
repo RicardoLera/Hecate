@@ -22,5 +22,8 @@ begin
     a(13 downto 0) when '0',
     std_logic_vector(-signed(a(13 downto 0))) when others;
 
-  res <= (qt, mantissa);
+  res(15 downto 14) <= "10" when ((a(13 downto 0) = 14b"0") and (qt="01")) -- Test 77 edge case
+    else qt;
+
+  res(13 downto 0) <= mantissa;
 end architecture synth;

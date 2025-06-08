@@ -10,6 +10,7 @@ entity hecate_oa is
     clock, reset, start : in std_logic;
     res                 : out s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
     ready               : out std_logic := '0';
+    ker_ready           : out std_logic := '0';
     slice_ready         : out std_logic := '0'
   );
 end entity hecate_oa;
@@ -23,7 +24,6 @@ architecture area_opt of hecate_oa is
 
   signal acc                    : s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
   signal ker_transf             : s25_complex_array(0 to n_points/2); -- LATCH
-  signal acc_ready, ker_ready   : std_logic := '0'; -- LATCH
 
   signal fft_in                 : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
   signal fft_out                : s25_complex_array(0 to n_points/2);
@@ -86,7 +86,7 @@ begin
       if (reset or ready) then
         if reset then ready <= '0'; end if;
         sx <= 0; sy <= 0; sz <= 0;
-        fft_reset <= '1'; hec_reset <= '1'; ker_ready <= '0'; ifft_reset <= '1'; acc_ready <= '0'; 
+        fft_reset <= '1'; hec_reset <= '1'; ker_ready <= '0'; ifft_reset <= '1'; slice_ready <= '0'; 
         acc <= (others => (others => (others => (others => '0'))));
         ker_transf <= (others => (others => (others => '0')));
       elsif (start) then
@@ -119,7 +119,7 @@ begin
           ifft_in <= hec_out;
           ifft_start <= '1'; ifft_reset <= '0';
                 
-        elsif (not acc_ready) then -- Update accumulator
+        elsif (not slice_ready) then -- Update accumulator
           for z in 0 to nz-1 loop
             for y in 0 to ny-1 loop
               for x in 0 to nx-1 loop
@@ -127,13 +127,13 @@ begin
               end loop;
             end loop;
           end loop;
-          acc_ready <= '1';
+          slice_ready <= '1';
 
         else -- Next slice / finish
           fft_start  <= '0'; fft_reset <= '1';
           hec_start  <= '0'; hec_reset <= '1';
           ifft_start <= '0'; ifft_reset <= '1';
-          acc_ready  <= '0';
+          slice_ready  <= '0';
           sx <= sx + 1;
           if (sx+1 >= slice_x) then
             sy <= sy + 1; sx <= 0;
@@ -150,7 +150,6 @@ begin
       end if;
     end if;
   end process proc_slice;
-  slice_ready <= acc_ready;
   res <= acc;
 
 end architecture area_opt;

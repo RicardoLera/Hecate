@@ -26,7 +26,7 @@ architecture synth of flux_inverter is
   signal filtered_or        : unsigned(cordic_len-2 downto 0);
   signal compared           : unsigned(cordic_len-2 downto 0);
   signal compared_or        : unsigned(cordic_len-2 downto 0);
-  signal s_ready,   s_error : std_logic;
+  signal s_ready,  as_error : std_logic;
 
   constant m_0              : unsigned(cordic_len-1 downto 0) := (0 => '1', others => '0');
   signal   m                : unsigned(cordic_len-1 downto 0) := m_0;
@@ -57,8 +57,8 @@ begin
     compared_or(i) <= compared_or(i - 1) or compared(i);
   end generate gen_or;
 
-  s_error <= compared_or(cordic_len-2);
-  erro    <= s_error;
+  as_error <= compared_or(cordic_len-2);
+  erro     <= as_error;
 
   m_n(0)           <= filtered_or(cordic_len-2);
   m_n(cordic_len-1 downto 1) <= m(cordic_len-2 downto 0);
@@ -69,13 +69,13 @@ begin
 
   outp <= m(cordic_len-2 downto 0) and b(cordic_len-2 downto 0);
 
-  proc : process (reset_as, clock, s_error) begin
+  proc : process (reset_as, as_error, clock) begin
 
     if (reset_as) then
       m <= m_0;
     elsif rising_edge(clock) then
 
-      if (reset_s or s_error) then
+      if (reset_s) then
         m <= m_0;
       elsif (s_ready = '1' or load = '0') then
         m <= m;
