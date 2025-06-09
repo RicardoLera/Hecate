@@ -5,12 +5,12 @@ library ieee;
 
 entity conv3d is
   port (
-    img : in  s25_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-    ker : in  s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    img : in  t_signed_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
+    ker : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clk : in  std_logic;
     rst : in  std_logic;
     run : in  std_logic;
-    res : out s25_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
+    res : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
     rdy : out std_logic
   );
 end entity conv3d;
@@ -21,10 +21,10 @@ architecture synth of conv3d is
 
   signal rdy_sub : std_logic_vector(osize_full-1 downto 0) := (others => '0');
 
-  signal mul_a, mul_b, mul_res : s25_real_array(osize_full-1 downto 0) := (others => (others => '0'));
-  signal add_a, add_b          : s25_real_array(osize_full-1 downto 0) := (others => (others => '0'));
+  signal mul_a, mul_b, mul_res : t_signed_real_array(osize_full-1 downto 0) := (others => (others => '0'));
+  signal add_a, add_b          : t_signed_real_array(osize_full-1 downto 0) := (others => (others => '0'));
 
-  signal res_buff : s25_real_array(0 to osize_full-1);
+  signal res_buff : t_signed_real_array(0 to osize_full-1);
   
 begin
 
@@ -38,7 +38,7 @@ begin
 
       begin
 
-        mul_res(oidx) <= resize((mul_a(oidx) * mul_b(oidx)) sra 16, 25);
+        mul_res(oidx) <= resize((mul_a(oidx) * mul_b(oidx)) sra signed_point, signed_size);
         res_buff(oidx) <= add_a(oidx) + add_b(oidx);
         
         macc : process(clk)

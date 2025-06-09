@@ -9,7 +9,7 @@ end entity hadamard_tb;
 architecture sim of hadamard_tb is
 
   signal reset, start : std_logic;
-  signal img, ker, p  : s25_complex;
+  signal img, ker, p  : t_signed_complex;
   signal ready        : std_logic;
 
   signal   clk             : std_logic := '0';

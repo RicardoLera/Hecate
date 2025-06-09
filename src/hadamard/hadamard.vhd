@@ -5,13 +5,10 @@ library ieee;
 
 entity hadamard is
   port (
-    clock : in  std_logic;
-    reset : in  std_logic;
-    start : in  std_logic;
-    img   : in  s25_complex;
-    ker   : in  s25_complex;
-    p     : out s25_complex;
-    ready : out std_logic
+    clock, reset, start : in  std_logic;
+    img, ker            : in  t_signed_complex;
+    p                   : out t_signed_complex;
+    ready               : out std_logic
   );
 end entity hadamard;
 
@@ -23,41 +20,41 @@ architecture synth of hadamard is
   signal flux_run, kx_run                   : std_logic := '0';
 
   -- CORDIC control
-  signal j : unsigned(cordic_len_log-1 downto 0) := (others => '0');
+  signal j : integer range 0 to cordic_len := 0;
 
   -- Primary CORDIC
-  signal pc_x_in, pc_y_in      : s25 := (others => '0');
-  signal pc_x_out, pc_y_out    : s25;
+  signal pc_x_in, pc_y_in      : t_signed := (others => '0');
+  signal pc_x_out, pc_y_out    : t_signed;
   signal pc_sig_in, pc_sig_out : std_logic := '0';
-  signal pc_z_in, pc_z_out     : p16;
+  signal pc_z_in, pc_z_out     : t_pfb;
 
   -- Secondary CORDIC
-  signal sc_x_in, sc_y_in      : s25 := (others => '0');
-  signal sc_x_out, sc_y_out    : s25;
+  signal sc_x_in, sc_y_in      : t_signed := (others => '0');
+  signal sc_x_out, sc_y_out    : t_signed;
   signal sc_sig_in, sc_sig_out : std_logic := '0';
-  signal sc_z_in, sc_z_out     : p16;
+  signal sc_z_in, sc_z_out     : t_pfb;
 
   -- Flux Multiplier
-  signal flux_a, flux_a_nex : s25 := (others => '0');
-  signal flux_b, flux_b_nex : s25 := (others => '0');
+  signal flux_a, flux_a_nex : t_signed := (others => '0');
+  signal flux_b, flux_b_nex : t_signed := (others => '0');
   signal flux_ready         : std_logic;
-  signal flux_out           : s25 := (others => '0');
+  signal flux_out           : t_signed := (others => '0');
 
   -- Feedback latches
-  signal img_z_l, ker_z_l : p16 := (others => '0');
-  signal prod_l           : s25 := (others => '0');
+  signal img_z_l, ker_z_l : t_pfb := (others => '0');
+  signal prod_l           : t_signed := (others => '0');
 
   -- Sign treatment
-  signal img_x_abs, img_y_abs : s25;
-  signal ker_x_abs, ker_y_abs : s25;
-  signal img_z_cor, ker_z_cor : p16;
-  signal prod_z, prod_z_q1    : p16 := (others => '0');
-  signal img_quad, ker_quad   : std_logic_vector(1 downto 0);
+  signal img_x_abs, img_y_abs : t_signed;
+  signal ker_x_abs, ker_y_abs : t_signed;
+  signal img_z_cor, ker_z_cor : t_pfb;
+  signal prod_z, prod_z_q1    : t_pfb := (others => '0');
+  signal img_quad, ker_quad   : signed(1 downto 0);
 
   -- K-correction Constant Multipliers
-  signal kmul_in_x, kmul_out_x : s25 := (others => '0');
-  signal kmul_in_y, kmul_out_y : s25 := (others => '0');
-  signal out_x_sel, out_y_sel  : s25;
+  signal kmul_in_x, kmul_out_x : t_signed := (others => '0');
+  signal kmul_in_y, kmul_out_y : t_signed := (others => '0');
+  signal out_x_sel, out_y_sel  : t_signed;
 
 begin
 
@@ -121,8 +118,8 @@ begin
     );
 
   -- K-correction Constant Multipliers
-  kmul_out_x <= resize((kmul_in_x * s25_kcon) sra 16, 25);
-  kmul_out_y <= resize((kmul_in_y * s25_kcon) sra 16, 25);
+  kmul_out_x <= resize((kmul_in_x * signed_kcon) sra signed_point, signed_size);
+  kmul_out_y <= resize((kmul_in_y * signed_kcon) sra signed_point, signed_size);
 
   -- J control (both CORDICs)
   j_control_pro : process (clock) begin
@@ -132,8 +129,8 @@ begin
           if (j < cordic_len-1) then
             j <= j + 1;
           end if;
-        when "01"   => j <= (others => '0');
-        when "11"   => j <= (others => '0');
+        when "01"   => j <= 0;
+        when "11"   => j <= 0;
         when others => j <= j;
       end case;
     end if;
@@ -244,8 +241,8 @@ begin
   ker_y_abs <= abs(ker(1));
 
   -- Post-vectorization i/k correction to Q1~4
-  img_quad <= (img(1)(24), img(0)(24) xor img(1)(24));
-  ker_quad <= (ker(1)(24), ker(0)(24) xor ker(1)(24));
+  img_quad <= (img(1)(signed_size-1), img(0)(signed_size-1) xor img(1)(signed_size-1));
+  ker_quad <= (ker(1)(signed_size-1), ker(0)(signed_size-1) xor ker(1)(signed_size-1));
 
   img_q : component pfb_q
     port map (
@@ -262,7 +259,7 @@ begin
     );
 
   -- Polar Multiplication (angle z) -- Normalization to Q1
-  prod_z <= std_logic_vector(signed(img_z_cor) + signed(ker_z_cor));
+  prod_z <= img_z_cor + ker_z_cor;
 
   prod_q : component pfb_q
     port map (
@@ -272,11 +269,11 @@ begin
     );
 
   -- Apply normalization to output
-  with (prod_z(15) xor prod_z(14)) select out_x_sel <= -- q01 and q10
+  with (prod_z(pfb_size-1) xor prod_z(pfb_size-2)) select out_x_sel <= -- q01 and q10
     -kmul_out_x when '1',
     kmul_out_x when others;
 
-  with (prod_z(15)) select out_y_sel <= -- q10 and q11
+  with (prod_z(pfb_size-1)) select out_y_sel <= -- q10 and q11
     -kmul_out_y when '1',
     kmul_out_y when others;
 

@@ -1,5 +1,4 @@
-ID: 0dd75e1b7f6be9f2ff1623d2bbba9fe371d8be88
-(synthesis performed at 1ab0810f5c0093e014afcbb0ec0d169e257ca01b before simulation changes)
+Synth IDs: 1ab0810f5c0093e014afcbb0ec0d169e257ca01b (before simulation changes (and test 77))
 
   hecate_oa -- 2x2x2
 
@@ -408,103 +407,99 @@ Total on-chip power:
 
 
 
-== SIMULATION DATA ==
+== SIMULATION DATA == 7b70efe761f9014e161829b09491952c66a8069d == 
 
 2x2x2 x 2x2x2 -- 128 tests -- cor_length=18
 Passed tests = 128 out of 128
 Max test time = 82 cycles
 Min test time = 64 cycles
-Average test time = 71 cycles
-Max slice time = 81 cycles
-Min slice time = 63 cycles
-Average slice time = 70 cycles
-Max precision error = 000.0B99      -- < 2^12
-Average precision error = 000.0142  -- < 2^9
+Average test time = 70 cycles
+Max slice time = 73 cycles
+Min slice time = 56 cycles
+Average slice time = 61 cycles
+Max precision error = 00.0097     -- < 2^8
+Average precision error = 00.0015 -- < 2^5
 
 4x4x4 x 2x2x2 -- 16 tests -- cor_length=18
 Passed tests = 16 out of 16
 Max test time = 600 cycles
-Min test time = 463 cycles
-Average test time = 517 cycles
-Max slice time = 81 cycles
-Min slice time = 57 cycles
-Average slice time = 65 cycles
-Max precision error = 000.0C6D     -- < 2^12
-Average precision error = 000.00CE -- < 2^8
+Min test time = 464 cycles
+Average test time = 493 cycles
+Max slice time = 90 cycles
+Min slice time = 56 cycles
+Average slice time = 60 cycles
+Max precision error = 00.0090     -- < 2^8
+Average precision error = 00.001E -- < 2^5
 
 8x8x8 x 2x2x2 -- 2 tests -- cor_length=18
 Passed tests = 2 out of 2
-Max test time = 4744 cycles
-Min test time = 3939 cycles
-Average test time = 4342 cycles
-Max slice time = 81 cycles
-Min slice time = 57 cycles
-Average slice time = 68 cycles
-Max precision error = 000.00AC     -- < 2^8
-Average precision error = 000.0033 -- < 2^6
+Max test time = 3859 cycles
+Min test time = 3805 cycles
+Average test time = 3832 cycles
+Max slice time = 74 cycles
+Min slice time = 56 cycles
+Average slice time = 60 cycles
+Max precision error = 00.0092     -- < 2^8
+Average precision error = 00.002B -- < 2^6
 
 3x3x3 x 3x3x3 -- 32 tests -- cor_length=18
 Passed tests = 32 out of 32
 Max test time = 88 cycles
 Min test time = 71 cycles
-Average test time = 84 cycles
-Max slice time = 87 cycles
-Min slice time = 70 cycles
-Average slice time = 83 cycles
-Max precision error = 000.02A7     -- < 2^10
-Average precision error = 000.0042 -- < 2^7
+Average test time = 83 cycles
+Max slice time = 77 cycles
+Min slice time = 60 cycles
+Average slice time = 72 cycles
+Max precision error = 00.00CE     -- < 2^8
+Average precision error = 00.001B -- < 2^5
 
 6x6x6 x 3x3x3 -- 4 tests -- cor_length=18
 Passed tests = 4 out of 4
-Max test time = 634 cycles
-Min test time = 586 cycles
-Average test time = 613 cycles
-Max slice time = 87 cycles
-Min slice time = 66 cycles
-Average slice time = 77 cycles
-Max precision error = 000.034E     -- < 2^10
-Average precision error = 000.0072 -- < 2^7
+Max test time = 609 cycles
+Min test time = 541 cycles
+Average test time = 574 cycles
+Max slice time = 92 cycles
+Min slice time = 60 cycles
+Average slice time = 70 cycles
+Max precision error = 00.00D5     -- < 2^8
+Average precision error = 00.0026 -- < 2^6
 
 7x3x3 x 7x3x3 -- 2 tests -- cor_length=18
-Passed tests = 2 out of 2
-Max test time = 94 cycles
+Passed tests = 8 out of 8
+Max test time = 102 cycles
 Min test time = 93 cycles
-Average test time = 94 cycles
-Max slice time = 93 cycles
-Min slice time = 92 cycles
-Average slice time = 93 cycles
-Max precision error = 000.01E9     -- < 2^9
-Average precision error = 000.004E -- < 2^7
+Average test time = 95 cycles
+Max slice time = 89 cycles
+Min slice time = 81 cycles
+Average slice time = 82 cycles
+Max precision error = 00.0163     -- < 2^9
+Average precision error = 00.002A -- < 2^6
 
 
-I        K        tests    N      slices    cycles (avrg slice)    I rate    I grow    K rate    K grow    worst precision   
-2x2x2    2x2x2    128      32     128       70                     1x        1x        1x        1x        < 2^12
-4x4x4    2x2x2    16       32     128       65                     8x        0.93x     1x        --        < 2^12
-8x8x8    2x2x2    2        32     128       68                     64x       
-3x3x3    3x3x3    32       128    32        83                     1x        1x        3.375x    1.19x     < 2^10
-6x6x6    3x3x3    4        128    32        77                     8x        0.93x     3.375x    --        < 2^10
-7x3x3    7x3x3    2        512    2 (8)     93                     --        --        7.875x    1.33x     < 2^9
-* "grow" means how much the per-slice time increased proportinal to I or K
+K*t_slices proportional testing
+
+I        K        tests    N      t_slices    HAD cycles             I rate    I grow*   K rate    K grow*   worst precision    dc/dN**
+2x2x2    2x2x2    128      32     128         61 -2log2(N) = 51      1x        1x        1x        1x        < 2^8              ref
+4x4x4    2x2x2    16       32     128         60 -2log2(N) = 50      8x        ~1x       1x        --        < 2^8              --
+8x8x8    2x2x2    2        32     128         60 -2log2(N) = 50      64x       ~1x       1x        --        < 2^8              --
+3x3x3    3x3x3    32       128    32          71 -2log2(N) = 57      1x        1x        3.375x    1.12x     < 2^8              0.0625
+6x6x6    3x3x3    4        128    32          70 -2log2(N) = 56      8x        ~1x       3.375x    --        < 2^8              --
+7x3x3    7x3x3    2        512    8           82 -2log2(N) = 64      --        --        7.875x    1.25x     < 2^9              0.0271
+* "grow" means how much the per-slice cycles increased proportinal to I or K
+** (had_cy2 - had_cy1) / (N2 - N1)
 
 
-I        K        tests    N      slices    cycles (avrg test)     I rate    I grow    K rate    K grow    worst precision   
-2x2x2    2x2x2    128      32     128       71                     1x        1x        1x        1x        < 2^12
-4x4x4    2x2x2    16       32     128       517                    8x        7.28x     1x        --        < 2^12
-3x3x3    3x3x3    32       128    32        84                     1x        1x        3.375x    1.18x     < 2^10
-6x6x6    3x3x3    4        128    32        613                    8x        7.30x     3.375x    --        < 2^10
-7x3x3    7x3x3    2        512    2 (8)     94                     --        --        7.875x    1.32x     < 2^9
-* "grow" means how much the per-test time increased proportinal to I or K
-** note that it takes 1 cycle for tests to finish, hence why test time doesn't match slice time when there's 1 slice, causing a minor inacuracy
+I        K        tests    N      t_slices    cycles (avrg test)     I rate    I grow*   K rate    K grow*   worst precision 
+2x2x2    2x2x2    128      32     128         70                     1x        1x        1x        1x        < 2^8 
+4x4x4    2x2x2    16       32     128         493                    8x        7.04x     1x        --        < 2^8
+8x8x8    2x2x2    2        32     128         3832                   64x       54.74x    1x        --        < 2^8
+3x3x3    3x3x3    32       128    32          83                     1x        1x        3.375x    1.19x     < 2^8
+6x6x6    3x3x3    4        128    32          574                    8x        6.92x     3.375x    --        < 2^8
+7x3x3    7x3x3    2        512    8           95                     --        --        7.875x    1.36x     < 2^9
+* "grow" means how much the per-test cycles increased proportinal to I or K
+** note that test_time includes the kernel fft, hence why a single-slice test doesn't match test_time
 
 == ==
-
-
-
-
-
-
-
-
 
 
 
@@ -524,12 +519,51 @@ Expected component growth: (128×log₂(128)) ÷ (32×log₂(32)) = x5.6
 
 
 
+Preliminary calculation...
+
+2x2x2 to 3x3x3
+f   -> x0.87
+cps -> 1.12x
+dsp -> 6.63x
+
+Let's assume those ratios are consistent (cps will peter off, but it's kinda accurate now)
+
+K2/K1 = 0.87*f
+K*8 = 0.87*f
+f = 9.2*K
+
+K2/K1 = 1.12*cps
+K*8 = 1.12*cps
+cps = 7.14*K
+
+K2/K1 = 6.63*dsp
+K*8 = 6.63*dsp
+dsp = 1.26*K
+
+GOPS = (2*K^2) * f/cps [see notebook]
+
+GOPS = (K^2) * 2*(9.2*K/7.14*K) = 2.58*K^2
+
+PD = GOPS / (dsp * f) [notebook]
+
+PD = 2.58*K^2 / (1.26*K * 9.2*K) = 0.223
+
+lmao
+
+I had predicted 0.225
+
+Quoth the notebook:
+"Quod Erad Demonstratum: our project is shit"
 
 
 
 
 
+Very edgy. Now, there are a couple flaws in that analysis. Primarily, it assumes that f/cps/dsp all grow linearly.
 
+CpS has a set maximum for the flux mul, plus 2*(log2(N)+1) for the fft and ifft, plus maybe some rogue single transition cycles .
+f is the only one that might be accurate, but it could still grow with log2N for all I know. We need to analyse which paths get longer and why.
+dsp, according to the log snippets, grow only with kmul. That means Nlog2N unfortunately, as we're using constant multiplication
 
 
 

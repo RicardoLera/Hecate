@@ -29,36 +29,27 @@ ghdl remove
 
 if [ "$1" = "synth" ] ; then
   
-  comp_files="hecate_pkg.vhd hecate_oa_tb.vhd hecate_oa.vhd hecate.vhd hadamard/hadamard_uc.vhd hadamard/hadamard.vhd hadamard/flux_multiplier.vhd hadamard/flux_inverter.vhd hadamard/cordic.vhd fft/fft.vhd arithmetic/varshiftright.vhd arithmetic/s25_cmul.vhd arithmetic/s25_add.vhd arithmetic/adder_carry.vhd arithmetic/s25_butterfly.vhd arithmetic/s25_wmul.vhd"
-
+  comp_files="*.vhd */*.vhd"
   family="xc${2:-"7"}"
 
   yosys -m ghdl -p \
-    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate_oa_tb; synth_xilinx -top hecate_oa_tb -family $family -flatten; json -o yosys_out/$family.json" \
+    "ghdl --std=08 -fsynopsys --latches $comp_files -e hecate_tb; synth_xilinx -top hecate_tb -family $family -flatten; json -o yosys_out/$family.json" \
   2>&1 | tee >(tail -n 128 > yosys_out/"$family"_synth_log_tail.txt)
   # &> yosys_out/"$family".txt
 
 else
-
-  if [ "$1" = "lsp" ] ; then
-    comp_files="debug_lsp/*.vhd"
-    top_module="lsp_tb"
   
-  elif [ "$1" = "fft" ] ; then
-    comp_files="hecate_pkg.vhd fft/fft.vhd fft/fft_tb.vhd arithmetic/s25_wmul.vhd arithmetic/s25_butterfly.vhd function_rom.vhd"
+  if [ "$1" = "fft" ] ; then
+    comp_files="auxiliary/hecate_pkg.vhd auxiliary/function_rom.vhd fft/*.vhd"
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
-    comp_files="hecate_pkg.vhd */*.vhd"
+    comp_files="auxiliary/hecate_pkg.vhd hadamard/*.vhd"
     top_module="hadamard_tb sim"
 
   elif [ "$1" = "hec" ] ; then
     comp_files="*.vhd */*.vhd"
     top_module="hecate_tb sim"
-
-  elif [ "$1" = "hec_oa" ] ; then
-    comp_files="*.vhd */*.vhd"
-    top_module="hecate_oa_tb sim"
 
   else
     printf "ERROR: OPERATION NOT RECOGNIZED\n"
@@ -69,7 +60,7 @@ else
   ghdl -m --std=08 $top_module
   ghdl -e --std=08 $top_module
   ghdl -r --std=08 $top_module --max-stack-alloc=4096 --asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
+
   rm *.o
   rm "$(echo $top_module | awk '{print $1;}')"-"$(echo $top_module | awk '{print $2;}')"
-
 fi

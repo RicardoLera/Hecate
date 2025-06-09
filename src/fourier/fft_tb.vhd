@@ -5,8 +5,8 @@ library ieee;
 
 entity fft_tb is
   port (
-    inp   : in s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-    ram   : out s25_complex_array(0 to n_points/2);
+    inp   : in t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    ram   : out t_signed_complex_array(0 to n_points/2);
     clock : in std_logic := '0';
     ready : out std_logic := '0'
   );
@@ -14,8 +14,8 @@ end entity fft_tb;
 
 architecture sim of fft_tb is
 
-  signal   test_arr : s25_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
-  signal   o : s25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal   test_arr : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
+  signal   o : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
   signal   clk, start, reset, simulate, s_ready : std_logic := '0';
   constant clockperiod : time := 1 ms;
 
@@ -74,7 +74,7 @@ end architecture sim;
 
 
 architecture synth of fft_tb is
-  signal res   : s25_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal res   : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
   signal reset : std_logic := '1';
   signal start : std_logic := '0';
 begin
