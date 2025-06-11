@@ -77,23 +77,23 @@ begin
     test_loop : for n in 0 to test_n-1 loop
       s_test_n <= n; -- track test_n on waveform
 
-      -- for z in 0 to iz-1 loop
-      --   for y in 0 to iy-1 loop
-      --     for x in 0 to ix-1 loop
-      --       uniform(seed1, seed2, r);
-      --       img(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
-      --     end loop;
-      --   end loop;
-      -- end loop;
+      for z in 0 to iz-1 loop
+        for y in 0 to iy-1 loop
+          for x in 0 to ix-1 loop
+            uniform(seed1, seed2, r);
+            img(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
+          end loop;
+        end loop;
+      end loop;
 
-      -- for z in 0 to kz-1 loop
-      --   for y in 0 to ky-1 loop
-      --     for x in 0 to kx-1 loop
-      --       uniform(seed1, seed2, r);
-      --       ker(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
-      --     end loop;
-      --   end loop;
-      -- end loop;
+      for z in 0 to kz-1 loop
+        for y in 0 to ky-1 loop
+          for x in 0 to kx-1 loop
+            uniform(seed1, seed2, r);
+            ker(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
+          end loop;
+        end loop;
+      end loop;
 
       -- img_loop_z : for z in 0 to iz-1 loop
       --   img_loop_y : for y in 0 to iy-1 loop
