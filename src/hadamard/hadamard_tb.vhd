@@ -8,13 +8,14 @@ end entity hadamard_tb;
 
 architecture sim of hadamard_tb is
 
-  signal reset, start : std_logic;
-  signal img, ker, p  : t_signed_complex;
-  signal ready        : std_logic;
+  signal reset, start, ready : std_logic;
+  signal img, ker, p         : t_signed_complex;
 
   signal   clk             : std_logic := '0';
   signal   keep_simulating : std_logic := '0';
   constant clockperiod     : time      := 1 ns;
+
+  signal signed_one : t_signed := (others => '0');
 
 begin
 
@@ -30,6 +31,12 @@ begin
       p     => p,
       ready => ready
     );
+
+  signed_one(signed_point) <= '1';
+  img(0) <= signed_one;
+  img(1) <= signed_one;
+  ker(0) <= signed_one;
+  ker(1) <= signed_one;
 
   -- values going into hadamard at n_idx=1
   --  x_i <= "0000000010110011100101100"; -- 0x1.672c

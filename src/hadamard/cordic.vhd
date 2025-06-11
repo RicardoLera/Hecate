@@ -8,11 +8,12 @@ entity cordic is
   port (
     j                  : in  integer range 0 to cordic_len;
     sigma_in, rotation : in  std_logic;
-    sigma_out          : out std_logic;
     x_in, y_in         : in  t_signed;
-    x_out, y_out       : out t_signed;
     z_in               : in  t_pfb;
-    z_out              : out t_pfb
+    sigma_out          : out std_logic;
+    x_out, y_out       : out t_signed;
+    z_out              : out t_pfb;
+    comp_out           : out std_logic
   );
 end entity cordic;
 
@@ -22,14 +23,13 @@ architecture synth of cordic is
   signal z_add                : t_pfb := (others => '0');
 begin
 
-  shifted_x <= x_in sra j;
-  shifted_y <= y_in sra j;
-    -- when not data(signed_size-1) else (data sra to_integer(distance)) + 1;   -- speeds up timing
-    -- when distance /= cordic_len-1 else (others => '0') ;          -- allows returning 0 for negative values
-
   x_out <= x_in + y_add;
   y_out <= y_in + x_add;
   z_out <= z_in + z_add;
+
+  shifted_x <= x_in sra j when (nand(x_in)) else (others => '0'); -- else allows returning 0
+  shifted_y <= y_in sra j when (nand(y_in)) else (others => '0');
+    -- when not data(signed_size-1) else (data sra to_integer(distance)) + 1;   -- speeds up timing
 
   with sigma_in select y_add <=
     -shifted_y when '0',    -- x-s_y when '0',
@@ -45,5 +45,8 @@ begin
   with rotation select sigma_out <=
     z_out(z_out'length - 1) when '1',
     not y_out(y_out'length - 1) when others;
+
+  comp_out <= (and(x_in xor x_out)) and (and(y_in xor y_out)) and (and(z_in xor z_out));
+  -- returns 1 if every input is equal to output
 
 end architecture synth;

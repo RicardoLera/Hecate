@@ -2,16 +2,16 @@
 library ieee;
   use ieee.std_logic_1164.all;
 
-entity hadamard_uc is
+entity hadamard_cu is
   port (
-    clock, start, reset               : in  std_logic;
-    polar_latch_ready, j_end          : in  std_logic;
-    cordic_mode                       : out std_logic_vector(1 downto 0);
-    ready, rotation, flux_run, kx_run : out std_logic
+    clock, start, reset                           : in  std_logic;
+    polar_latch_ready, j_end                      : in  std_logic;
+    cordic_mode                                   : out std_logic_vector(1 downto 0);
+    ready, rotation, flux_run, flux_reset, kx_run : out std_logic
   );
-end entity hadamard_uc;
+end entity hadamard_cu;
 
-architecture synth of hadamard_uc is
+architecture synth of hadamard_cu is
   signal e_cur : t_state := initial;
   signal e_nex : t_state;
 begin
@@ -46,6 +46,10 @@ begin
   with e_cur select flux_run <=
     '1' when vector_flux,            -- Polar mul
     '0' when others;                 -- off
+
+  with e_cur select flux_reset <=
+    '1' when rot_kmul,
+    '0' when others;
 
   with e_cur select kx_run <=
     '1' when rot_kmul,               -- k-constant mul

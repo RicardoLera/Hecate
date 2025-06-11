@@ -5,14 +5,33 @@ library ieee;
 
 package hecate_pkg is
 
+    --=================--
+    -- Main Parameters --
+    --=================--
+
+    constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
+    constant iy : natural := 2;
+    constant iz : natural := 2;
+  
+    constant kx : natural := 2;
+    constant ky : natural := 2;
+    constant kz : natural := 2;
+
+    constant signed_size  : natural := 32; -- number of bits in signed signals 
+    constant signed_point : natural := 24; -- number of bits past the point 
+    constant pfb_size     : natural := 24; -- number of bits in pi-factor binary
+    constant cordic_len   : natural := 32;
+
+    constant test_n       : natural  := 1;
+    constant test_seed1   : positive := 3928;
+    constant test_seed2   : positive := 11;
+
+
+
+  
   --==================--
   -- Type Definitions -- 
   --==================--
-
-  -- Type parameters
-  constant signed_size  : natural := 32; -- number of bits in signed signals 
-  constant signed_point : natural := 24; -- number of bits past the point 
-  constant pfb_size     : natural := 24; -- number of bits in pi-factor binary
 
   -- Subtypes
   subtype t_signed is signed(signed_size-1 downto 0);
@@ -52,24 +71,7 @@ package hecate_pkg is
   -- Constants (ROM) -- 
   --=================--
 
-  -- Main parameters
-  constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
-  constant iy : natural := 2;
-  constant iz : natural := 2;
-
-  constant kx : natural := 2;
-  constant ky : natural := 2;
-  constant kz : natural := 2;
-
-  constant test_n     : natural  := 16;
-  constant test_seed1 : positive := 3928;
-  constant test_seed2 : positive := 11;
-
-  constant cordic_len : natural := 20;
-
   -- Derived parameters
-
-  constant signed_zero  : signed(signed_size-1 downto 0) := (others => '0');
 
   constant ox : natural := (ix+kx-1);
   constant oy : natural := (iy+ky-1);
@@ -87,16 +89,17 @@ package hecate_pkg is
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
   constant the_log        : natural := natural(log2(real(n_points)));
 
-  constant cordic_len_log : natural := natural(ceil(log2(real(cordic_len))));
-
   -- CORDIC k-correction -> (Product[Sqrt[1+2^(-2x)],{x,0,signed_point-1}])^-3
   constant kcon : real := 0.22392824057423056779858936992391541750457092029889299944181236773520544649;
   constant signed_kcon : t_signed := to_signed(natural((2.0**signed_point)*(kcon)), signed_size);
 
+  -- Zero
+  constant signed_zero  : signed(signed_size-1 downto 0) := (others => '0');
+
   -- Set ROM style
   attribute rom_style : string;
   attribute rom_style of 
-    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, cordic_len_log, test_seed1, test_seed2, test_n, kcon, signed_kcon
+    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, test_seed1, test_seed2, test_n, kcon, signed_kcon
   : constant is "block";
 
 
@@ -168,23 +171,25 @@ package hecate_pkg is
     );
   end component;
 
-  component pfb_q is
+  component pfb_qadd is
     port (
-      a   : in t_pfb;
-      qt  : in signed(1 downto 0);
-      res : out t_pfb
+      ax, ay, bx, by : in  t_signed;
+      az0, bz0       : in  t_pfb;
+      sz0            : out t_pfb;
+      sxs, sys       : out std_logic 
     );
-  end component pfb_q;
+  end component pfb_qadd;
 
   component cordic is
     port (
       j                  : in  integer range 0 to cordic_len;
       sigma_in, rotation : in  std_logic;
-      sigma_out          : out std_logic;
       x_in, y_in         : in  t_signed;
-      x_out, y_out       : out t_signed;
       z_in               : in  t_pfb;
-      z_out              : out t_pfb
+      sigma_out          : out std_logic;
+      x_out, y_out       : out t_signed;
+      z_out              : out t_pfb;
+      comp_out           : out std_logic
     );
   end component;
 
@@ -206,12 +211,12 @@ package hecate_pkg is
     );
   end component;
 
-  component hadamard_uc is
+  component hadamard_cu is
     port (
-      clock, start, reset               : in  std_logic;
-      polar_latch_ready, j_end          : in  std_logic;
-      cordic_mode                       : out std_logic_vector(1 downto 0);
-      ready, rotation, flux_run, kx_run : out std_logic
+      clock, start, reset                           : in  std_logic;
+      polar_latch_ready, j_end                      : in  std_logic;
+      cordic_mode                                   : out std_logic_vector(1 downto 0);
+      ready, rotation, flux_run, flux_reset, kx_run : out std_logic
     );
   end component;
 

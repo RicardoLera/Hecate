@@ -44,7 +44,7 @@ else
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
-    comp_files="auxiliary/hecate_pkg.vhd hadamard/*.vhd"
+    comp_files="auxiliary/hecate_pkg.vhd auxiliary/function_rom.vhd hadamard/*.vhd"
     top_module="hadamard_tb sim"
 
   elif [ "$1" = "hec" ] ; then

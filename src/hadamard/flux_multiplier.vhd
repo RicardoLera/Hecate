@@ -1,5 +1,4 @@
   use work.hecate_pkg.all;
-  use work.function_rom.all;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -15,11 +14,9 @@ end entity flux_multiplier;
 
 architecture synth of flux_multiplier is
 
-  signal a_pos, a_nex_pos  : unsigned(signed_size-2 downto 0);
-  signal b_pos, b_nex_pos  : unsigned(signed_size-2 downto 0);
-  signal a_inv, b_inv      : unsigned(cordic_len-2 downto 0);
   signal a_sel, b_sel, sum : unsigned(signed_size-2 downto 0);
   signal shift_sum         : unsigned(signed_size-1 downto 0);
+  signal a_inv, b_inv      : unsigned(signed_size-2 downto signed_size-cordic_len);
   signal p_full            : unsigned(2*signed_size-2 downto 0) := (others => '0');
   signal p_full_shifted    : unsigned(2*signed_size-2 downto 0);
   signal p_full_n          : unsigned(2*signed_size-2 downto 0);
@@ -36,8 +33,8 @@ begin
       clock   => clock,
       reset_s => f_reset,
       load    => run,
-      inp     => a_pos(signed_size-2 downto signed_size-cordic_len),
-      nex     => a_nex_pos(signed_size-2 downto signed_size-cordic_len),
+      inp     => unsigned(a    (a_inv'range)),
+      nex     => unsigned(a_nex(a_inv'range)),
       outp    => a_inv,
       new_bit => a_bit,
       ready   => a_ready,
@@ -49,8 +46,8 @@ begin
       clock   => clock,
       reset_s => f_reset,
       load    => run,
-      inp     => b_pos(signed_size-2 downto signed_size-cordic_len),
-      nex     => b_nex_pos(signed_size-2 downto signed_size-cordic_len),
+      inp     => unsigned(b    (b_inv'range)),
+      nex     => unsigned(b_nex(b_inv'range)),
       outp    => b_inv,
       new_bit => b_bit,
       ready   => b_ready,
@@ -67,20 +64,14 @@ begin
     end if;
   end process proc;
 
-  -- Assert positive input values
-  a_pos <= unsigned(a(signed_size-2 downto 0)) when not a(signed_size-1) else (others => '0');
-  b_pos <= unsigned(b(signed_size-2 downto 0)) when not b(signed_size-1) else (others => '0');
-  a_nex_pos <= unsigned(a_nex(signed_size-2 downto 0)) when not a_nex(signed_size-1) else (others => '0');
-  b_nex_pos <= unsigned(b_nex(signed_size-2 downto 0)) when not b_nex(signed_size-1) else (others => '0');
-
-  ready <= a_ready and b_ready;
+  ready   <= a_ready and b_ready;
   f_error <= a_error or b_error;
   f_reset <= f_error or reset;
 
-  with b_bit select a_sel <= (cordic_len-2 downto 0 => unsigned(a_inv), others => '0') when '1',
+  with b_bit select a_sel <= (a_inv'range => unsigned(a_inv), others => '0') when '1',
     (others => '0') when others;
 
-  with a_bit select b_sel <= (cordic_len-2 downto 0 => unsigned(b_inv), others => '0') when '1',
+  with a_bit select b_sel <= (b_inv'range => unsigned(b_inv), others => '0') when '1',
     (others => '0') when others;
 
   sum <= a_sel + b_sel;
