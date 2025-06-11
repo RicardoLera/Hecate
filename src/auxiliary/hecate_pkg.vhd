@@ -20,9 +20,8 @@ package hecate_pkg is
     constant signed_size  : natural := 32; -- number of bits in signed signals 
     constant signed_point : natural := 24; -- number of bits past the point 
     constant pfb_size     : natural := 24; -- number of bits in pi-factor binary
-    constant cordic_len   : natural := 32;
 
-    constant test_n       : natural  := 1;
+    constant test_n       : natural  := 2;
     constant test_seed1   : positive := 3928;
     constant test_seed2   : positive := 11;
 
@@ -47,7 +46,7 @@ package hecate_pkg is
   type t_signed_3d_complex_array is array (natural range <>) of t_signed_2d_complex_array;
   
   -- Hadamard state machine list
-  type t_state is (initial, vector_flux, pre_rot, rot_kmul, final);
+  type t_had_state is (initial, vector_mul, pre_rot, rot_kmul, final);
 
   -- Function types
   type bool_array            is array (natural range <>)   of boolean;
@@ -91,15 +90,21 @@ package hecate_pkg is
 
   -- CORDIC k-correction -> (Product[Sqrt[1+2^(-2x)],{x,0,signed_point-1}])^-3
   constant kcon : real := 0.22392824057423056779858936992391541750457092029889299944181236773520544649;
-  constant signed_kcon : t_signed := to_signed(natural((2.0**signed_point)*(kcon)), signed_size);
 
-  -- Zero
-  constant signed_zero  : signed(signed_size-1 downto 0) := (others => '0');
+  -- Signed constants
+  constant signed_zero : t_signed := (others => '0');
+  constant signed_one  : t_signed := (signed_point => '1', others => '0');
+  constant signed_half : t_signed := (signed_point-1 => '1', others => '0');
+  constant signed_kcon : t_signed := to_signed(natural((2.0**signed_point)*(kcon)), signed_size);
 
   -- Set ROM style
   attribute rom_style : string;
   attribute rom_style of 
-    ix, iy, iz, kx, ky, kz, ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log, cordic_len, test_seed1, test_seed2, test_n, kcon, signed_kcon
+    ix, iy, iz, kx, ky, kz,
+    signed_size, signed_point, pfb_size,
+    test_seed1, test_seed2, test_n,
+    ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log,
+    signed_kcon, signed_zero, signed_one, signed_half
   : constant is "block";
 
 
@@ -182,41 +187,22 @@ package hecate_pkg is
 
   component cordic is
     port (
-      j                  : in  integer range 0 to cordic_len;
-      sigma_in, rotation : in  std_logic;
-      x_in, y_in         : in  t_signed;
-      z_in               : in  t_pfb;
-      sigma_out          : out std_logic;
-      x_out, y_out       : out t_signed;
-      z_out              : out t_pfb;
-      comp_out           : out std_logic
-    );
-  end component;
-
-  component flux_inverter is
-    port (
-      clock, reset_s, load : in  std_logic;
-      new_bit, ready, err  : out std_logic;
-      inp, nex             : in  unsigned(cordic_len-2 downto 0);
-      outp                 : out unsigned(cordic_len-2 downto 0)
-    );
-  end component;
-
-  component flux_multiplier is
-    port (
-      clock, reset, run  : in  std_logic;
-      a, b, a_nex, b_nex : in  t_signed;
-      p                  : out t_signed;
-      ready              : out std_logic
+      j                   : in  integer range 0 to signed_size;
+      sigma_in, rotation  : in  std_logic;
+      x_in, y_in          : in  t_signed;
+      z_in                : in  t_pfb;
+      sigma_out, comp_out : out std_logic;
+      x_out, y_out        : out t_signed;
+      z_out               : out t_pfb
     );
   end component;
 
   component hadamard_cu is
     port (
-      clock, start, reset                           : in  std_logic;
-      polar_latch_ready, j_end                      : in  std_logic;
-      cordic_mode                                   : out std_logic_vector(1 downto 0);
-      ready, rotation, flux_run, flux_reset, kx_run : out std_logic
+      clock, start, reset      : in  std_logic;
+      polar_latch_ready, j_end : in  std_logic;
+      cordic_mode              : out std_logic_vector(1 downto 0);
+      ready, rotation          : out std_logic
     );
   end component;
 
@@ -391,9 +377,9 @@ package body hecate_pkg is
   function cordic_arctan (j, s: natural) return t_pfb is
     variable res : t_pfb;
   begin
-    res := to_signed(natural((2.0**signed_point)*(arctan(2.0**(-real(j))))/(2.0*MATH_PI)), pfb_size)
+    res := to_signed(natural((2.0**pfb_size)*(arctan(2.0**(-real(j))))/(2.0*MATH_PI)), pfb_size)
       when s=0
-    else -to_signed(natural((2.0**signed_point)*(arctan(2.0**(-real(j))))/(2.0*MATH_PI)), pfb_size);
+    else -to_signed(natural((2.0**pfb_size)*(arctan(2.0**(-real(j))))/(2.0*MATH_PI)), pfb_size);
     return res;
   end function;
 

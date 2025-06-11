@@ -33,8 +33,8 @@ architecture sim of hecate_tb is
   signal s_test_n           : integer;
   signal keep_simulating    : std_logic := '0';
   constant clockperiod      : time      := 1 ns;
-
 begin
+
   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hecate
@@ -98,7 +98,7 @@ begin
       -- img_loop_z : for z in 0 to iz-1 loop
       --   img_loop_y : for y in 0 to iy-1 loop
       --     img_loop_x : for x in 0 to ix-1 loop
-      --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --       img(z)(y)(x) <= signed_one;
       --     end loop img_loop_x;
       --   end loop img_loop_y;
       -- end loop img_loop_z;
@@ -106,13 +106,13 @@ begin
       -- ker_loop_z : for z in 0 to kz-1 loop
       --   ker_loop_y : for y in 0 to ky-1 loop
       --     ker_loop_x : for x in 0 to kx-1 loop
-      --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
+      --       ker(z)(y)(x) <= signed_one;
       --     end loop ker_loop_x;
       --   end loop ker_loop_y;
       -- end loop ker_loop_z;
 
-      -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
-      -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
+      -- img(0)(0)(1) <= signed_half;
+      -- ker(0)(0)(1) <= signed_half;
 
       wait for 4 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;

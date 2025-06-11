@@ -6,18 +6,17 @@ library ieee;
 
 entity cordic is
   port (
-    j                  : in  integer range 0 to cordic_len;
-    sigma_in, rotation : in  std_logic;
-    x_in, y_in         : in  t_signed;
-    z_in               : in  t_pfb;
-    sigma_out          : out std_logic;
-    x_out, y_out       : out t_signed;
-    z_out              : out t_pfb;
-    comp_out           : out std_logic
+    j                   : in  integer range 0 to signed_size;
+    sigma_in, rotation  : in  std_logic;
+    x_in, y_in          : in  t_signed;
+    z_in                : in  t_pfb;
+    sigma_out, comp_out : out std_logic;
+    x_out, y_out        : out t_signed;
+    z_out               : out t_pfb
   );
 end entity cordic;
 
-architecture synth of cordic is
+architecture synth of cordic is 
   signal shifted_x, shifted_y : t_signed;
   signal x_add,     y_add     : t_signed;
   signal z_add                : t_pfb := (others => '0');
@@ -46,7 +45,23 @@ begin
     z_out(z_out'length - 1) when '1',
     not y_out(y_out'length - 1) when others;
 
-  comp_out <= (and(x_in xor x_out)) and (and(y_in xor y_out)) and (and(z_in xor z_out));
+  comp_out <= '1' when
+    (x_in(x_in'left-1 downto 1) = x_out(x_in'left-1 downto 1)) and
+    (z_in(z_in'left-1 downto 1) = z_out(z_in'left-1 downto 1)) and
+    (j /= 0)
+  else '0';
   -- returns 1 if every input is equal to output
 
 end architecture synth;
+
+-- Hardware report:
+-- 2x signed_size adder           2*s(+)
+-- 1x pbf_size adder                p(+)
+-- 2x signed_size variable sra    2*s(v>>)
+-- 2x signed_size:1 MUX         2*s:1(MUX)
+-- 1x pbf_size:1 MUX              p:1(MUX)
+-- 1x 1:1 MUX                     1:1(MUX)
+
+-- Extra (not standard / might change)
+-- shift zero MUX and NAND
+-- comp_out comparisons

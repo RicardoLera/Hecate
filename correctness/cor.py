@@ -61,7 +61,6 @@ img = np.array(
     0, 0, 0,
     0, 0, 0
   ], dtype=np.float64)
-
 ker = np.array(
   [
     1, 1, 0,
@@ -113,35 +112,36 @@ ker = np.array(
 # ker = img
 
 # "Test 77" -- random test edge case
-img = np.array(
-  [
-    0x0547, 0x188F, 0,
-    0x9D4B, 0xC1EB, 0,
-    0, 0, 0,
+# img = np.array(
+#   [
+#     0x0547, 0x188F, 0,
+#     0x9D4B, 0xC1EB, 0,
+#     0, 0, 0,
 
-    0xF60C, 0x050D, 0,
-    0x5E0D, 0x9096, 0,
-    0, 0, 0,
+#     0xF60C, 0x050D, 0,
+#     0x5E0D, 0x9096, 0,
+#     0, 0, 0,
     
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0
-  ], dtype=np.float64)
+#     0, 0, 0,
+#     0, 0, 0,
+#     0, 0, 0
+#   ], dtype=np.float64)
+# ker = np.array(
+#   [
+#     0x681B, 0xA361, 0,
+#     0xF218, 0x67B9, 0,
+#     0, 0, 0,
 
-ker = np.array(
-  [
-    0x681B, 0xA361, 0,
-    0xF218, 0x67B9, 0,
-    0, 0, 0,
-
-    0x8D84, 0x3A29, 0,
-    0x1B6D, 0xF2A4, 0,
-    0, 0, 0,
+#     0x8D84, 0x3A29, 0,
+#     0x1B6D, 0xF2A4, 0,
+#     0, 0, 0,
     
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0
-  ], dtype=np.float64)
+#     0, 0, 0,
+#     0, 0, 0,
+#     0, 0, 0
+#   ], dtype=np.float64)
+# img = img / pow(2, 16)
+# ker = ker / pow(2, 16)
 
 # Random array test
 # img = np.random.rand(8)
@@ -149,44 +149,34 @@ ker = np.array(
 # img[4:8] = 0
 # ker[4:8] = 0
 
+
+
+
+spsize = 2**(math.ceil(math.log(np.size(img), 2))) # next power of 2
+
 #https://www.wolframalpha.com/input?i2d=true&i=Product%5BSqrt%5B1%2BPower%5B2%2C%5C%2840%29-2x%5C%2841%29%5D%5D%2C%7Bx%2C0%2C25-1%7D%5D
 kcor = 1.6467602581210646732881021003239958776890527483399070103764969935
 
-spsize =2**(math.ceil(math.log(np.size(img), 2))) # next power of 2
-
-
-
 # FFT
-IMG = np.fft.fft(img / pow(2, 16), spsize)
-# print(arrToHex(np.real(IMG)))
-# print(arrToHex(np.imag(IMG)))
-KER = np.fft.fft(ker / pow(2, 16), spsize)
-# print(arrToHex(np.real(KER)))
-# print(arrToHex(np.imag(KER)))
-
+IMG = np.fft.fft(img, spsize)
+KER = np.fft.fft(ker, spsize)
 
 # CORDIC rect -> polar
 mIMG = np.abs(IMG) * kcor
-pIMG = np.angle(IMG)
+pIMG = (np.angle(IMG) % (2*np.pi)) / (2*np.pi)
 mKER = np.abs(KER) * kcor
-pKER = np.angle(KER)
-# print(arrToHex(mIMG))
-# print(arrToHex(pIMG))
+pKER = (np.angle(KER) % (2*np.pi)) / (2*np.pi)
 
 # Hadamard
 mHAD = mIMG * mKER / spsize
-pHAD = pIMG + pKER
-# print(arrToHex(np.real(mHAD)))
+pHAD = (pIMG + pKER) % (2*np.pi)
 
 # CORDIC polar -> rect
-HAD = mHAD * np.exp(1j*pHAD) * kcor / pow(kcor,3)
-# print(arrToHex(np.real(HAD)))
-# print(arrToHex(np.imag(HAD)))
-
+HAD = mHAD * np.exp(1j*pHAD*2*np.pi) * kcor / pow(kcor,3)
 
 # IFFT
 had = np.fft.ifft(HAD, np.size(HAD)) * spsize # / pow(kcor,3)
-# print(arrToHex(np.real(had)))
+
 
 
 
@@ -203,6 +193,9 @@ hex_mHAD = arrToHex(mHAD)
 hex_pHAD = arrToHex(pHAD)
 hex_xHAD = arrToHex(np.real(HAD))
 hex_yHAD = arrToHex(np.imag(HAD))
+hex_had  = arrToHex(np.real(had))
+# print()
+
 
 
 
