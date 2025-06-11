@@ -157,19 +157,7 @@ end architecture area_opt;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
--- This arch is optimized on number of cycles. It uses parallel hecates and multiple FFTs.    (WORK IN PROGRESS)
+-- This arch is optimized on number of cycles. It uses parallel hecates and multiple FFTs    (WORK IN PROGRESS)
 -- architecture time_opt of hecate is
 
 --   constant hec_x : natural := ix/2;

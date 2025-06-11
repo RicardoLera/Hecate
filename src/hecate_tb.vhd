@@ -33,8 +33,8 @@ architecture sim of hecate_tb is
   signal s_test_n           : integer;
   signal keep_simulating    : std_logic := '0';
   constant clockperiod      : time      := 1 ns;
-
 begin
+
   clk <= (not clk) and keep_simulating after clockperiod / 2;
 
   dut : component hecate
@@ -77,42 +77,42 @@ begin
     test_loop : for n in 0 to test_n-1 loop
       s_test_n <= n; -- track test_n on waveform
 
-      for z in 0 to iz-1 loop
-        for y in 0 to iy-1 loop
-          for x in 0 to ix-1 loop
-            uniform(seed1, seed2, r);
-            img(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
-          end loop;
-        end loop;
-      end loop;
+      -- for z in 0 to iz-1 loop
+      --   for y in 0 to iy-1 loop
+      --     for x in 0 to ix-1 loop
+      --       uniform(seed1, seed2, r);
+      --       img(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
+      --     end loop;
+      --   end loop;
+      -- end loop;
 
-      for z in 0 to kz-1 loop
-        for y in 0 to ky-1 loop
-          for x in 0 to kx-1 loop
-            uniform(seed1, seed2, r);
-            ker(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
-          end loop;
-        end loop;
-      end loop;
+      -- for z in 0 to kz-1 loop
+      --   for y in 0 to ky-1 loop
+      --     for x in 0 to kx-1 loop
+      --       uniform(seed1, seed2, r);
+      --       ker(z)(y)(x) <= to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
+      --     end loop;
+      --   end loop;
+      -- end loop;
 
-      -- img_loop_z : for z in 0 to iz-1 loop
-      --   img_loop_y : for y in 0 to iy-1 loop
-      --     img_loop_x : for x in 0 to ix-1 loop
-      --       img(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-      --     end loop img_loop_x;
-      --   end loop img_loop_y;
-      -- end loop img_loop_z;
+      img_loop_z : for z in 0 to iz-1 loop
+        img_loop_y : for y in 0 to iy-1 loop
+          img_loop_x : for x in 0 to ix-1 loop
+            img(z)(y)(x) <= signed_one;
+          end loop img_loop_x;
+        end loop img_loop_y;
+      end loop img_loop_z;
 
-      -- ker_loop_z : for z in 0 to kz-1 loop
-      --   ker_loop_y : for y in 0 to ky-1 loop
-      --     ker_loop_x : for x in 0 to kx-1 loop
-      --       ker(z)(y)(x) <= '0' & "00000001" & "0000000000000000";
-      --     end loop ker_loop_x;
-      --   end loop ker_loop_y;
-      -- end loop ker_loop_z;
+      ker_loop_z : for z in 0 to kz-1 loop
+        ker_loop_y : for y in 0 to ky-1 loop
+          ker_loop_x : for x in 0 to kx-1 loop
+            ker(z)(y)(x) <= signed_one;
+          end loop ker_loop_x;
+        end loop ker_loop_y;
+      end loop ker_loop_z;
 
-      -- img(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
-      -- ker(0)(0)(1) <= '0' & "00000000" & "1000000000000000";
+      -- img(0)(0)(1) <= signed_half;
+      -- ker(0)(0)(1) <= signed_half;
 
       wait for 4 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;

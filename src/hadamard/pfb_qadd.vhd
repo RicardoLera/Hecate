@@ -13,7 +13,7 @@ entity pfb_qadd is
 end entity pfb_qadd;
 
 architecture synth of pfb_qadd is
-  constant mzero                         : signed(pfb_size-3 downto 0) := signed_zero(pfb_size-3 downto 0);
+  constant mzero                         : signed(pfb_size-3 downto 0) := (others => '0');
   signal axs, ays,  bxs, bys             : std_logic;
   signal axm, aym,  bxm, bym             : signed(signed_size-2 downto 0);
   signal azm, azmi, bzm, bzmi, szm, szmi : signed(pfb_size-3 downto 0);
@@ -33,7 +33,7 @@ begin
 
   szq   <= azq + bzq;
   szm   <= szq(pfb_size-3 downto 0); szmi <= not(szm)+1;
-  sel_s <= szq(pfb_size-1) & szq(pfb_size-2) & nor(szq);
+  sel_s <= szq(pfb_size-1) & szq(pfb_size-2) & nor(szq(pfb_size -3 downto 0));
 
   process(all) begin -- convert az0 -> azq
     case? sel_a is
@@ -67,12 +67,12 @@ begin
     case? sel_s is
       when "001" => sz0 <= ("00", mzero ); sxs <= '0'; sys <= '0'; -- s = 0     (second sign arbitrary)
       when "011" => sz0 <= ("01", mzero ); sys <= '0'; sxs <= '0'; -- s = pi/2  (second sign arbitrary)
-      when "101" => sz0 <= ("10", mzero ); sxs <= '1'; sys <= '0'; -- s = pi    (second sign arbitrary)
-      when "111" => sz0 <= ("11", mzero ); sys <= '1'; sxs <= '0'; -- s = 3pi/2 (second sign arbitrary)
+      when "101" => sz0 <= ("00", mzero ); sxs <= '1'; sys <= '0'; -- s = pi    (second sign arbitrary)
+      when "111" => sz0 <= ("01", mzero ); sys <= '1'; sxs <= '0'; -- s = 3pi/2 (second sign arbitrary)
       when "000" => sz0 <= ("00", szm   ); sxs <= '0'; sys <= '0'; -- 0     < s < pi/2
-      when "010" => sz0 <= ("01", szmi  ); sxs <= '1'; sys <= '0'; -- pi/2  < s < pi
-      when "100" => sz0 <= ("10", szm   ); sxs <= '1'; sys <= '1'; -- pi    < s < 3pi/2
-      when "110" => sz0 <= ("11", szmi  ); sxs <= '0'; sys <= '1'; -- 3pi/2 < s < 2pi (0)
+      when "010" => sz0 <= ("00", szmi  ); sxs <= '1'; sys <= '0'; -- pi/2  < s < pi
+      when "100" => sz0 <= ("00", szm   ); sxs <= '1'; sys <= '1'; -- pi    < s < 3pi/2
+      when "110" => sz0 <= ("00", szmi  ); sxs <= '0'; sys <= '1'; -- 3pi/2 < s < 2pi (0)
       when others => sz0 <= (others => '0'); sxs <= '0'; sys <= '0'; -- unreachable
     end case?;
   end process;
