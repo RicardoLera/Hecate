@@ -1,4 +1,5 @@
   use work.hecate_pkg.all;
+  use work.function_rom.all;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -16,26 +17,24 @@ end entity fft;
 
 architecture synth of fft is
 
-  signal layer  : natural range 0 to the_log+1 := 0;
+  signal layer  : natural range 0 to the_log := 0;
   signal switch : std_logic                    := '1'; -- '0' -> wmul; '1' -> bfly
 
   signal in_scramble       : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
   signal bfly_in, bfly_out : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0'))); -- even-top; odd-bottom
   signal wmul_in, wmul_out : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
-  signal wmul_w            : t_w_array             (0 to n_points-1) := (others => 0); 
+  signal wmul_w            : t_natural_array       (0 to n_points-1) := (others => 0); 
 
 begin
 
   -- Input/Output layer (scramble)
   gen_scramble : for n in 0 to n_points-1 generate
     in_scramble(scramble_lut(n)) <= i(n);
-    o(n) <= bfly_out(fft_net_lut(n, the_log));
+    o(n) <= bfly_out(fft_net_lut(n)(the_log));
   end generate gen_scramble;
 
   -- Generate butterflies and complex constant multiplers
   gen_bfly_wmul : for n in 0 to n_points/2-1 generate
-    signal wmul_w_sel : integer;
-  begin
     bfly : component butterfly
       port map (
         i_top => bfly_in(2*n),
@@ -46,10 +45,10 @@ begin
     w_mul : component wmul
       port map (
         i => wmul_in(2*n+1),
-        w => wmul_w_sel,
+        w => wmul_w(2*n+1),
+        s => clockwise,
         o => wmul_out(2*n+1)
       );
-    wmul_w_sel    <= -wmul_w(2*n+1) when clockwise else wmul_w(2*n+1);
     wmul_out(2*n) <= wmul_in(2*n);
     -- max needed mults is n_points/2 -(w^(N/4)=i mul) -(w^0=1 mul)
   end generate gen_bfly_wmul;
@@ -86,9 +85,9 @@ begin
               if switch then
                 bfly_in(n) <= wmul_out(n);
               else
-                -- report "l = " & integer'image(layer) &  "   n = " & integer'image(n) & "   => net = " & integer'image(fft_net_lut(n, layer));
-                wmul_in(n) <= bfly_out(fft_net_lut(n, layer));
-                wmul_w(n)  <= fft_w_lut(n, layer);
+                -- report "l = " & integer'image(layer) &  "   n = " & integer'image(n) & "   => net = " & integer'image(fft_net_lut(n)(layer));
+                wmul_in(n) <= bfly_out(fft_net_lut(n)(layer));
+                wmul_w(n)  <= fft_w_lut(n)(layer);
               end if;
           end case;
         end if;

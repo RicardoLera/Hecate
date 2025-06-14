@@ -1,4 +1,5 @@
   use work.hecate_pkg.all;
+  use work.function_rom.all;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -6,18 +7,22 @@ library ieee;
 entity wmul is
   port (
     i : in  t_signed_complex;
-    w : in  integer;
+    w : in  natural;
+    s : in  std_logic;
     o : out t_signed_complex
   );
 end entity wmul;
 
 architecture karatsuba of wmul is -- 3 constant multipliers + 3 adders
   signal a, b, c, d, s1, s2, s3, k1, k2, k3, re, im : t_signed;
+  signal s_n : natural;
 begin
+  s_n <= 1 when s else 0;
+
   a <= i(0);
   b <= i(1);
-  c <= twiddle_lut(w)(0);
-  d <= twiddle_lut(w)(1);
+  c <= twiddle_lut(w)(s_n)(0);
+  d <= twiddle_lut(w)(s_n)(1);
 
   s1 <= a + b;
   s2 <= c + d;

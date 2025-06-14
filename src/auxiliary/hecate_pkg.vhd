@@ -9,17 +9,17 @@ package hecate_pkg is
     -- Main Parameters --
     --=================--
 
-    constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
-    constant iy : natural := 2;
-    constant iz : natural := 2;
+    constant ix : natural := 3; -- assumes i mod k = 0, use assert in the testbench
+    constant iy : natural := 3;
+    constant iz : natural := 3;
   
-    constant kx : natural := 2;
-    constant ky : natural := 2;
-    constant kz : natural := 2;
+    constant kx : natural := 3;
+    constant ky : natural := 3;
+    constant kz : natural := 3;
 
     constant signed_size  : natural := 32; -- number of bits in signed signals 
     constant signed_point : natural := 24; -- number of bits past the point 
-    constant pfb_size     : natural := 22; -- number of bits in pi-factor binary
+    constant pfb_size     : natural := 24; -- number of bits in pi-factor binary
 
     constant test_n       : natural  := 2;
     constant test_seed1   : positive := 3928;
@@ -44,7 +44,6 @@ package hecate_pkg is
   type t_signed_complex_array    is array (natural range <>) of t_signed_complex;
   type t_signed_2d_complex_array is array (natural range <>) of t_signed_complex_array;
   type t_signed_3d_complex_array is array (natural range <>) of t_signed_2d_complex_array;
-  type t_w_array                 is array (natural range <>) of integer;
   
   -- State machine lists
   type t_had_state is (initial, vector_mul, pre_rot, rot_kmul, final);
@@ -111,7 +110,8 @@ package hecate_pkg is
   component wmul is
     port (
       i : in  t_signed_complex;
-      w : in  integer;
+      w : in  natural;
+      s : in  std_logic;
       o : out t_signed_complex
     );
   end component wmul;
@@ -205,11 +205,22 @@ package hecate_pkg is
   -- Function Declarations --
   --=======================--
 
-  function scramble_lut (n    : natural) return natural;
-  function fft_net_lut  (n, l : natural) return natural;
-  function fft_w_lut    (n, l : natural) return natural;
-  function twiddle_lut  (inp  : integer) return t_signed_complex;
-  function arctan_lut   (j, s : natural) return t_pfb;
+  type t_natural_array    is array (natural range <>)   of natural;
+  type t_natural_2d_array is array (natural range <>)   of t_natural_array;
+  type t_pfb_array        is array (0 to signed_size-1) of t_pfb;
+  type t_pfb_array_sign   is array (0 to 1) of t_pfb_array; -- 0 = positive; 1 = negative
+
+  function scramble_f (n      : natural) return natural;
+  function fft_net_f  (n, l   : natural) return natural;
+  function fft_w_f    (n, l   : natural) return natural;
+  function twiddle_f  (inp, s : natural) return t_signed_complex;
+  function arctan_f   (j, s   : natural) return t_pfb;
+
+  function build_scramble return t_natural_array;
+  function build_fft_net  return t_natural_2d_array;
+  function build_fft_w    return t_natural_2d_array;
+  function build_twiddle  return t_signed_2d_complex_array;
+  function build_arctan   return t_pfb_array_sign;
 
 end package hecate_pkg;
 
@@ -220,7 +231,7 @@ package body hecate_pkg is
   --=======================--
 
   -- "Scrambling" is the sorting process that an array automatically undergoes when passing through a discrete fourier transform. By scrambling the array in the same manner before the operation, we can return the array to its original ordering
-  function scramble_lut(n : natural) return natural is
+  function scramble_f(n : natural) return natural is
     variable idx : natural := 0;
   begin
     for g in 0 to the_log-1 loop
@@ -231,14 +242,13 @@ package body hecate_pkg is
     return idx;
   end function;
 
-  function fft_net_lut(n, l : natural) return natural is
+  -- tracing last transition   -- switch bit 0 and bit l     -- 3210 -> 0213
+  function fft_net_f(n, l : natural) return natural is
     variable net   : natural;
     variable n_slv : unsigned(the_log-1 downto 0) := to_unsigned(n, the_log);
     variable temp_bit_l, temp_bit_0 : std_logic;
   begin
-
-    -- if tracing last transition   -- switch bit 0 and bit l     -- 3210 -> 0213
-    if (l < the_log) then
+    if (l < the_log) then  
       temp_bit_l := n_slv(l);
       temp_bit_0 := n_slv(0);
       n_slv(0) := temp_bit_l;
@@ -251,21 +261,10 @@ package body hecate_pkg is
         net := 2*(n-n_points/2)+1;
       end if;
     end if;
-
-    -- if tracing all the way back to l=0           just do leftwards bit rotation
-    -- if (l = the_log) then
-    --   net_slv := n_slv(l-2 downto 0) & n_slv(l-1); -- 3210 -> 2103
-    --   w := 0;
-    -- else
-    --   net_slv := zero & n_slv(l-2 downto 0) & n_slv(l-1);
-    --   w := ((net/2) mod (2**l)) * (2**(the_log-l-1));
-    -- end if;
-    -- net := natural(to_integer(net_slv));
-
     return net;
   end function;
 
-  function fft_w_lut(n, l : natural) return natural is
+  function fft_w_f(n, l : natural) return natural is
     variable w : natural;
     constant valid : boolean := (n mod 2) = 1;
   begin
@@ -278,17 +277,19 @@ package body hecate_pkg is
   end function;
 
   -- Generic twiddle function
-  function twiddle_lut (inp : integer) return t_signed_complex is
+  function twiddle_f(inp, s: natural) return t_signed_complex is
     constant base : real := 2.0*MATH_PI/real(n_points);
     variable x : t_signed_complex;
   begin
     x(0) := to_signed(integer((2.0**signed_point)*cos(real(inp) * base)), signed_size);
-    x(1) := to_signed(integer((2.0**signed_point)*sin(real(inp) * base)), signed_size);
+    x(1) := to_signed(integer((2.0**signed_point)*sin(real(inp) * base)), signed_size)
+      when s=0
+    else -to_signed(integer((2.0**signed_point)*sin(real(inp) * base)), signed_size);
     return t_signed_complex(x);
   end function;
 
   -- CORDIC arctangent
-  function arctan_lut (j, s: natural) return t_pfb is
+  function arctan_f(j, s: natural) return t_pfb is
     variable res : t_pfb;
   begin
     res := to_signed(integer((2.0**pfb_size)*(arctan(2.0**(-real(j))))/(2.0*MATH_PI)), pfb_size)
@@ -296,5 +297,66 @@ package body hecate_pkg is
     else -to_signed(integer((2.0**pfb_size)*(arctan(2.0**(-real(j))))/(2.0*MATH_PI)), pfb_size);
     return res;
   end function;
+
+
+
+
+  --==============--
+  -- ROM Builders --
+  --==============--
+
+  function build_scramble return t_natural_array is
+    variable res : t_natural_array(0 to n_points-1);
+  begin
+    for n in 0 to n_points-1 loop
+      res(n) := scramble_f(n);
+    end loop;
+    return res;
+  end function build_scramble;
+
+  function build_fft_net  return t_natural_2d_array is
+    variable res : t_natural_2d_array(0 to n_points-1)(0 to the_log);
+  begin
+    for n in 0 to n_points-1 loop
+      for l in 0 to the_log loop
+        res(n)(l) := fft_net_f(n,l);
+      end loop;
+    end loop;
+    return res;
+  end function build_fft_net;
+
+  function build_fft_w return t_natural_2d_array is
+    variable res : t_natural_2d_array(0 to n_points-1)(0 to the_log-1);
+  begin
+    for n in 0 to n_points-1 loop
+      for l in 0 to the_log-1 loop
+        res(n)(l) := fft_w_f(n,l);
+      end loop;
+    end loop;
+    return res;
+  end function build_fft_w;
+
+  function build_twiddle return t_signed_2d_complex_array is
+    variable res : t_signed_2d_complex_array(0 to n_points-1)(0 to 1);
+  begin
+    for n in 0 to n_points/2-1 loop
+      for s in 0 to 1 loop
+        res(n)(s) := twiddle_f(n,s);
+      end loop;
+    end loop;
+    return res;
+  end function build_twiddle;
+
+  function build_arctan return t_pfb_array_sign is
+    variable res : t_pfb_array_sign;
+  begin
+    for j in 0 to signed_size-1 loop
+      for s in 0 to 1 loop
+        res(s)(j) := arctan_f(j,s);
+      end loop;
+    end loop;
+    return res;
+  end function build_arctan;
+
 
 end package body hecate_pkg;

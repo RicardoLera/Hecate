@@ -1,4 +1,5 @@
   use work.hecate_pkg.all;
+  use work.function_rom.all;
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
@@ -37,8 +38,8 @@ begin
     shifted_x  when '0',    -- y+s_x when '0'
     -shifted_x when others; -- y-s_x when others;
 
-  z_add <= arctan_lut(j,0) when sigma_in -- z+lut when '1' else z-lut
-    else arctan_lut(j,1);
+  z_add <= arctan_lut(0)(j) when sigma_in -- z+lut when '1' else z-lut
+    else arctan_lut(1)(j);
 
   with rotation select sigma_out <=
     z_out(z_out'length - 1) when '1',
