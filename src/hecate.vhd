@@ -8,154 +8,246 @@ entity hecate is
     img                 : in t_signed_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
     ker                 : in t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clock, reset, start : in std_logic;
-    res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-    ready               : out std_logic := '0';
-    ker_ready           : out std_logic := '0';
-    slice_ready         : out std_logic := '0'
+    res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
+    ready               : out std_logic;
+    ker_ready           : out std_logic;
+    slice_ready         : out std_logic
   );
 end entity hecate;
-
--- It's also possible to make a generic arch that builds x hecates using a process y times.
 
 -- This arch is optimized in terms of area. It uses 1 hadamard_arr and 1 fft
 architecture area_opt of hecate is
 
-  signal   sx, sy, sz           : natural := 0;
+  -- Wires
+  signal ker_raster           : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
-  signal acc                    : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0')))); -- LATCH
-  signal ker_transf             : t_signed_complex_array(0 to n_points/2); -- LATCH
+  signal fft_in               : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal fft_out              : t_signed_complex_array(0 to n_points-1);
+  signal fft_start, fft_ready : std_logic := '0';
+  signal fft_reset            : std_logic := '1';
+  signal fft_clockwise        : std_logic := '0';
 
-  signal fft_in                 : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
-  signal fft_out                : t_signed_complex_array(0 to n_points/2);
-  signal fft_start, fft_ready   : std_logic := '0';
-  signal fft_reset              : std_logic := '1';
+  signal had_img, had_ker     : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal had_out              : t_signed_complex_array(0 to n_points/2);
+  signal had_start, had_ready : std_logic := '0';
+  signal had_reset            : std_logic := '1';
 
-  signal hec_img, hec_ker       : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
-  signal hec_out                : t_signed_complex_array(0 to n_points/2);
-  signal hec_start, hec_ready   : std_logic := '0';
-  signal hec_reset              : std_logic := '1';
+  signal slice                : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal prod_sym             : t_signed_complex_array(0 to n_points-1);
+  signal conv, add            : t_signed_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+  signal acc_ready            : std_logic;
 
-  signal ifft_in                : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
-  signal ifft_out, ifft_acc     : t_signed_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
-  signal ifft_start, ifft_ready : std_logic := '0';
-  signal ifft_reset             : std_logic := '1';
+  -- Latches
+  signal state      : t_hec_state := initial;
+  signal sx, sy, sz : natural := 0;
+  signal acc        : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
+  signal ker_transf : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal prod       : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
 
 begin
 
   fft_single : component fft
     port map (
-      i       => fft_in,
-      o       => fft_out,
-      clock   => clock,
-      reset   => fft_reset,
-      start   => fft_start,
-      s_ready => fft_ready
+      i         => fft_in,
+      o         => fft_out,
+      clock     => clock,
+      reset     => fft_reset,
+      start     => fft_start,
+      clockwise => fft_clockwise,
+      s_ready   => fft_ready
     );
   
-  hec_single : component hadamard_arr
+  had_arr_single : component hadamard_arr
     port map (
-      img_transf => hec_img,
-      ker_transf => hec_ker,
+      img_transf => had_img,
+      ker_transf => had_ker,
       clock      => clock,
-      reset      => hec_reset,
-      start      => hec_start,
-      res        => hec_out,
-      ready      => hec_ready
+      reset      => had_reset,
+      start      => had_start,
+      res        => had_out,
+      ready      => had_ready
     );
 
-  ifft_single : component ifft
-    port map (
-      i       => ifft_in,
-      o       => ifft_out,
-      clock   => clock,
-      reset   => ifft_reset,
-      start   => ifft_start,
-      s_ready => ifft_ready
-    );
-
+  -- Accumulation adders
   gen_oa_adds_z : for z in 0 to nz-1 generate
     gen_oa_adds_y : for y in 0 to ny-1 generate
       gen_oa_adds_x : for x in 0 to nx-1 generate
-        ifft_acc(z)(y)(x) <= ifft_out(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
+        constant n : natural := x + y*nx + z*nx*ny;
+      begin
+        conv(z)(y)(x) <= fft_out(n)(0);
+        add(z)(y)(x) <= conv(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
       end generate gen_oa_adds_x;
     end generate gen_oa_adds_y;
   end generate gen_oa_adds_z;
 
-  proc_slice : process(clock) begin
+  -- Signal rasterization / derasterization
+  gen_z : for z in 0 to kz-1 generate
+    gen_y : for y in 0 to ky-1 generate
+      gen_x : for x in 0 to kx-1 generate
+        constant n : natural := x + y*nx + z*nx*ny;
+      begin
+        ker_raster(n) <= (ker(z)(y)(x), signed_zero);
+        slice(n)      <= (img(sz*kz+z)(sy*ky+y)(sx*kx+x), signed_zero);
+      end generate gen_x;
+    end generate gen_y;
+  end generate gen_z;
+
+  -- Hermitian symmetry
+  process (all) begin
+    for n in 0 to n_points-1 loop
+      if n <= n_points/2 then 
+        prod_sym(n) <= prod(n);
+      else
+        prod_sym(n) <= (prod(n_points-n)(0), -prod(n_points-n)(1));
+      end if;
+    end loop;
+  end process;
+
+  -- Control unit
+  fsm : process (clock) begin
+    if (reset) then
+      state <= initial;
+    elsif rising_edge(clock) then          -- TO-DO: standarize reset synchronicity
+      state <=
+        ker_fft    when state = initial    and start     = '1' else
+        latch_ker  when state = ker_fft    and fft_ready = '1' else
+        slice_fft  when state = latch_ker  or ((state = accumulate) and (acc_ready = '0')) else
+        had        when state = slice_fft  and fft_ready = '1' else
+        latch_had  when state = had        and had_ready = '1' else
+        ifft       when state = latch_had                      else
+        accumulate when state = ifft       and fft_ready = '1' else
+        final      when state = accumulate and acc_ready = '1' else
+        state;
+    end if;
+  end process;
+
+  -- Latch assignments
+  latches : process (clock) begin
     if rising_edge(clock) then
-      if (reset or ready) then
-        if reset then ready <= '0'; end if;
-        sx <= 0; sy <= 0; sz <= 0;
-        fft_reset <= '1'; hec_reset <= '1'; ker_ready <= '0'; ifft_reset <= '1'; slice_ready <= '0'; 
-        acc <= (others => (others => (others => (others => '0'))));
-        ker_transf <= (others => (others => (others => '0')));
-      elsif (start) then
 
-        if (not ker_ready) then -- Transform kernel
-          if (not fft_ready) then
-            fft_in <= ker;
-            fft_start <= '1'; fft_reset <= '0';
-            -- assignments are instructed to happen every cycle, but I don't see how this would infer more hardware than creating another IF
-          else
-            fft_start <= '0'; fft_reset <= '1';
-            ker_ready <= '1'; ker_transf <= fft_out;
-          end if;
+      ker_transf <= fft_out when state = latch_ker;
+      prod       <= had_out when state = latch_had;
 
-        elsif (not fft_ready) then -- Transform slice
-          for szi in 0 to kz-1 loop
-            for syi in 0 to ky-1 loop
-              for sxi in 0 to kx-1 loop
-                fft_in(szi)(syi)(sxi) <= img(sz*kz+szi)(sy*ky+syi)(sx*kx+sxi);
-              end loop;
-            end loop;
+      for z in 0 to nz-1 loop
+        for y in 0 to ny-1 loop
+          for x in 0 to nx-1 loop
+            acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= add(z)(y)(x)
+              when state = accumulate else
+              (others => '0') when state = initial;
           end loop;
-          fft_start <= '1'; fft_reset <= '0';
+        end loop;
+      end loop;
 
-        elsif (not hec_ready) then -- Start hadamard_arr
-          hec_img <= fft_out; hec_ker <= ker_transf;
-          hec_start <= '1'; hec_reset <= '0';
-        
-        elsif (not ifft_ready) then -- Untransform slice
-          ifft_in <= hec_out;
-          ifft_start <= '1'; ifft_reset <= '0';
-                
-        elsif (not slice_ready) then -- Update accumulator
-          for z in 0 to nz-1 loop
-            for y in 0 to ny-1 loop
-              for x in 0 to nx-1 loop
-                acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= ifft_acc(z)(y)(x);
-              end loop;
-            end loop;
-          end loop;
-          slice_ready <= '1';
-
-        else -- Next slice / finish
-          fft_start  <= '0'; fft_reset <= '1';
-          hec_start  <= '0'; hec_reset <= '1';
-          ifft_start <= '0'; ifft_reset <= '1';
-          slice_ready  <= '0';
-          sx <= sx + 1;
-          if (sx+1 >= slice_x) then
-            sy <= sy + 1; sx <= 0;
-            if (sy+1 >= slice_y) then
-              sz <= sz + 1; sy <= 0;
-              if (sz+1 >= slice_z) then
-                sz <= 0;
-                ready <= '1';
-              end if;
-            end if;
+      sx <= sx + 1;
+      if (sx+1 >= slice_x) then
+        sy <= sy + 1; sx <= 0;
+        if (sy+1 >= slice_y) then
+          sz <= sz + 1; sy <= 0;
+          if (sz+1 >= slice_z) then
+            sz <= 0;
           end if;
-
         end if;
       end if;
+
     end if;
-  end process proc_slice;
+  end process;
+
+  -- Signal assignments
+  assigns : process (all) begin
+    case state is
+
+      when ker_fft =>
+        fft_reset     <= '0';
+        fft_start     <= '1';
+        fft_clockwise <= '0';
+        fft_in        <= ker_raster;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
+      when latch_ker =>
+        fft_reset     <= '1';
+        fft_start     <= '0';
+        fft_clockwise <= '0';
+        fft_in        <= slice;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
+      when slice_fft =>
+        fft_reset     <= '0';
+        fft_start     <= '1';
+        fft_clockwise <= '0';
+        fft_in        <= slice;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
+      when had =>
+        fft_reset     <= '0';
+        fft_start     <= '0';
+        fft_clockwise <= '0';
+        fft_in        <= slice;
+        had_reset     <= '0';
+        had_start     <= '1';
+        had_img       <= fft_out(0 to n_points/2);
+        had_ker       <= ker_transf(0 to n_points/2);
+
+      when latch_had =>
+        fft_reset     <= '1';
+        fft_start     <= '0';
+        fft_clockwise <= '1';
+        fft_in        <= prod_sym;
+        had_reset     <= '0';
+        had_start     <= '1';
+        had_img       <= fft_out(0 to n_points/2);
+        had_ker       <= ker_transf(0 to n_points/2);
+
+      when ifft =>
+        fft_reset     <= '0';
+        fft_start     <= '1';
+        fft_clockwise <= '1';
+        fft_in        <= prod_sym;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
+      when accumulate =>
+        fft_reset     <= '0';
+        fft_start     <= '0';
+        fft_clockwise <= '1';
+        fft_in        <= prod_sym;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
+      when others =>
+        fft_reset     <= '1';
+        fft_start     <= '0';
+        fft_clockwise <= '0';
+        fft_in        <= (others => (others => (others => '0')));
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+      end case;
+  end process;
+
+  ker_ready <= '1' when state = latch_ker else '0';
+  slice_ready <= '1' when state = accumulate else '0';
+  acc_ready <= '1' when (sx = slice_x-1) and (sy = slice_y-1) and (sz = slice_z-1) else '0';
+  ready <= '1' when state = final else '0';
   res <= acc;
 
 end architecture area_opt;
 
 
-
+-- It's also possible to make a generic arch that builds x hecates using a process y times.
 
 -- This arch is optimized on number of cycles. It uses parallel hecates and multiple FFTs    (WORK IN PROGRESS)
 -- architecture time_opt of hecate is

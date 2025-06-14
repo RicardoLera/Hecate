@@ -35,33 +35,27 @@ begin
   szm   <= szq(pfb_size-3 downto 0); szmi <= not(szm)+1;
   sel_s <= szq(pfb_size-1) & szq(pfb_size-2) & nor(szq(pfb_size -3 downto 0));
 
-  process(all) begin -- convert az0 -> azq
-    case? sel_a is
-      when "0--1" => azq <= ("00", mzero ); -- a = 0
-      when "-01-" => azq <= ("01", mzero ); -- a = pi/2
-      when "1--1" => azq <= ("10", mzero ); -- a = pi
-      when "-11-" => azq <= ("11", mzero ); -- a = 3pi/2
-      when "0000" => azq <= ("00", azm   ); -- 0     < a < pi/2
-      when "1000" => azq <= ("01", azmi  ); -- pi/2  < a < pi
-      when "1100" => azq <= ("10", azm   ); -- pi    < a < 3pi/2
-      when "0100" => azq <= ("11", azmi  ); -- 3pi/2 < a < 2pi (0)
-      when others => azq <= (others => '0'); -- unreachable
-    end case?;
-  end process;
+  azq <=
+    ("00", mzero ) when (not sel_a(3) and sel_a(0)) else -- a = 0
+    ("01", mzero ) when (not sel_a(2) and sel_a(1)) else -- a = pi/2
+    ("10", mzero ) when (    sel_a(3) and sel_a(0)) else -- a = pi
+    ("11", mzero ) when (    sel_a(2) and sel_a(1)) else -- a = 3pi/2
+    ("00", azm   ) when (sel_a = "0000") else -- 0     < a < pi/2
+    ("01", azmi  ) when (sel_a = "1000") else -- pi/2  < a < pi
+    ("10", azm   ) when (sel_a = "1100") else -- pi    < a < 3pi/2
+    ("11", azmi  ) when (sel_a = "0100") else -- 3pi/2 < a < 2pi (0)
+    (others => '0'); -- unreachable
 
-  process(all) begin -- convert bz0 -> bzq
-    case? sel_b is
-      when "0--1" => bzq <= ("00", mzero ); -- b = 0
-      when "-01-" => bzq <= ("01", mzero ); -- b = pi/2
-      when "1--1" => bzq <= ("10", mzero ); -- b = pi
-      when "-11-" => bzq <= ("11", mzero ); -- b = 3pi/2
-      when "0000" => bzq <= ("00", bzm   ); -- 0     < b < pi/2
-      when "1000" => bzq <= ("01", bzmi  ); -- pi/2  < b < pi
-      when "1100" => bzq <= ("10", bzm   ); -- pi    < b < 3pi/2
-      when "0100" => bzq <= ("11", bzmi  ); -- 3pi/2 < b < 2pi (0)
-      when others => bzq <= (others => '0'); -- unreachable
-    end case?;
-  end process;
+  bzq <=
+    ("00", mzero ) when (not sel_b(3) and sel_b(0)) else -- b = 0
+    ("01", mzero ) when (not sel_b(2) and sel_b(1)) else -- b = pi/2
+    ("10", mzero ) when (    sel_b(3) and sel_b(0)) else -- b = pi
+    ("11", mzero ) when (    sel_b(2) and sel_b(1)) else -- b = 3pi/2
+    ("00", bzm   ) when (sel_b = "0000") else -- 0     < b < pi/2
+    ("01", bzmi  ) when (sel_b = "1000") else -- pi/2  < b < pi
+    ("10", bzm   ) when (sel_b = "1100") else -- pi    < b < 3pi/2
+    ("11", bzmi  ) when (sel_b = "0100") else -- 3pi/2 < b < 2pi (0)
+    (others => '0'); -- unreachable
 
   process(all) begin -- convert szq -> sz0
     case? sel_s is
@@ -78,3 +72,18 @@ begin
   end process;
 
 end architecture synth;
+
+-- Vivado doesn't understand this, despite claiming to support VHDL-2008 and manually setting all files to the standard. So if-chain it is.
+-- process(all) begin -- convert bz0 -> bzq
+--   case? sel_b is
+--     when "0--1" => azq <= ("00", mzero ); -- a = 0           
+--     when "-01-" => azq <= ("01", mzero ); -- a = pi/2
+--     when "1--1" => azq <= ("10", mzero ); -- a = pi
+--     when "-11-" => azq <= ("11", mzero ); -- a = 3pi/2
+--     when "0000" => azq <= ("00", azm   ); -- 0     < a < pi/2
+--     when "1000" => azq <= ("01", azmi  ); -- pi/2  < a < pi
+--     when "1100" => azq <= ("10", azm   ); -- pi    < a < 3pi/2
+--     when "0100" => azq <= ("11", azmi  ); -- 3pi/2 < a < 2pi (0)
+--     when others => azq <= (others => '0');
+--   end case?;
+-- end process;

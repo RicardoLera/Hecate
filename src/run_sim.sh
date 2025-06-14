@@ -40,7 +40,7 @@ if [ "$1" = "synth" ] ; then
 else
   
   if [ "$1" = "fft" ] ; then
-    comp_files="auxiliary/hecate_pkg.vhd auxiliary/function_rom.vhd fft/*.vhd"
+    comp_files="auxiliary/hecate_pkg.vhd auxiliary/function_rom.vhd fourier/*.vhd"
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then

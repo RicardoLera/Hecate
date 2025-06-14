@@ -14,23 +14,34 @@ end entity fft_tb;
 
 architecture sim of fft_tb is
 
-  signal   test_arr : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
-  signal   o : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  constant clockperiod        : time := 1 ms;
+  signal   test_arr_3d        : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := (others => (others => (others => (others => '0'))));
+  signal   test_arr_raster, o : t_signed_complex_array(0 to n_points-1);
   signal   clk, start, reset, simulate, s_ready : std_logic := '0';
-  constant clockperiod : time := 1 ms;
 
 begin
 
   clk <= (not clk) and simulate after clockperiod / 2;
 
+  gen_oa_adds_z : for z in 0 to kz-1 generate
+    gen_oa_adds_y : for y in 0 to ky-1 generate
+      gen_oa_adds_x : for x in 0 to kx-1 generate
+        constant n : natural := x + y*nx + z*nx*ny;
+      begin
+        test_arr_raster(n) <= (test_arr_3d(z)(y)(x), signed_zero);
+      end generate gen_oa_adds_x;
+    end generate gen_oa_adds_y;
+  end generate gen_oa_adds_z;
+
   dut : component fft
     port map (
-      i       => test_arr,
-      o       => o,
-      clock   => clk,
-      reset   => reset,
-      start   => start,
-      s_ready => s_ready
+      i         => test_arr_raster,
+      o         => o,
+      clock     => clk,
+      reset     => reset,
+      start     => start,
+      clockwise => '0',
+      s_ready   => s_ready
     );
 
   test : process is
@@ -39,10 +50,11 @@ begin
     reset <= '1';
     simulate <= '1';
     wait for 2 ms;
-    for z in 0 to kz-1 loop
-      for y in 0 to ky-1 loop
-        for x in 0 to kx-1 loop
-          test_arr(z)(y)(x) <= "0000000010000000000000000";
+
+    for z in 0 to iz-1 loop
+      for y in 0 to iy-1 loop
+        for x in 0 to ix-1 loop
+          test_arr_3d(z)(y)(x) <= signed_one;
         end loop;
       end loop;
     end loop;
@@ -52,7 +64,7 @@ begin
     wait until (s_ready = '1') for 50 ms ;
     wait for 2 ms;
 
-    test_arr(0)(0)(1) <= "0000000001000000000000000";
+    test_arr_3d(0)(0)(1) <= signed_half;
     reset <= '1';
     start <= '0';
     wait for 2 ms;
@@ -74,19 +86,30 @@ end architecture sim;
 
 
 architecture synth of fft_tb is
-  signal res   : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
-  signal reset : std_logic := '1';
-  signal start : std_logic := '0';
+  signal res, inp_raster : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal reset           : std_logic := '1';
+  signal start           : std_logic := '0';
 begin
+
+  gen_oa_adds_z : for z in 0 to kz-1 generate
+    gen_oa_adds_y : for y in 0 to ky-1 generate
+      gen_oa_adds_x : for x in 0 to kx-1 generate
+        constant n : natural := x + y*nx + z*nx*ny;
+      begin
+        inp_raster(n) <= (inp(z)(y)(x), signed_zero);
+      end generate gen_oa_adds_x;
+    end generate gen_oa_adds_y;
+  end generate gen_oa_adds_z;
 
   dut : component fft
     port map (
-      i       => inp,
-      o       => res,
-      clock   => clock,
-      reset   => reset,
-      start   => start,
-      s_ready => ready
+      i         => inp_raster,
+      o         => res,
+      clock     => clock,
+      reset     => reset,
+      start     => start,
+      clockwise => '0',
+      s_ready   => ready
     );
 
   test : process (clock) begin

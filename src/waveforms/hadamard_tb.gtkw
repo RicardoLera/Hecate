@@ -29,7 +29,7 @@ top.hadamard_tb.dut.ready
 -Control Unit
 @420
 top.hadamard_tb.dut.j
-top.hadamard_tb.dut.cu.e_nex
+top.hadamard_tb.dut.cu.s_nex
 @28
 top.hadamard_tb.dut.j_end
 top.hadamard_tb.ready
