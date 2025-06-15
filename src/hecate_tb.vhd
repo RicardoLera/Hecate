@@ -6,12 +6,12 @@ library ieee;
 
 entity hecate_tb is
   port (
-    rom_serial_i : in  t_signed := (others => '0');
-    rom_serial_k : in  t_signed := (others => '0');
-    ram_serial   : out t_signed := (others => '0');
-    clock, start : in  std_logic := '0';
-    reset        : in  std_logic := '1';
-    ready        : out std_logic := '0'
+    rom_serial_i : in  t_signed;
+    rom_serial_k : in  t_signed;
+    ram_serial   : out t_signed;
+    clock, start : in  std_logic;
+    reset        : in  std_logic;
+    ready        : out std_logic
   );
 end entity hecate_tb;
 

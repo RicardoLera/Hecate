@@ -120,6 +120,9 @@ begin
   -- K-correction Constant Multipliers
   kmul_out_x <= resize((pc_x_out * signed_kcon) sra signed_point, signed_size);
   kmul_out_y <= resize((pc_y_out * signed_kcon) sra signed_point, signed_size);
+  -- kmul_out_x <= pc_x_out(signed_size/2+signed_point/2-1 downto signed_point/2) * signed_kcon(signed_point downto );
+  -- kmul_out_y <= pc_y_out(signed_size/2+signed_point/2-1 downto signed_point/2) * signed_kcon(signed_point downto );
+
 
 
 

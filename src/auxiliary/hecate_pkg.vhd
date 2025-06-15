@@ -9,13 +9,13 @@ package hecate_pkg is
     -- Main Parameters --
     --=================--
 
-    constant ix : natural := 3; -- assumes i mod k = 0, use assert in the testbench
-    constant iy : natural := 3;
-    constant iz : natural := 3;
+    constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
+    constant iy : natural := 2;
+    constant iz : natural := 2;
   
-    constant kx : natural := 3;
-    constant ky : natural := 3;
-    constant kz : natural := 3;
+    constant kx : natural := 2;
+    constant ky : natural := 2;
+    constant kz : natural := 2;
 
     constant signed_size  : natural := 32; -- number of bits in signed signals 
     constant signed_point : natural := 24; -- number of bits past the point 
@@ -47,7 +47,7 @@ package hecate_pkg is
   
   -- State machine lists
   type t_had_state is (initial, vector_mul, pre_rot, rot_kmul, final);
-  type t_hec_state is (initial, ker_fft, latch_ker, slice_fft, had, latch_had, ifft, accumulate, final);
+  type t_hec_state is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, final);
 
 
 

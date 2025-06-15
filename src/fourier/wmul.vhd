@@ -28,6 +28,11 @@ begin
   s2 <= c + d;
   s3 <= d - c;
 
+  -- casts to define DST length [too much precision loss]
+  -- k1 <= c(signed_size/2+signed_point/2-1 downto signed_point/2) * s1(signed_size/2+signed_point/2-1 downto signed_point/2); -- c*(a+b)
+  -- k2 <= b(signed_size/2+signed_point/2-1 downto signed_point/2) * s2(signed_size/2+signed_point/2-1 downto signed_point/2); -- b*(c+d)
+  -- k3 <= a(signed_size/2+signed_point/2-1 downto signed_point/2) * s3(signed_size/2+signed_point/2-1 downto signed_point/2); -- a*(d-c)
+  
   k1 <= resize((c * s1) sra signed_point, signed_size); -- c*(a+b)
   k2 <= resize((b * s2) sra signed_point, signed_size); -- b*(c+d)
   k3 <= resize((a * s3) sra signed_point, signed_size); -- a*(d-c)

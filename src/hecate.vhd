@@ -37,7 +37,7 @@ architecture area_opt of hecate is
   signal conv, add            : t_signed_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
   signal acc_ready            : std_logic;
 
-  -- Latches
+  -- Registers
   signal state      : t_hec_state := initial;
   signal sx, sy, sz : natural := 0;
   signal acc        : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
@@ -75,7 +75,7 @@ begin
         constant n : natural := x + y*nx + z*nx*ny;
       begin
         conv(z)(y)(x) <= fft_out(n)(0);
-        add(z)(y)(x) <= conv(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
+        add(z)(y)(x)  <= conv(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
       end generate gen_oa_adds_x;
     end generate gen_oa_adds_y;
   end generate gen_oa_adds_z;
@@ -105,24 +105,26 @@ begin
 
   -- Control unit
   fsm : process (clock) begin
-    if (reset) then
-      state <= initial;
-    elsif rising_edge(clock) then          -- TO-DO: standarize reset synchronicity
+    if rising_edge(clock) then 
+      if (reset) then
+        state <= initial;
+      else
       state <=
-        ker_fft    when state = initial    and start     = '1' else
-        latch_ker  when state = ker_fft    and fft_ready = '1' else
-        slice_fft  when state = latch_ker  or ((state = accumulate) and (acc_ready = '0')) else
-        had        when state = slice_fft  and fft_ready = '1' else
-        latch_had  when state = had        and had_ready = '1' else
-        ifft       when state = latch_had                      else
-        accumulate when state = ifft       and fft_ready = '1' else
-        final      when state = accumulate and acc_ready = '1' else
+        ker_fft    when (state = initial   ) and (start     = '1') else
+        latch_ker  when (state = ker_fft   ) and (fft_ready = '1') else
+        slice_fft  when (state = latch_ker ) or  ((state = accumulate) and (acc_ready = '0')) else
+        had        when (state = slice_fft ) and (fft_ready = '1') else
+        latch_had  when (state = had       ) and (had_ready = '1') else
+        ifft       when (state = latch_had )                       else
+        accumulate when (state = ifft      ) and (fft_ready = '1') else
+        final      when (state = accumulate) and (acc_ready = '1') else
         state;
+      end if;
     end if;
   end process;
 
-  -- Latch assignments
-  latches : process (clock) begin
+  -- Reg assignments
+  regs : process (clock) begin
     if rising_edge(clock) then
 
       ker_transf <= fft_out when state = latch_ker;
@@ -138,13 +140,15 @@ begin
         end loop;
       end loop;
 
+    if state = accumulate then
       sx <= sx + 1;
-      if (sx+1 >= slice_x) then
-        sy <= sy + 1; sx <= 0;
-        if (sy+1 >= slice_y) then
-          sz <= sz + 1; sy <= 0;
-          if (sz+1 >= slice_z) then
-            sz <= 0;
+        if (sx+1 >= slice_x) then
+          sy <= sy + 1; sx <= 0;
+          if (sy+1 >= slice_y) then
+            sz <= sz + 1; sy <= 0;
+            if (sz+1 >= slice_z) then
+              sz <= 0;
+            end if;
           end if;
         end if;
       end if;
@@ -165,12 +169,12 @@ begin
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
         had_ker       <= (others => (others => (others => '0')));
-
+      
       when latch_ker =>
-        fft_reset     <= '1';
+        fft_reset     <= '1'; -- fft holds output on reset, no need to give it a reset state
         fft_start     <= '0';
         fft_clockwise <= '0';
-        fft_in        <= slice;
+        fft_in        <= ker_raster;
         had_reset     <= '1';
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
@@ -199,10 +203,10 @@ begin
       when latch_had =>
         fft_reset     <= '1';
         fft_start     <= '0';
-        fft_clockwise <= '1';
-        fft_in        <= prod_sym;
+        fft_clockwise <= '0';
+        fft_in        <= slice;
         had_reset     <= '0';
-        had_start     <= '1';
+        had_start     <= '0';
         had_img       <= fft_out(0 to n_points/2);
         had_ker       <= ker_transf(0 to n_points/2);
 
