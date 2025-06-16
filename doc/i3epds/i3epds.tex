@@ -1,31 +1,39 @@
 % Page limit: 12 (including references)
 % Refer to: https://www.computer.org/csdl/journal/td/write-for-us/15085
 
-\documentclass[10pt,journal,compsoc]{IEEEtran}
-
-% included in 2020 generic template
-\usepackage{textcomp}
-\usepackage{verbatim}
-
-% included in 2015 compsoc template
+% from 2020 template "bare_jrnl_new_sample4.tex":
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
 \usepackage{algorithmic}
-\usepackage{url}
+\usepackage{algorithm}
 \usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
 \usepackage{stfloats}
-\usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
-\usepackage{amsmath, amsfonts}
-  \interdisplaylinepenalty=2500
-\usepackage[pdftex]{graphicx}
-  \graphicspath{{figs/}}
-  \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-\usepackage[nocompress]{cite}
-
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 
-% included for writing the article - REMOVE BEFORE SUBMISSION
-\usepackage{xcolor}
+% from 2020 template "New_IEEEtran_how-to.tex":
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+  T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\usepackage{balance}
+
+% from 2015 template "bare_jrnl_compsoc.tex": -- ignored in lieu of most recent template
+% \documentclass[10pt,journal,compsoc]{IEEEtran}
+% \usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
+% \usepackage{amsmath, amsfonts}
+%   \interdisplaylinepenalty=2500
+% \usepackage[pdftex]{graphicx}
+%   \graphicspath{{figs/}}
+%   \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+% \usepackage[nocompress]{cite}
+
+% included for editing:   --- REMOVE BEFORE SUBMISSION
+\usepackage{xcolor}\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
-\usepackage{lipsum}
 
 \begin{document}
 
@@ -39,21 +47,21 @@
     \IEEEcompsocthanksitem R. Lera, M. Alves and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.%\protect\\
       %E-mails: \todo{insert emails}  or not
   }%
-  \thanks{Manuscript received Undecimber XX, 20XX; revised Undecimber XX, 20XX.}
+  \thanks{Manuscript received DATE; revised DATE.}
 }
 
 % Headers
-\markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~X, No.~X, Undecimber~\the\year{}}%
+\markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~X, No.~X, MONTH~20XX{}}%
 {Lera; Alves; Albertini: A Scalable and Hardware-Efficient Convolution Accelerator}
 
-% compsoc new pubid style
+% Compsoc new pubid style
 \IEEEpubid{\makebox[\columnwidth]{\hfill 0000--0000/00/\$00.00~\copyright~\the\year{} IEEE}%
 \hspace{\columnsep}\makebox[\columnwidth]{Published by the IEEE Computer Society\hfill}}
 
 % Abstract and Keywords
 \IEEEtitleabstractindextext{%
   \begin{abstract}% 100~200 word limit (compsoc guidelines)
-    \lipsum[1-1]
+    Lorem
   \end{abstract}
   \begin{IEEEkeywords}
     Lorem, ipsum, dolor sit.
@@ -67,18 +75,20 @@
 
   \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\cite{}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\cite{}, which is even more prominent on three-dimensional CNNs~\cite{}.
 
-  A survey~\cite{mittal2021survey} on the current state...
+  A survey~\cite{mittal2021survey} on the current state%...
 
   %\IEEEPARstart{T}{he}
-  The computational cost of large-scale convolution has been a limiting factor since the inception of CNNs. LeCun...
+  The computational cost of large-scale convolution has been a limiting factor since the inception of CNNs. LeCun%...
 
-  A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be redirected and processed concurrently. Notable applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}.
+  A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently. Notable applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}.
 
 \section{Algorithms \& Complexity}
   Current accelerator topologies aim to maximize parallelization, for instance: the TPU uses the \texttt{im2col} algorithm which re-organizes the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}. While this method enables highly-parallelized systolic array implementations, its hardware cost scales drastically with the size of the convolution kernel~\cite{lera2023hardware}. 
 
-  Regarding kernel size, modern CNNs have opted for a larger number of layers with smaller kernels, as they can provide the same receptive field as a single layer with a large kernel, at a lower processing cost~\cite{simonyan2014very}. 
+  Regarding kernel size, a larger number of layers with smaller kernels can provide the same receptive field as a single layer with a large kernel, at a lower processing cost~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3×3, opting instead to increase network depth and number of kernels \todo{maybe cite MobileNet and such here}. 
   
+  
+
   %the size of the input and kernel, while its respective performance improvement scales linearly.
 
 \section{Proposed Architecture}

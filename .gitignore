@@ -1,19 +1,19 @@
 .*
 !/.gitignore
 
-work-obj*.cf
-*.code-workspace
 *.txt
 *.json
 *.toml
-**/build
 *.ghw
 *.edn
+**/build
+templates
 
+## Vivado
 *.cache
 *.runs
 *.ip_user_files
-
+*.gen
 
 ## Core latex/pdflatex auxiliary files
 *.aux
