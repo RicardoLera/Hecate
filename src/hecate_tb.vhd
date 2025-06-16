@@ -17,6 +17,7 @@ end entity hecate_tb;
 
 
 
+
 -----SIMULATION ARCHITECTURE-----
 
 architecture sim of hecate_tb is
@@ -62,7 +63,7 @@ begin
     );
 
   test : process
-    variable test_res, pnt : natural  := 0;
+    variable test_res, pnt : natural := 0;
     variable err, err_mean, err_worst                 : unsigned(signed_size-1 downto 0) := (others => '0');
     variable t1, t2, test_time,  t_mean, t_max, t_min : time := 0 ns;
     variable s1, s2, slice_time, s_mean, s_max, s_min : time := 0 ns;
@@ -182,6 +183,7 @@ end architecture sim;
 
 
 
+
 -----SYNTHESIZEABLE ARCHITECTURE-----
 
 architecture synth of hecate_tb is
@@ -191,6 +193,7 @@ architecture synth of hecate_tb is
   signal res : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
   signal oa_ready, oa_start, serial_i_ready, serial_k_ready : std_logic := '0';
 
+  signal load : std_logic := '1';
 begin
 
   serial_in : process (clock) is
@@ -200,9 +203,17 @@ begin
       if reset then
         izi := 0; iyi := 0; ixi := 0; kzi := 0; kyi := 0; kxi := 0;
         serial_i_ready <= '0'; serial_k_ready <= '0';
-      elsif start then
-        if not serial_i_ready then
+      elsif start and not serial_i_ready then
+      
+        if load then
+        
           img(izi)(iyi)(ixi) <= rom_serial_i;
+          ker(kzi)(kyi)(kxi) <= rom_serial_k;
+          load <= not load;
+         
+        else
+
+        if not serial_i_ready then
           ixi := ixi + 1;
           if (ixi = ix) then iyi := iyi + 1; ixi := 0; end if;
           if (iyi = iy) then izi := izi + 1; iyi := 0; end if;
@@ -210,12 +221,16 @@ begin
         end if;
 
         if not serial_k_ready then
-          ker(kzi)(kyi)(kxi) <= rom_serial_k;
           kxi := kxi + 1;
           if (kxi = kx) then kyi := kyi + 1; kxi := 0; end if;
           if (kyi = ky) then kzi := kzi + 1; kyi := 0; end if;
           if (kzi = kz) then serial_k_ready <= '1'; end if;
         end if;
+        
+        load <= not load;
+
+        end if;
+        
       end if;
     end if;
   end process serial_in;
