@@ -1,16 +1,18 @@
 .*
 !/.gitignore
 
-src/fourier/references
 work-obj*.cf
 *.code-workspace
 *.txt
-!/pub/i3epds/results/*.txt
 *.json
 *.toml
 **/build
 *.ghw
 *.edn
+
+*.cache
+*.runs
+*.ip_user_files
 
 
 ## Core latex/pdflatex auxiliary files

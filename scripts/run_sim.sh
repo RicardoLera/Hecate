@@ -27,6 +27,9 @@
 
 ghdl remove
 
+dir="../src/vhdl"
+wave_dir="../doc/results_vhdl/waveforms"
+
 if [ "$1" = "synth" ] ; then
   
   comp_files="*.vhd */*.vhd"
@@ -40,15 +43,15 @@ if [ "$1" = "synth" ] ; then
 else
   
   if [ "$1" = "fft" ] ; then
-    comp_files="auxiliary/hecate_pkg.vhd auxiliary/function_rom.vhd fourier/*.vhd"
+    comp_files="$dir/auxiliary/hecate_pkg.vhd $dir//auxiliary/function_rom.vhd $dir//fourier/*.vhd"
     top_module="fft_tb sim"
 
   elif [ "$1" = "had" ] ; then
-    comp_files="auxiliary/hecate_pkg.vhd auxiliary/function_rom.vhd hadamard/*.vhd"
+    comp_files="$dir/auxiliary/hecate_pkg.vhd $dir/auxiliary/function_rom.vhd $dir/hadamard/*.vhd"
     top_module="hadamard_tb sim"
 
   elif [ "$1" = "hec" ] ; then
-    comp_files="*.vhd */*.vhd"
+    comp_files="$dir/*.vhd $dir/*/*.vhd"
     top_module="hecate_tb sim"
 
   else
@@ -59,8 +62,9 @@ else
   ghdl -i --std=08 $comp_files
   ghdl -m --std=08 $top_module
   ghdl -e --std=08 $top_module
-  ghdl -r --std=08 $top_module --max-stack-alloc=4096 --asserts=disable-at-0 --wave=waveforms/"${top_module%% *}".ghw
+  ghdl -r --std=08 $top_module --max-stack-alloc=4096 --asserts=disable-at-0 --wave=$wave_dir/"${top_module%% *}".ghw
 
   rm *.o
+  rm *.cf
   rm "$(echo $top_module | awk '{print $1;}')"-"$(echo $top_module | awk '{print $2;}')"
 fi
