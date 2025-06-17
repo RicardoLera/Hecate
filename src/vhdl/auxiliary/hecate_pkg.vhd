@@ -210,17 +210,19 @@ package hecate_pkg is
   type t_pfb_array        is array (0 to signed_size-1) of t_pfb;
   type t_pfb_array_sign   is array (0 to 1) of t_pfb_array; -- 0 = positive; 1 = negative
 
-  function scramble_f (n      : natural) return natural;
-  function fft_net_f  (n, l   : natural) return natural;
-  function fft_w_f    (n, l   : natural) return natural;
-  function twiddle_f  (inp, s : natural) return t_signed_complex;
-  function arctan_f   (j, s   : natural) return t_pfb;
+  function scramble_f    (n      : natural) return natural;
+  function fft_net_f     (n, l   : natural) return natural;
+  function fft_w_f       (n, l   : natural) return natural;
+  function twiddle_f     (inp, s : natural) return t_signed_complex;
+  function twiddle_add_f (inp, s : natural) return t_signed_complex;
+  function arctan_f      (j, s   : natural) return t_pfb;
 
-  function build_scramble return t_natural_array;
-  function build_fft_net  return t_natural_2d_array;
-  function build_fft_w    return t_natural_2d_array;
-  function build_twiddle  return t_signed_2d_complex_array;
-  function build_arctan   return t_pfb_array_sign;
+  function build_scramble    return t_natural_array;
+  function build_fft_net     return t_natural_2d_array;
+  function build_fft_w       return t_natural_2d_array;
+  function build_twiddle     return t_signed_complex_array;
+  function build_twiddle_add return t_signed_2d_complex_array;
+  function build_arctan      return t_pfb_array_sign;
 
 end package hecate_pkg;
 
@@ -288,6 +290,15 @@ package body hecate_pkg is
     return t_signed_complex(x);
   end function;
 
+  -- Twiddle addition function (for karatsuba)
+  function twiddle_add_f (inp, s : natural) return t_signed_complex is
+    variable x : t_signed_complex;
+  begin
+      x(0) := twiddle_f(inp, s)(0) + twiddle_f(inp, s)(1); -- c+d
+      x(1) := twiddle_f(inp, s)(1) - twiddle_f(inp, s)(0); -- d-c
+    return x;
+  end function;
+
   -- CORDIC arctangent
   function arctan_f(j, s: natural) return t_pfb is
     variable res : t_pfb;
@@ -336,16 +347,25 @@ package body hecate_pkg is
     return res;
   end function build_fft_w;
 
-  function build_twiddle return t_signed_2d_complex_array is
-    variable res : t_signed_2d_complex_array(0 to n_points-1)(0 to 1);
+  function build_twiddle return t_signed_complex_array is
+    variable res : t_signed_complex_array (0 to n_points-1);
   begin
-    for n in 0 to n_points/2-1 loop
-      for s in 0 to 1 loop
-        res(n)(s) := twiddle_f(n,s);
-      end loop;
+    for n in 0 to n_points-1 loop
+      res(n)(0) := twiddle_f(n,0)(0);
+      res(n)(1) := twiddle_f(n,1)(0);
     end loop;
     return res;
   end function build_twiddle;
+
+  function build_twiddle_add return t_signed_2d_complex_array is
+    variable res : t_signed_2d_complex_array(0 to n_points-1)(0 to 1);
+  begin
+    for n in 0 to n_points-1 loop
+      res(n)(0) := twiddle_add_f(n,0);
+      res(n)(1) := twiddle_add_f(n,1);
+    end loop;
+    return res;
+  end function build_twiddle_add;
 
   function build_arctan return t_pfb_array_sign is
     variable res : t_pfb_array_sign;
