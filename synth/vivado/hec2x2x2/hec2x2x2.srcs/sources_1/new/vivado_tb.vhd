@@ -5,9 +5,9 @@ library ieee;
 
 entity vivado_tb is
   port (
-    rom_serial_i : in  t_signed  := (others => '0');
+    rom_serial_i : in  t_signed  := (others => '0'); -- MIF IP
     rom_serial_k : in  t_signed  := (others => '0');
-    ram_serial   : out t_signed  := (others => '0');
+    ram_serial   : out t_signed  := (others => '0'); -- RAM IP
     clock, start : in  std_logic := '0';
     reset        : in  std_logic := '0';
     ready        : out std_logic := '0'
@@ -16,7 +16,7 @@ end entity vivado_tb;
 
 architecture synth of vivado_tb is
 
-  component clk_wiz_0
+  component clk_wiz_0 
     port (
       clk_in1  : in  std_logic;
       reset    : in  std_logic;

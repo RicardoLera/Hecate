@@ -220,7 +220,7 @@ package hecate_pkg is
   function build_scramble    return t_natural_array;
   function build_fft_net     return t_natural_2d_array;
   function build_fft_w       return t_natural_2d_array;
-  function build_twiddle     return t_signed_complex_array;
+  function build_twiddle     return t_signed_2d_complex_array;
   function build_twiddle_add return t_signed_2d_complex_array;
   function build_arctan      return t_pfb_array_sign;
 
@@ -347,12 +347,12 @@ package body hecate_pkg is
     return res;
   end function build_fft_w;
 
-  function build_twiddle return t_signed_complex_array is
-    variable res : t_signed_complex_array (0 to n_points-1);
+  function build_twiddle return t_signed_2d_complex_array is
+    variable res : t_signed_2d_complex_array (0 to n_points-1)(0 to 1);
   begin
     for n in 0 to n_points-1 loop
-      res(n)(0) := twiddle_f(n,0)(0);
-      res(n)(1) := twiddle_f(n,1)(0);
+      res(n)(0) := twiddle_f(n,0);
+      res(n)(1) := twiddle_f(n,1);
     end loop;
     return res;
   end function build_twiddle;

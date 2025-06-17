@@ -23,3 +23,6 @@ set_input_delay -clock $input_clock -min [expr $tco_min + $trce_dly_min] [get_po
 # Output Delay Constraint
 set_output_delay -clock $destination_clock -max [expr $trce_dly_max + $tsu] [get_ports $output_ports];
 set_output_delay -clock $destination_clock -min [expr $trce_dly_min - $thd] [get_ports $output_ports];
+
+# derive_pll_clocks -create_base_clocks
+# derive_clock_uncertainty

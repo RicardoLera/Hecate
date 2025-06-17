@@ -42,7 +42,7 @@ begin
         o_top => bfly_out(2*n),
         o_bot => bfly_out(2*n+1)
       );
-    w_mul : component wmul
+    twiddle_mul : component wmul
       port map (
         i => wmul_in(2*n+1),
         w => wmul_w(2*n+1),
@@ -96,3 +96,13 @@ begin
   end generate fnet;
 
 end architecture synth;
+
+configuration wmul_config of fft is
+  for synth
+    for gen_bfly_wmul
+      for twiddle_mul : wmul
+        use entity work.wmul(karatsuba); -- valid names: "karatsuba", "cmul"
+      end for;
+    end for;
+  end for;
+end wmul_config;
