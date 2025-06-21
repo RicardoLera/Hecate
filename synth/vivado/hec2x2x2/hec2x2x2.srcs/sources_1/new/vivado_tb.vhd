@@ -5,18 +5,16 @@ library ieee;
 
 entity vivado_tb is
   port (
-    rom_serial_i : in  t_signed  := (others => '0'); -- MIF IP
-    rom_serial_k : in  t_signed  := (others => '0');
-    ram_serial   : out t_signed  := (others => '0'); -- RAM IP
-    clock, start : in  std_logic := '0';
-    reset        : in  std_logic := '0';
-    ready        : out std_logic := '0'
+    clock, start, reset : in  std_logic := '0';
+    ready               : out std_logic := '0';
+    ram_serial          : out t_signed  := (others => '0')
+
   );
 end entity vivado_tb;
 
 architecture synth of vivado_tb is
 
-  component clk_wiz_0 
+  component clk_wiz_0
     port (
       clk_in1  : in  std_logic;
       reset    : in  std_logic;
@@ -27,14 +25,24 @@ architecture synth of vivado_tb is
      );
   end component;
 
+  component blk_mem_kernel_2x2x2
+    port (
+      clka  : in std_logic;
+      addra : in std_logic_vector(2 downto 0);
+      douta : out std_logic_vector(31 downto 0)
+    );
+  end component;
+
   signal locked, clk_125, clk_250, clk_500 : std_logic;
+
+  signal rom_k_addr : std_logic_vector(2 downto 0) := (others => '0');
+  signal rom_k_out  : std_logic_vector(31 downto 0);
 
   signal img : t_signed_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
   signal ker : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
   signal res : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
   signal oa_ready, oa_start, serial_i_ready, serial_k_ready : std_logic := '0';
 
-  signal load : std_logic := '1';
 begin
 
   gen_clocks : clk_wiz_0
@@ -47,44 +55,33 @@ begin
       clk_out3 => clk_500
     );
 
-  serial_in : process (clk_125) is
-    variable izi, iyi, ixi, kzi, kyi, kxi : natural := 0;
+  gen_rom_k : blk_mem_kernel_2x2x2
+    port map (
+      clka  => clk_125,
+      addra => rom_k_addr,
+      douta => rom_k_out
+    );
+
+  serial_in_k : process (clk_125) is
+    variable zi, yi, xi : natural := 0;
   begin
     if rising_edge(clk_125) then
       if reset then
-        izi := 0; iyi := 0; ixi := 0; kzi := 0; kyi := 0; kxi := 0;
-        serial_i_ready <= '0'; serial_k_ready <= '0';
-      elsif start and not serial_i_ready then
-      
-        if load then
-        
-          img(izi)(iyi)(ixi) <= rom_serial_i;
-          ker(kzi)(kyi)(kxi) <= rom_serial_k;
-          load <= not load;
-         
-        else
-
-        if not serial_i_ready then
-          ixi := ixi + 1;
-          if (ixi = ix) then iyi := iyi + 1; ixi := 0; end if;
-          if (iyi = iy) then izi := izi + 1; iyi := 0; end if;
-          if (izi = iz) then serial_i_ready <= '1'; end if;
-        end if;
-
-        if not serial_k_ready then
-          kxi := kxi + 1;
-          if (kxi = kx) then kyi := kyi + 1; kxi := 0; end if;
-          if (kyi = ky) then kzi := kzi + 1; kyi := 0; end if;
-          if (kzi = kz) then serial_k_ready <= '1'; end if;
-        end if;
-        
-        load <= not load;
-
-        end if;
-        
+        zi := 0; yi := 0; xi := 0;
+        serial_k_ready <= '0';
+      elsif start and locked and not serial_k_ready then
+        ker(zi)(yi)(xi) <= signed(rom_k_out);
+        xi := xi + 1;
+        if (xi = kx) then yi := yi + 1; xi := 0; end if;
+        if (yi = ky) then zi := zi + 1; yi := 0; end if;
+        if (zi = kz) then serial_k_ready <= '1'; end if;
+        rom_k_addr <= std_logic_vector(to_unsigned(xi + yi*kx + zi*ky*kx, 3));
       end if;
     end if;
-  end process serial_in;
+  end process serial_in_k;
+
+
+
   oa_start <= serial_i_ready and serial_k_ready;
 
   dut : component hecate
@@ -116,3 +113,45 @@ begin
   end process serial_out;
 
 end architecture synth;
+
+
+
+    -- if state = accumulate then
+    --   sx <= sx + 1;
+    --     if (sx+1 >= slice_x) then
+    --       sy <= sy + 1; sx <= 0;
+    --       if (sy+1 >= slice_y) then
+    --         sz <= sz + 1; sy <= 0;
+    --         if (sz+1 >= slice_z) then
+    --           sz <= 0;
+    --         end if;
+    --       end if;
+    --     end if;
+    --   end if;
+
+
+-- if load then
+        
+--   img(izi)(iyi)(ixi) <= rom_serial_i;
+--   ker(kzi)(kyi)(kxi) <= rom_serial_k;
+--   load <= not load;
+ 
+-- else
+
+-- if not serial_i_ready then
+--   ixi := ixi + 1;
+--   if (ixi = ix) then iyi := iyi + 1; ixi := 0; end if;
+--   if (iyi = iy) then izi := izi + 1; iyi := 0; end if;
+--   if (izi = iz) then serial_i_ready <= '1'; end if;
+-- end if;
+
+-- if not serial_k_ready then
+--   kxi := kxi + 1;
+--   if (kxi = kx) then kyi := kyi + 1; kxi := 0; end if;
+--   if (kyi = ky) then kzi := kzi + 1; kyi := 0; end if;
+--   if (kzi = kz) then serial_k_ready <= '1'; end if;
+-- end if;
+
+-- load <= not load;
+
+-- end if;

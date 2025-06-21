@@ -118,9 +118,9 @@ begin
       wait for 4 * clockperiod;
       rst <= '0'; sta <= '1'; t1 := now;
 
-      calc_slice_z : for z in 0 to slice_z-1 loop
-        calc_slice_y : for y in 0 to slice_y-1 loop
-          calc_slice_x : for x in 0 to slice_x-1 loop
+      calc_sz : for z in 0 to sz-1 loop
+        calc_sy : for y in 0 to sy-1 loop
+          calc_sx : for x in 0 to sx-1 loop
             if (not ker_rdy) then wait until (ker_rdy) for 1 ms; end if;
             s1 := now; wait until (slice_rdy) for 10 ms; s2 := now;
             slice_time := s2-s1;
@@ -128,9 +128,9 @@ begin
             if (slice_time > s_max) then s_max := slice_time; end if;
             if (slice_time < s_min or s_min = 0 ns) then s_min := slice_time; end if;
             report "test(" & natural'image(n) & ") slice(" & natural'image(z) & ")(" & natural'image(y) & ")(" & natural'image(x) & ")" & "   Time = " & natural'image(slice_time / clockperiod ) & " cycles";
-          end loop calc_slice_x;
-        end loop calc_slice_y;
-      end loop calc_slice_z;
+          end loop calc_sx;
+        end loop calc_sy;
+      end loop calc_sz;
 
       wait until (o_ready and g_ready) for 10 ms; t2 := now;
       test_time := t2-t1;
@@ -162,7 +162,7 @@ begin
     end loop test_loop;
 
     t_mean := t_mean / test_n;
-    s_mean := s_mean / (test_n*slice_x*slice_y*slice_z);
+    s_mean := s_mean / (test_n*sx*sy*sz);
     err_mean := unsigned(err_mean) / to_unsigned(oz*oy*ox*test_n, signed_size);
 
     report "Passed tests = " & natural'image(test_res) & " out of " & natural'image(test_n);

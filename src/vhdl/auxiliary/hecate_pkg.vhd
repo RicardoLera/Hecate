@@ -9,13 +9,14 @@ package hecate_pkg is
     -- Main Parameters --
     --=================--
 
-    constant ix : natural := 2; -- assumes i mod k = 0, use assert in the testbench
-    constant iy : natural := 2;
-    constant iz : natural := 2;
+    constant ix : natural := 66; -- C3D net-64 padded
+    constant iy : natural := 66;
+    constant iz : natural := 3;  -- RGB frame inputs
   
-    constant kx : natural := 2;
-    constant ky : natural := 2;
-    constant kz : natural := 2;
+    constant kx : natural := 3;
+    constant ky : natural := 3;
+    constant kz : natural := 3;
+    constant kn : natural := 64; -- C3D first conv layer
 
     constant signed_size  : natural := 32; -- number of bits in signed signals 
     constant signed_point : natural := 24; -- number of bits past the point 
@@ -27,7 +28,7 @@ package hecate_pkg is
 
 
 
-  
+
   --==================--
   -- Type Definitions -- 
   --==================--
@@ -47,7 +48,7 @@ package hecate_pkg is
   
   -- State machine lists
   type t_had_state is (initial, vector_mul, pre_rot, rot_kmul, final);
-  type t_hec_state is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, final);
+  type t_hec_state is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, hold);
 
 
 
@@ -66,9 +67,9 @@ package hecate_pkg is
   constant ny : natural := (2*ky-1);
   constant nz : natural := (2*kz-1);
 
-  constant slice_x : natural := ix/kx;
-  constant slice_y : natural := iy/ky;
-  constant slice_z : natural := iz/kz;
+  constant sx : natural := ix/kx;
+  constant sy : natural := iy/ky;
+  constant sz : natural := iz/kz;
 
   constant n_points_nopad : natural := nx*ny*nz;
   constant n_points       : natural := natural(2**ceil(log2(real(n_points_nopad))));
@@ -89,7 +90,7 @@ package hecate_pkg is
     ix, iy, iz, kx, ky, kz,
     signed_size, signed_point, pfb_size,
     test_seed1, test_seed2, test_n,
-    ox, oy, oz, nx, ny, nz, slice_x, slice_y, slice_z, n_points_nopad, n_points, the_log,
+    ox, oy, oz, nx, ny, nz, sx, sy, sz, n_points_nopad, n_points, the_log,
     signed_kcon, signed_zero, signed_one, signed_half
   : constant is "block";
 

@@ -5,13 +5,13 @@ library ieee;
   
 entity hecate is
   port (
-    img                 : in t_signed_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-    ker                 : in t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-    clock, reset, start : in std_logic;
-    res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1);
-    ready               : out std_logic;
+    slice, ker          : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    clock, reset, start : in  std_logic;
+    slice_start         : in std_logic;
+    sx, sy, sz          : in  natural;
     ker_ready           : out std_logic;
-    slice_ready         : out std_logic
+    acc_ready           : out std_logic;
+    res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1)
   );
 end entity hecate;
 
@@ -19,7 +19,7 @@ end entity hecate;
 architecture area_opt of hecate is
 
   -- Wires
-  signal ker_raster           : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal ker_raster, slice_raster : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
   signal fft_in               : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
   signal fft_out              : t_signed_complex_array(0 to n_points-1);
@@ -32,14 +32,11 @@ architecture area_opt of hecate is
   signal had_start, had_ready : std_logic := '0';
   signal had_reset            : std_logic := '1';
 
-  signal slice                : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
   signal prod_sym             : t_signed_complex_array(0 to n_points-1);
   signal conv, add            : t_signed_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
-  signal acc_ready            : std_logic;
 
   -- Registers
   signal state      : t_hec_state := initial;
-  signal sx, sy, sz : natural := 0;
   signal acc        : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
   signal ker_transf : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
   signal prod       : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
@@ -86,8 +83,8 @@ begin
       gen_x : for x in 0 to kx-1 generate
         constant n : natural := x + y*nx + z*nx*ny;
       begin
-        ker_raster(n) <= (ker(z)(y)(x), signed_zero);
-        slice(n)      <= (img(sz*kz+z)(sy*ky+y)(sx*kx+x), signed_zero);
+        slice_raster(n) <= (slice(z)(y)(x), signed_zero);
+        ker_raster(n)   <= (ker(z)(y)(x), signed_zero);
       end generate gen_x;
     end generate gen_y;
   end generate gen_z;
@@ -112,16 +109,18 @@ begin
       state <=
         ker_fft    when (state = initial   ) and (start     = '1') else
         latch_ker  when (state = ker_fft   ) and (fft_ready = '1') else
-        slice_fft  when (state = latch_ker ) or  ((state = accumulate) and (acc_ready = '0')) else
+        slice_fft  when (state = latch_ker ) or  ((state = hold) and (slice_start = '1')) else
         had        when (state = slice_fft ) and (fft_ready = '1') else
         latch_had  when (state = had       ) and (had_ready = '1') else
         ifft       when (state = latch_had )                       else
         accumulate when (state = ifft      ) and (fft_ready = '1') else
-        final      when (state = accumulate) and (acc_ready = '1') else
+        hold       when (state = accumulate)                       else
         state;
       end if;
     end if;
   end process;
+  ker_ready <= '1' when state = latch_ker else '0';
+  acc_ready <= '1' when state = hold else '0';
 
   -- Reg assignments
   regs : process (clock) begin
@@ -139,19 +138,6 @@ begin
           end loop;
         end loop;
       end loop;
-
-    if state = accumulate then
-      sx <= sx + 1;
-        if (sx+1 >= slice_x) then
-          sy <= sy + 1; sx <= 0;
-          if (sy+1 >= slice_y) then
-            sz <= sz + 1; sy <= 0;
-            if (sz+1 >= slice_z) then
-              sz <= 0;
-            end if;
-          end if;
-        end if;
-      end if;
 
     end if;
   end process;
@@ -184,7 +170,7 @@ begin
         fft_reset     <= '0';
         fft_start     <= '1';
         fft_clockwise <= '0';
-        fft_in        <= slice;
+        fft_in        <= slice_raster;
         had_reset     <= '1';
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
@@ -194,7 +180,7 @@ begin
         fft_reset     <= '0';
         fft_start     <= '0';
         fft_clockwise <= '0';
-        fft_in        <= slice;
+        fft_in        <= slice_raster;
         had_reset     <= '0';
         had_start     <= '1';
         had_img       <= fft_out(0 to n_points/2);
@@ -204,7 +190,7 @@ begin
         fft_reset     <= '1';
         fft_start     <= '0';
         fft_clockwise <= '0';
-        fft_in        <= slice;
+        fft_in        <= slice_raster;
         had_reset     <= '0';
         had_start     <= '0';
         had_img       <= fft_out(0 to n_points/2);
@@ -242,10 +228,6 @@ begin
       end case;
   end process;
 
-  ker_ready <= '1' when state = latch_ker else '0';
-  slice_ready <= '1' when state = accumulate else '0';
-  acc_ready <= '1' when (sx = slice_x-1) and (sy = slice_y-1) and (sz = slice_z-1) else '0';
-  ready <= '1' when state = final else '0';
   res <= acc;
 
 end architecture area_opt;
