@@ -42,13 +42,15 @@ package hecate_pkg is
   type t_signed_real_array       is array (natural range <>) of t_signed;
   type t_signed_2d_real_array    is array (natural range <>) of t_signed_real_array;
   type t_signed_3d_real_array    is array (natural range <>) of t_signed_2d_real_array;
+  type t_signed_4d_real_array    is array (natural range <>) of t_signed_3d_real_array;
   type t_signed_complex_array    is array (natural range <>) of t_signed_complex;
   type t_signed_2d_complex_array is array (natural range <>) of t_signed_complex_array;
   type t_signed_3d_complex_array is array (natural range <>) of t_signed_2d_complex_array;
   
   -- State machine lists
   type t_had_state is (initial, vector_mul, pre_rot, rot_kmul, final);
-  type t_hec_state is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, hold);
+  type t_hec_state is (initial, slice_fft, had, latch_had, ifft, accumulate);
+  type t_vivado_tb_state is (initial, final);
 
 
 
@@ -160,7 +162,8 @@ package hecate_pkg is
   component hadamard is
     port (
       clock, reset, start : in  std_logic;
-      img, ker            : in  t_signed_complex;
+      img                 : in  t_signed_complex;
+      n_ker               : in  natural;
       p                   : out t_signed_complex;
       ready               : out std_logic
     );
@@ -168,10 +171,21 @@ package hecate_pkg is
 
   component hadamard_arr is
     port (
-      img_transf, ker_transf : in  t_signed_complex_array(0 to n_points/2);
-      clock, reset, start    : in  std_logic;
-      res                    : out t_signed_complex_array(0 to n_points/2);
-      ready                  : out std_logic
+      img_transf          : in  t_signed_complex_array(0 to n_points/2);
+      n_ker               : in  natural;
+      clock, reset, start : in  std_logic;
+      res                 : out t_signed_complex_array(0 to n_points/2);
+      ready               : out std_logic
+    );
+  end component;
+
+  component hecate is
+    port (
+      slice               : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+      clock, reset, start : in  std_logic;
+      sxi, syi, szi       : in  natural;
+      ready               : out std_logic;
+      res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1)
     );
   end component;
 
@@ -186,18 +200,6 @@ package hecate_pkg is
       rdy : out std_logic
     );
   end component conv3d;
-
-  component hecate is
-    port (
-      img                 : in t_signed_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-      ker                 : in t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-      clock, reset, start : in std_logic;
-      res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-      ready               : out std_logic := '0';
-      ker_ready           : out std_logic := '0';
-      slice_ready         : out std_logic := '0'
-    );
-  end component;
 
 
 

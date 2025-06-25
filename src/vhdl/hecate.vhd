@@ -5,12 +5,10 @@ library ieee;
   
 entity hecate is
   port (
-    slice, ker          : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    slice               : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clock, reset, start : in  std_logic;
-    slice_start         : in std_logic;
-    sx, sy, sz          : in  natural;
-    ker_ready           : out std_logic;
-    acc_ready           : out std_logic;
+    sxi, syi, szi       : in  natural;
+    ready               : out std_logic;
     res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1)
   );
 end entity hecate;
@@ -19,7 +17,7 @@ end entity hecate;
 architecture area_opt of hecate is
 
   -- Wires
-  signal ker_raster, slice_raster : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
+  signal slice_raster         : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
 
   signal fft_in               : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
   signal fft_out              : t_signed_complex_array(0 to n_points-1);
@@ -27,19 +25,19 @@ architecture area_opt of hecate is
   signal fft_reset            : std_logic := '1';
   signal fft_clockwise        : std_logic := '0';
 
-  signal had_img, had_ker     : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal had_img              : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
   signal had_out              : t_signed_complex_array(0 to n_points/2);
   signal had_start, had_ready : std_logic := '0';
   signal had_reset            : std_logic := '1';
 
   signal prod_sym             : t_signed_complex_array(0 to n_points-1);
-  signal conv, add            : t_signed_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
+  signal add                  : t_signed_3d_real_array(0 to nz-1)(0 to ny-1)(0 to nx-1);
 
   -- Registers
-  signal state      : t_hec_state := initial;
-  signal acc        : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-  signal ker_transf : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
-  signal prod       : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
+  signal state                : t_hec_state := initial;
+  signal kni                  : natural     := 0;
+  signal acc                  : t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
+  signal prod                 : t_signed_complex_array(0 to n_points/2) := (others => (others => (others => '0')));
 
 begin
 
@@ -57,7 +55,7 @@ begin
   had_arr_single : component hadamard_arr
     port map (
       img_transf => had_img,
-      ker_transf => had_ker,
+      n_ker      => kni, 
       clock      => clock,
       reset      => had_reset,
       start      => had_start,
@@ -71,8 +69,7 @@ begin
       gen_oa_adds_x : for x in 0 to nx-1 generate
         constant n : natural := x + y*nx + z*nx*ny;
       begin
-        conv(z)(y)(x) <= fft_out(n)(0);
-        add(z)(y)(x)  <= conv(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
+        add(z)(y)(x)  <= fft_out(n)(0) + acc(szi*kz+z)(syi*ky+y)(sxi*kx+x);
       end generate gen_oa_adds_x;
     end generate gen_oa_adds_y;
   end generate gen_oa_adds_z;
@@ -84,7 +81,6 @@ begin
         constant n : natural := x + y*nx + z*nx*ny;
       begin
         slice_raster(n) <= (slice(z)(y)(x), signed_zero);
-        ker_raster(n)   <= (ker(z)(y)(x), signed_zero);
       end generate gen_x;
     end generate gen_y;
   end generate gen_z;
@@ -105,36 +101,31 @@ begin
     if rising_edge(clock) then 
       if (reset) then
         state <= initial;
-      else
-      state <=
-        ker_fft    when (state = initial   ) and (start     = '1') else
-        latch_ker  when (state = ker_fft   ) and (fft_ready = '1') else
-        slice_fft  when (state = latch_ker ) or  ((state = hold) and (slice_start = '1')) else
-        had        when (state = slice_fft ) and (fft_ready = '1') else
-        latch_had  when (state = had       ) and (had_ready = '1') else
-        ifft       when (state = latch_had )                       else
-        accumulate when (state = ifft      ) and (fft_ready = '1') else
-        hold       when (state = accumulate)                       else
-        state;
+      elsif (start) then
+        state <=
+          slice_fft  when (state = initial   )                       else
+          had        when ((state = slice_fft) and (fft_ready = '1')) or ((state = accumulate ) and (ready = '0')) else
+          latch_had  when (state = had       ) and (had_ready = '1') else
+          ifft       when (state = latch_had )                       else
+          accumulate when (state = ifft      ) and (fft_ready = '1') else
+          state;
       end if;
     end if;
   end process;
-  ker_ready <= '1' when state = latch_ker else '0';
-  acc_ready <= '1' when state = hold else '0';
+  ready <= '1' when kni = kn-1 else '0';
 
   -- Reg assignments
   regs : process (clock) begin
     if rising_edge(clock) then
 
-      ker_transf <= fft_out when state = latch_ker;
-      prod       <= had_out when state = latch_had;
+      kni  <= kni + 1 when state = accumulate else 0 when state = slice_fft;
+      prod <= had_out when state = latch_had;
 
       for z in 0 to nz-1 loop
         for y in 0 to ny-1 loop
           for x in 0 to nx-1 loop
-            acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= add(z)(y)(x)
-              when state = accumulate else
-              (others => '0') when state = initial;
+            acc(szi*kz+z)(syi*ky+y)(sxi*kx+x) <= add(z)(y)(x)
+              when state = accumulate else (others => '0') when state = initial;
           end loop;
         end loop;
       end loop;
@@ -146,26 +137,6 @@ begin
   assigns : process (all) begin
     case state is
 
-      when ker_fft =>
-        fft_reset     <= '0';
-        fft_start     <= '1';
-        fft_clockwise <= '0';
-        fft_in        <= ker_raster;
-        had_reset     <= '1';
-        had_start     <= '0';
-        had_img       <= (others => (others => (others => '0')));
-        had_ker       <= (others => (others => (others => '0')));
-      
-      when latch_ker =>
-        fft_reset     <= '1'; -- fft holds output on reset, no need to give it a reset state
-        fft_start     <= '0';
-        fft_clockwise <= '0';
-        fft_in        <= ker_raster;
-        had_reset     <= '1';
-        had_start     <= '0';
-        had_img       <= (others => (others => (others => '0')));
-        had_ker       <= (others => (others => (others => '0')));
-
       when slice_fft =>
         fft_reset     <= '0';
         fft_start     <= '1';
@@ -174,7 +145,6 @@ begin
         had_reset     <= '1';
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
-        had_ker       <= (others => (others => (others => '0')));
 
       when had =>
         fft_reset     <= '0';
@@ -184,7 +154,7 @@ begin
         had_reset     <= '0';
         had_start     <= '1';
         had_img       <= fft_out(0 to n_points/2);
-        had_ker       <= ker_transf(0 to n_points/2);
+        had_new_slice <= '1';
 
       when latch_had =>
         fft_reset     <= '1';
@@ -194,7 +164,6 @@ begin
         had_reset     <= '0';
         had_start     <= '0';
         had_img       <= fft_out(0 to n_points/2);
-        had_ker       <= ker_transf(0 to n_points/2);
 
       when ifft =>
         fft_reset     <= '0';
@@ -204,7 +173,6 @@ begin
         had_reset     <= '1';
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
-        had_ker       <= (others => (others => (others => '0')));
 
       when accumulate =>
         fft_reset     <= '0';
@@ -214,7 +182,6 @@ begin
         had_reset     <= '1';
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
-        had_ker       <= (others => (others => (others => '0')));
 
       when others =>
         fft_reset     <= '1';
@@ -224,10 +191,9 @@ begin
         had_reset     <= '1';
         had_start     <= '0';
         had_img       <= (others => (others => (others => '0')));
-        had_ker       <= (others => (others => (others => '0')));
       end case;
   end process;
-
+  
   res <= acc;
 
 end architecture area_opt;
@@ -314,14 +280,14 @@ end architecture area_opt;
 --               hz := to_integer(unsigned'('0' & hec_idx(2)));
 --               hy := to_integer(unsigned'('0' & hec_idx(1)));
 --               hx := to_integer(unsigned'('0' & hec_idx(0)));
---                 for sz in 0 to 2 loop
---                   for sy in 0 to 2 loop
---                     for sx in 0 to 2 loop
---                       if ((g_ox=hx*2+sx) and (g_oy=hy*2+sy) and (g_oz=hz*2+sz)) then
---                         res(g_oz)(g_oy)(g_ox) <= std_logic_vector(unsigned(res(g_oz)(g_oy)(g_ox)) + unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx)));
+--                 for szi in 0 to 2 loop
+--                   for syi in 0 to 2 loop
+--                     for sxi in 0 to 2 loop
+--                       if ((g_ox=hx*2+sxi) and (g_oy=hy*2+syi) and (g_oz=hz*2+szi)) then
+--                         res(g_oz)(g_oy)(g_ox) <= std_logic_vector(unsigned(res(g_oz)(g_oy)(g_ox)) + unsigned(hec(hz)(hy)(hx)(szi)(syi)(sxi)));
 
 --                         -- if ((g_oz=2) and (g_oy=2) and (g_ox=2)) then -- central point
---                         --   report "hec(" & integer'image(hz) & ")(" & integer'image(hy) & ")(" & integer'image(hx) & ")(" & integer'image(sz) & ")(" & integer'image(sy) & ")(" & integer'image(sx) & ") = " & integer'image(to_integer(unsigned(hec(hz)(hy)(hx)(sz)(sy)(sx))));
+--                         --   report "hec(" & integer'image(hz) & ")(" & integer'image(hy) & ")(" & integer'image(hx) & ")(" & integer'image(szi) & ")(" & integer'image(syi) & ")(" & integer'image(sxi) & ") = " & integer'image(to_integer(unsigned(hec(hz)(hy)(hx)(szi)(syi)(sxi))));
 --                         -- end if;
 
 --                       end if;

@@ -6,7 +6,8 @@ library ieee;
 entity hadamard is
   port (
     clock, reset, start : in  std_logic;
-    img, ker            : in  t_signed_complex;
+    img                 : in  t_signed_complex;
+    n_ker               : in  natural;
     p                   : out t_signed_complex;
     ready               : out std_logic
   );

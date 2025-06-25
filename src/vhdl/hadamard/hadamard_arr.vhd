@@ -5,10 +5,11 @@ library ieee;
 
 entity hadamard_arr is
   port (
-    img_transf, ker_transf : in  t_signed_complex_array(0 to n_points/2);
-    clock, reset, start    : in  std_logic;
-    res                    : out t_signed_complex_array(0 to n_points/2);
-    ready                  : out std_logic
+    img_transf          : in  t_signed_complex_array(0 to n_points/2);
+    n_ker               : in  natural;
+    clock, reset, start : in  std_logic;
+    res                 : out t_signed_complex_array(0 to n_points/2);
+    ready               : out std_logic
   );
 end entity hadamard_arr;
 
@@ -36,7 +37,7 @@ begin
         reset => reset,
         start => start,
         img   => img_transf(id),
-        ker   => ker_transf(id),
+        n_ker => n_ker,
         p     => res(id),
         ready => ready_had(id)
       );
