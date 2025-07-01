@@ -18,7 +18,7 @@ end entity fft;
 architecture synth of fft is
 
   signal layer  : natural range 0 to the_log := 0;
-  signal switch : std_logic                    := '1'; -- '0' -> wmul; '1' -> bfly
+  signal switch : std_logic                  := '1'; -- '0' -> wmul; '1' -> bfly
 
   signal in_scramble       : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0')));
   signal bfly_in, bfly_out : t_signed_complex_array(0 to n_points-1) := (others => (others => (others => '0'))); -- even-top; odd-bottom

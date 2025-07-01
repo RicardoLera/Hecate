@@ -7,8 +7,7 @@ entity hecate is
   port (
     slice, ker          : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
     clock, reset, start : in  std_logic;
-    slice_start         : in std_logic;
-    sx, sy, sz          : in  natural;
+    sxi, syi, szi       : in  natural;
     ker_ready           : out std_logic;
     acc_ready           : out std_logic;
     res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1)
@@ -72,7 +71,7 @@ begin
         constant n : natural := x + y*nx + z*nx*ny;
       begin
         conv(z)(y)(x) <= fft_out(n)(0);
-        add(z)(y)(x)  <= conv(z)(y)(x) + acc(sz*kz+z)(sy*ky+y)(sx*kx+x);
+        add(z)(y)(x)  <= conv(z)(y)(x) + acc(szi*kz+z)(syi*ky+y)(sxi*kx+x);
       end generate gen_oa_adds_x;
     end generate gen_oa_adds_y;
   end generate gen_oa_adds_z;
@@ -106,35 +105,38 @@ begin
       if (reset) then
         state <= initial;
       else
-      state <=
-        ker_fft    when (state = initial   ) and (start     = '1') else
-        latch_ker  when (state = ker_fft   ) and (fft_ready = '1') else
-        slice_fft  when (state = latch_ker ) or  ((state = hold) and (slice_start = '1')) else
-        had        when (state = slice_fft ) and (fft_ready = '1') else
-        latch_had  when (state = had       ) and (had_ready = '1') else
-        ifft       when (state = latch_had )                       else
-        accumulate when (state = ifft      ) and (fft_ready = '1') else
-        hold       when (state = accumulate)                       else
+        state <=
+          ker_fft    when (state = initial   ) and (start       = '1') else
+          latch_ker  when (state = ker_fft   ) and (fft_ready   = '1') else
+          slice_fft  when (state = latch_ker ) or  (state = sl_reset)  else
+          had        when (state = slice_fft ) and (fft_ready   = '1') else
+          latch_had  when (state = had       ) and (had_ready   = '1') else
+          ifft       when (state = latch_had )                         else
+          accumulate when (state = ifft      ) and (fft_ready   = '1') else
+          hold       when (state = accumulate)                         else
+          sl_reset   when (state = hold)       and (start       = '1') else
         state;
       end if;
     end if;
   end process;
-  ker_ready <= '1' when state = latch_ker else '0';
+  ker_ready <= '1' when state = latch_ker else '0' when state = initial;
   acc_ready <= '1' when state = hold else '0';
 
   -- Reg assignments
   regs : process (clock) begin
     if rising_edge(clock) then
 
-      ker_transf <= fft_out when state = latch_ker;
-      prod       <= had_out when state = latch_had;
+      ker_transf <= fft_out when state = latch_ker else (others => (others => (others => '0'))) when state = initial;
+      prod       <= had_out when state = latch_had else (others => (others => (others => '0'))) when state = initial;
 
       for z in 0 to nz-1 loop
         for y in 0 to ny-1 loop
           for x in 0 to nx-1 loop
-            acc(sz*kz+z)(sy*ky+y)(sx*kx+x) <= add(z)(y)(x)
-              when state = accumulate else
-              (others => '0') when state = initial;
+            if state = initial then
+              acc <= (others => (others => (others => (others => '0'))));
+            elsif state = accumulate then
+              acc(szi*kz+z)(syi*ky+y)(sxi*kx+x) <= add(z)(y)(x);
+            end if;
           end loop;
         end loop;
       end loop;
@@ -216,6 +218,26 @@ begin
         had_img       <= (others => (others => (others => '0')));
         had_ker       <= (others => (others => (others => '0')));
 
+      when hold =>
+        fft_reset     <= '0';
+        fft_start     <= '0';
+        fft_clockwise <= '1';
+        fft_in        <= prod_sym;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
+      when sl_reset =>
+        fft_reset     <= '1';
+        fft_start     <= '0';
+        fft_clockwise <= '1';
+        fft_in        <= prod_sym;
+        had_reset     <= '1';
+        had_start     <= '0';
+        had_img       <= (others => (others => (others => '0')));
+        had_ker       <= (others => (others => (others => '0')));
+
       when others =>
         fft_reset     <= '1';
         fft_start     <= '0';
@@ -234,6 +256,7 @@ end architecture area_opt;
 
 
 -- It's also possible to make a generic arch that builds x hecates using a process y times.
+
 
 -- This arch is optimized on number of cycles. It uses parallel hecates and multiple FFTs    (WORK IN PROGRESS)
 -- architecture time_opt of hecate is

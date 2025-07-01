@@ -9,14 +9,14 @@ package hecate_pkg is
     -- Main Parameters --
     --=================--
 
-    constant ix : natural := 66; -- C3D net-64 padded
-    constant iy : natural := 66;
-    constant iz : natural := 3;  -- RGB frame inputs
+    constant ix : natural := 6; -- C3D net-64 padded = 66
+    constant iy : natural := 3;
+    constant iz : natural := 3; -- RGB frame inputs = 3
   
     constant kx : natural := 3;
     constant ky : natural := 3;
     constant kz : natural := 3;
-    constant kn : natural := 64; -- C3D first conv layer
+    constant kn : natural := 1; -- C3D first conv layer = 64
 
     constant signed_size  : natural := 32; -- number of bits in signed signals 
     constant signed_point : natural := 24; -- number of bits past the point 
@@ -47,8 +47,10 @@ package hecate_pkg is
   type t_signed_3d_complex_array is array (natural range <>) of t_signed_2d_complex_array;
   
   -- State machine lists
-  type t_had_state is (initial, vector_mul, pre_rot, rot_kmul, final);
-  type t_hec_state is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, hold);
+  type t_had_state       is (initial, vector_mul, pre_rot, rot_kmul, final);
+  type t_hec_state       is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, hold, sl_reset);
+  type t_vivado_tb_state is (initial, serial_in, conv_slice, serial_out, final);
+
 
 
 
@@ -189,13 +191,12 @@ package hecate_pkg is
 
   component hecate is
     port (
-      img                 : in t_signed_3d_real_array(0 to iz-1)(0 to iy-1)(0 to ix-1);
-      ker                 : in t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
-      clock, reset, start : in std_logic;
-      res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1) := (others => (others => (others => (others => '0'))));
-      ready               : out std_logic := '0';
-      ker_ready           : out std_logic := '0';
-      slice_ready         : out std_logic := '0'
+      slice, ker          : in  t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+      clock, reset, start : in  std_logic;
+      sxi, syi, szi       : in  natural;
+      ker_ready           : out std_logic;
+      acc_ready           : out std_logic;
+      res                 : out t_signed_3d_real_array(0 to oz-1)(0 to oy-1)(0 to ox-1)
     );
   end component;
 
@@ -211,6 +212,7 @@ package hecate_pkg is
   type t_pfb_array        is array (0 to signed_size-1) of t_pfb;
   type t_pfb_array_sign   is array (0 to 1) of t_pfb_array; -- 0 = positive; 1 = negative
 
+  function kernel_f                         return t_signed_3d_real_array;
   function scramble_f    (n      : natural) return natural;
   function fft_net_f     (n, l   : natural) return natural;
   function fft_w_f       (n, l   : natural) return natural;
@@ -232,6 +234,24 @@ package body hecate_pkg is
   --=======================--
   -- Function Descriptions --
   --=======================--
+
+  function kernel_f return t_signed_3d_real_array is
+    variable ker   : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
+    variable r     : real;
+    variable seed1 : positive := 234;
+    variable seed2 : positive := 678;
+  begin
+    -- TEMP - for simulation
+    for z in 0 to kz-1 loop
+      for y in 0 to ky-1 loop
+        for x in 0 to kx-1 loop
+          uniform(seed1, seed2, r);
+          ker(z)(y)(x) := to_signed(integer(floor(r * (2.0**signed_point))), signed_size);
+        end loop;
+      end loop;
+    end loop;
+    return ker;
+  end function;
 
   -- "Scrambling" is the sorting process that an array automatically undergoes when passing through a discrete fourier transform. By scrambling the array in the same manner before the operation, we can return the array to its original ordering
   function scramble_f(n : natural) return natural is
