@@ -54,28 +54,28 @@ begin
   -- CRITICAL PATH: ([signed_size adder] | [read LUT]) -> [constant multiplier] -> [signed_size adder]
 end architecture karatsuba;
 
-architecture cmul of wmul is
-  signal a, b, c, d, re, im : t_signed;
-  signal s_n : natural;
-begin
-  s_n <= 1 when s else 0;
+-- architecture cmul of wmul is
+--   signal a, b, c, d, re, im : t_signed;
+--   signal s_n : natural;
+-- begin
+--   s_n <= 1 when s else 0;
 
-  a <= i(0);
-  b <= i(1);
-  c <= twiddle_lut(w)(s_n)(0);
-  d <= twiddle_lut(w)(s_n)(1);
+--   a <= i(0);
+--   b <= i(1);
+--   c <= twiddle_lut(w)(s_n)(0);
+--   d <= twiddle_lut(w)(s_n)(1);
 
-  re <= resize((a*c - d*b) sra signed_point, signed_size);
-  im <= resize((a*d + b*c) sra signed_point, signed_size);
+--   re <= resize((a*c - d*b) sra signed_point, signed_size);
+--   im <= resize((a*d + b*c) sra signed_point, signed_size);
 
-  o <= (re, im);
+--   o <= (re, im);
 
-  -- (a+bi)*(c+di) = (ac - db) + (ad + bc)i
-  -- 
-  -- Total hardware: 4 constant multipliers + 2 signed_size adders
-  -- 
-  -- CRITICAL PATH: [read LUT] -> [constant multiplier] -> [signed_size adder]
-end architecture cmul;
+--   -- (a+bi)*(c+di) = (ac - db) + (ad + bc)i
+--   -- 
+--   -- Total hardware: 4 constant multipliers + 2 signed_size adders
+--   -- 
+--   -- CRITICAL PATH: [read LUT] -> [constant multiplier] -> [signed_size adder]
+-- end architecture cmul;
 
 
   -- Assuming [signed_size adder] > [read LUT], standard complex mul is a bit faster

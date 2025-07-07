@@ -30,7 +30,7 @@ architecture synth of vivado_tb_3x3x3 is
     port (
       clka  : in std_logic;
       ena   : in std_logic;
-      addra : in std_logic_vector(2 downto 0);
+      addra : in std_logic_vector(15 downto 0);
       douta : out std_logic_vector(31 downto 0)
     );
   end component;
@@ -39,7 +39,6 @@ architecture synth of vivado_tb_3x3x3 is
 
   signal rom_k_addr : std_logic_vector(15 downto 0);
   signal rom_k_out  : std_logic_vector(31 downto 0);
-  signal rom_k_clk, rom_k_ena : std_logic;
 
   signal hec_slice : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
   signal ker       : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := kernel_f;
@@ -65,8 +64,8 @@ begin
 
   gen_rom_k : blk_mem_gen_kernel_3x3x3
     port map (
-      clka  => rom_k_clk,
-      ena   => rom_k_ena,
+      clka  => clk_100m,
+      ena   => '1',
       addra => rom_k_addr,
       douta => rom_k_out
     );
@@ -87,13 +86,14 @@ begin
     );
 
   -- serial_in module
-  s_in : process (clock)
+  s_in : process (clk_100m)
     variable xi, yi, zi : natural := 0;
   begin
-    if rising_edge(clock) then
+    if rising_edge(clk_100m) then
       if reset then
         xi := 0; yi := 0; zi := 0;
         serial_in_rdy <= '0';
+        hec_slice(zi)(yi)(xi) <= (others => '0'); 
       elsif (state = serial_in) and (serial_in_rdy = '0') then
         hec_slice(zi)(yi)(xi) <= serial_in_img; 
         xi := xi + 1;                              -- might cause timing issues (variable vs signal)
@@ -113,13 +113,14 @@ begin
   end process;
 
   -- serial_out module
-  s_out : process (clock)
+  s_out : process (clk_100m)
     variable xi, yi, zi : natural := 0;
   begin
-    if rising_edge(clock) then
+    if rising_edge(clk_100m) then
       if reset then
         xi := 0; yi := 0; zi := 0;
         serial_out_rdy <= '0';
+        serial_out_conv <= (others => '0'); 
       elsif (state = serial_out) and (serial_out_rdy = '0') then
         serial_out_conv <= hec_res(zi)(yi)(xi);
         xi := xi + 1;                              -- might cause timing issues (variable vs signal)
@@ -139,8 +140,8 @@ begin
   end process;
   
   -- increment sxi syi szi
-  inc_s : process (clock) begin
-    if rising_edge(clock) then
+  inc_s : process (clk_100m) begin
+    if rising_edge(clk_100m) then
       if (reset) then
         sxi <= 0; syi <= 0; szi <= 0; img_complete <= '0';
       elsif hec_acc_ready and not img_complete then
@@ -156,8 +157,8 @@ begin
   hec_szi <= szi when state = conv_slice;
 
   -- Control unit
-  fsm : process (clock) begin
-    if rising_edge(clock) then 
+  fsm : process (clk_100m) begin
+    if rising_edge(clk_100m) then 
       if (reset) then
         state <= initial;
       else
@@ -170,10 +171,11 @@ begin
       end if;
     end if;
   end process;
-  hec_reset <= '1' when state = serial_in  else '0';
-  hec_start <= '1' when state = conv_slice else '0';
-  load_res  <= '1' when state = serial_out else '0';
-  ready     <= '1' when state = final      else '0';
+  rom_k_addr <= (others => '0');
+  hec_reset  <= '1' when state = serial_in  else '0';
+  hec_start  <= '1' when state = conv_slice else '0';
+  load_res   <= '1' when state = serial_out else '0';
+  ready      <= '1' when state = final      else '0';
 
 end architecture synth;
 

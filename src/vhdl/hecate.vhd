@@ -126,20 +126,26 @@ begin
   regs : process (clock) begin
     if rising_edge(clock) then
 
-      ker_transf <= fft_out when state = latch_ker else (others => (others => (others => '0'))) when state = initial;
-      prod       <= had_out when state = latch_had else (others => (others => (others => '0'))) when state = initial;
+      if state = initial then
+        ker_transf <= (others => (others => (others => '0')));
+        prod       <= (others => (others => (others => '0')));
+        acc        <= (others => (others => (others => (others => '0'))));
 
-      for z in 0 to nz-1 loop
-        for y in 0 to ny-1 loop
-          for x in 0 to nx-1 loop
-            if state = initial then
-              acc <= (others => (others => (others => (others => '0'))));
-            elsif state = accumulate then
+      elsif state = latch_ker then
+        ker_transf <= fft_out;
+
+      elsif state = latch_had then
+        prod <= had_out;
+
+      elsif state = accumulate then
+        for z in 0 to nz-1 loop
+          for y in 0 to ny-1 loop
+            for x in 0 to nx-1 loop
               acc(szi*kz+z)(syi*ky+y)(sxi*kx+x) <= add(z)(y)(x);
-            end if;
+            end loop;
           end loop;
         end loop;
-      end loop;
+      end if;
 
     end if;
   end process;

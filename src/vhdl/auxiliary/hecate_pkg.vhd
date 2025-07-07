@@ -48,7 +48,7 @@ package hecate_pkg is
   
   -- State machine lists
   type t_had_state       is (initial, vector_mul, pre_rot, rot_kmul, final);
-  type t_hec_state       is (initial, ker_fft, latch_ker, reset_fft, slice_fft, had, latch_had, ifft, accumulate, hold, sl_reset);
+  type t_hec_state       is (initial, ker_fft, latch_ker, slice_fft, had, latch_had, ifft, accumulate, hold, sl_reset);
   type t_vivado_tb_state is (initial, serial_in, conv_slice, serial_out, final);
 
 

@@ -77,19 +77,26 @@ begin
   fnet : for n in 0 to n_points-1 generate
     fnet_proc : process(clock) begin
       if rising_edge(clock) then
-        if ((start='1') and (layer /= the_log)) then
-          case layer is
-            when 0 =>
-              bfly_in(n) <= in_scramble(n);
-            when others =>
-              if switch then
-                bfly_in(n) <= wmul_out(n);
-              else
-                -- report "l = " & integer'image(layer) &  "   n = " & integer'image(n) & "   => net = " & integer'image(fft_net_lut(n)(layer));
-                wmul_in(n) <= bfly_out(fft_net_lut(n)(layer));
-                wmul_w(n)  <= fft_w_lut(n)(layer);
-              end if;
-          end case;
+        if reset then
+          bfly_in(n) <= (others => (others => '0'));
+          wmul_in(n) <= (others => (others => '0'));
+          wmul_w(n)  <= 0;
+        elsif ((start='1') and (layer /= the_log)) then
+          -- I describe the behavior of each reg in each clause in order to enforce the synthesis of regs
+          if layer=0 then
+            bfly_in(n) <= in_scramble(n);
+            wmul_in(n) <= wmul_in(n); -- hold
+            wmul_w(n)  <= wmul_w(n);  -- hold
+          elsif switch then
+            bfly_in(n) <= wmul_out(n);
+            wmul_in(n) <= wmul_in(n); -- hold
+            wmul_w(n)  <= wmul_w(n);  -- hold
+          else
+            -- report "l = " & integer'image(layer) &  "   n = " & integer'image(n) & "   => net = " & integer'image(fft_net_lut(n)(layer));
+            bfly_in(n) <= bfly_in(n); -- hold
+            wmul_in(n) <= bfly_out(fft_net_lut(n)(layer));
+            wmul_w(n)  <= fft_w_lut(n)(layer);
+          end if;
         end if;
       end if;
     end process fnet_proc;
@@ -97,12 +104,12 @@ begin
 
 end architecture synth;
 
-configuration wmul_config of fft is
-  for synth
-    for gen_bfly_wmul
-      for twiddle_mul : wmul
-        use entity work.wmul(karatsuba); -- valid names: "karatsuba", "cmul"
-      end for;
-    end for;
-  end for;
-end wmul_config;
+-- configuration wmul_config of fft is
+--   for synth
+--     for gen_bfly_wmul
+--       for twiddle_mul : wmul
+--         use entity work.wmul(karatsuba); -- valid names: "karatsuba", "cmul"
+--       end for;
+--     end for;
+--   end for;
+-- end wmul_config;

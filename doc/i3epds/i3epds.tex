@@ -32,7 +32,7 @@
 % \usepackage[nocompress]{cite}
 
 % included for editing:   --- REMOVE BEFORE SUBMISSION
-\usepackage{xcolor}%\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+\usepackage{xcolor}\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
 
 \begin{document}
@@ -73,7 +73,7 @@
 
 \IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
 
-  \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\cite{}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\cite{}, which is even more prominent on three-dimensional CNNs~\cite{}.
+  \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\todo{[cite]}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\todo{[cite]}, which is even more prominent on three-dimensional CNNs~\todo{[cite]}.
 
   A survey~\cite{mittal2021survey} on the current state%...
 
@@ -83,9 +83,9 @@
   A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently. Notable applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}.
 
 \section{Algorithms \& Complexity}
-  Current accelerator topologies aim to maximize parallelization, for instance: the TPU uses the \texttt{im2col} algorithm which re-organizes the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}. While this method enables highly-parallelized systolic array implementations, its hardware cost scales drastically with the size of the convolution kernel~\cite{lera2023hardware}. 
+  Current accelerator topologies aim to maximize parallelization, for instance: the TPU uses the \texttt{im2col} algorithm which re-organizes the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}. While this method enables highly-parallelized systolic array implementations, its hardware cost scales drastically with the size of the convolution kernel~\cite{lera2023hardware}.
 
-  Regarding kernel size, a larger number of layers with smaller kernels can provide the same receptive field as a single layer with a large kernel, at a lower processing cost~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3×3, opting instead to increase network depth and number of kernels \todo{maybe cite MobileNet and such here}. 
+  Regarding kernel size, a larger number of layers with smaller kernels can provide the same receptive field as a single layer with a large kernel, at a lower processing cost~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3×3, opting instead to increase network depth and number of kernels \todo{[maybe cite MobileNet and such here]}. 
   
   
 
