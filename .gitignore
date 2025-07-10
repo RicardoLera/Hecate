@@ -15,6 +15,7 @@ templates
 *.ip_user_files
 *.gen
 *.dcp
+*.bit
 
 ## Core latex/pdflatex auxiliary files
 *.aux
