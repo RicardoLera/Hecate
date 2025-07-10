@@ -26,19 +26,19 @@ architecture synth of vivado_tb_3x3x3 is
      );
   end component;
 
-  component blk_mem_gen_kernel_3x3x3
-    port (
-      clka  : in std_logic;
-      ena   : in std_logic;
-      addra : in std_logic_vector(15 downto 0);
-      douta : out std_logic_vector(31 downto 0)
-    );
-  end component;
+  -- component blk_mem_gen_kernel_3x3x3
+  --   port (
+  --     clka  : in std_logic;
+  --     ena   : in std_logic;
+  --     addra : in std_logic_vector(15 downto 0);
+  --     douta : out std_logic_vector(31 downto 0)
+  --   );
+  -- end component;
 
-  signal mmcm_locked, mmcm_reset, clk_100m, clk_50m, clk_25m : std_logic;
+  signal mmcm_locked, clk_100m, clk_50m, clk_25m : std_logic;
 
-  signal rom_k_addr : std_logic_vector(15 downto 0);
-  signal rom_k_out  : std_logic_vector(31 downto 0);
+  -- signal rom_k_addr : std_logic_vector(15 downto 0);
+  -- signal rom_k_out  : std_logic_vector(31 downto 0);
 
   signal hec_slice : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1);
   signal ker       : t_signed_3d_real_array(0 to kz-1)(0 to ky-1)(0 to kx-1) := kernel_f;
@@ -54,7 +54,7 @@ begin
 
   gen_clocks : clk_wiz_mmcm
     port map (
-      reset        => mmcm_reset,
+      reset        => '0',
       locked       => mmcm_locked,
       clk_in       => clock,
       clk_out_100m => clk_100m,
@@ -62,13 +62,13 @@ begin
       clk_out_25m  => clk_25m
     );
 
-  gen_rom_k : blk_mem_gen_kernel_3x3x3
-    port map (
-      clka  => clk_100m,
-      ena   => '1',
-      addra => rom_k_addr,
-      douta => rom_k_out
-    );
+  -- gen_rom_k : blk_mem_gen_kernel_3x3x3
+  --   port map (
+  --     clka  => clk_100m,
+  --     ena   => '1',
+  --     addra => rom_k_addr,
+  --     douta => rom_k_out
+  --   );
 
   dut : hecate
     port map (
@@ -140,16 +140,25 @@ begin
   end process;
   
   -- increment sxi syi szi
-  inc_s : process (clk_100m) begin
-    if rising_edge(clk_100m) then
-      if (reset) then
-        sxi <= 0; syi <= 0; szi <= 0; img_complete <= '0';
-      elsif hec_acc_ready and not img_complete then
-        sxi <= sxi + 1;
-        if (sxi = sx) then syi <= syi + 1; sxi <= 0; end if;
-        if (syi = oy) then szi <= szi + 1; syi <= 0; end if;
-        if ((szi = oz-1) and (syi = oy-1) and (sxi = ox-1)) then img_complete <= '1'; end if;
-      end if;
+  -- inc_s : process (clk_100m) begin
+  --   if rising_edge(clk_100m) then
+  --     if (reset) then
+  --       sxi <= 0; syi <= 0; szi <= 0; img_complete <= '0';
+  --     elsif hec_acc_ready and not img_complete then
+  --       sxi <= sxi + 1;
+  --       if (sxi = sx) then syi <= syi + 1; sxi <= 0; end if;
+  --       if (syi = oy) then szi <= szi + 1; syi <= 0; end if;
+  --       if ((szi = oz-1) and (syi = oy-1) and (sxi = ox-1)) then img_complete <= '1'; end if;
+  --     end if;
+  --   end if;
+  -- end process;
+
+  process (all) begin
+    if hec_acc_ready and not img_complete then
+      sxi <= sxi + 1;
+      if (sxi = sx) then syi <= syi + 1; sxi <= 0; end if;
+      if (syi = oy) then szi <= szi + 1; syi <= 0; end if;
+      if ((szi = oz-1) and (syi = oy-1) and (sxi = ox-1)) then img_complete <= '1'; end if;
     end if;
   end process;
   hec_sxi <= sxi when state = conv_slice;
@@ -171,7 +180,6 @@ begin
       end if;
     end if;
   end process;
-  rom_k_addr <= (others => '0');
   hec_reset  <= '1' when state = serial_in  else '0';
   hec_start  <= '1' when state = conv_slice else '0';
   load_res   <= '1' when state = serial_out else '0';

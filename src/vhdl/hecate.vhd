@@ -125,8 +125,7 @@ begin
   -- Reg assignments
   regs : process (clock) begin
     if rising_edge(clock) then
-
-      if state = initial then
+      if reset then
         ker_transf <= (others => (others => (others => '0')));
         prod       <= (others => (others => (others => '0')));
         acc        <= (others => (others => (others => (others => '0'))));

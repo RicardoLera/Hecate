@@ -575,23 +575,23 @@
         "C_CLKOUT6_ACTUAL_FREQ": [ { "value": "100.000", "resolve_type": "generated", "usage": "all" } ],
         "C_M_MAX": [ { "value": "64.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_M_MIN": [ { "value": "2.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
-        "C_D_MAX": [ { "value": "93.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
+        "C_D_MAX": [ { "value": "106.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_D_MIN": [ { "value": "1.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_O_MAX": [ { "value": "128.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_O_MIN": [ { "value": "1.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
         "C_VCO_MIN": [ { "value": "600.000", "resolve_type": "generated", "format": "float", "usage": "all" } ],
-        "C_VCO_MAX": [ { "value": "1440.000", "resolve_type": "generated", "format": "float", "usage": "all" } ]
+        "C_VCO_MAX": [ { "value": "1600.000", "resolve_type": "generated", "format": "float", "usage": "all" } ]
       },
       "project_parameters": {
         "ARCHITECTURE": [ { "value": "virtex7" } ],
-        "BASE_BOARD_PART": [ { "value": "xilinx.com:vc709:part0:1.8" } ],
+        "BASE_BOARD_PART": [ { "value": "" } ],
         "BOARD_CONNECTIONS": [ { "value": "" } ],
         "DEVICE": [ { "value": "xc7vx690t" } ],
         "PACKAGE": [ { "value": "ffg1761" } ],
         "PREFHDL": [ { "value": "VHDL" } ],
         "SILICON_REVISION": [ { "value": "" } ],
         "SIMULATOR_LANGUAGE": [ { "value": "VHDL" } ],
-        "SPEEDGRADE": [ { "value": "-2" } ],
+        "SPEEDGRADE": [ { "value": "-3" } ],
         "STATIC_POWER": [ { "value": "" } ],
         "TEMPERATURE_GRADE": [ { "value": "" } ]
       },

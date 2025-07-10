@@ -9,13 +9,13 @@ package hecate_pkg is
     -- Main Parameters --
     --=================--
 
-    constant ix : natural := 6; -- C3D net-64 padded = 66
-    constant iy : natural := 3;
-    constant iz : natural := 3; -- RGB frame inputs = 3
+    constant ix : natural := 4; -- C3D net-64 padded = 66
+    constant iy : natural := 4;
+    constant iz : natural := 4; -- RGB frame inputs = 3
   
-    constant kx : natural := 3;
-    constant ky : natural := 3;
-    constant kz : natural := 3;
+    constant kx : natural := 2;
+    constant ky : natural := 2;
+    constant kz : natural := 2;
     constant kn : natural := 1; -- C3D first conv layer = 64
 
     constant signed_size  : natural := 32; -- number of bits in signed signals 

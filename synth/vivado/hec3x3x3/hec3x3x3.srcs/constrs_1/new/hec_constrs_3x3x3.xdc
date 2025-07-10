@@ -3,8 +3,8 @@ create_clock -period 8.000 -name VIRTUAL_clk_out1_clk_wiz_0 -waveform {0.000 4.0
 set input_clock       VIRTUAL_clk_out1_clk_wiz_0;
 set destination_clock VIRTUAL_clk_out1_clk_wiz_0;
 
-set input_ports  {start reset read_slice {serial_in_img[*]};
-set output_ports {load_res ready {serial_out_conv[*]};
+set input_ports  {reset read_slice {serial_in_img[*]}};
+set output_ports {load_res ready {serial_out_conv[*]}};
 
 set tco_max         0.000;      # Maximum clock to out delay (external device)
 set tco_min         0.000;      # Minimum clock to out delay (external device)
