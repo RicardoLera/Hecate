@@ -31,6 +31,9 @@
 %   \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
 % \usepackage[nocompress]{cite}
 
+% Polar coordinate representation
+\usepackage{steinmetz}
+
 % included for editing:   --- REMOVE BEFORE SUBMISSION
 \usepackage{xcolor}\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
@@ -51,61 +54,98 @@
 }
 
 % Headers
-\markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~X, No.~X, MONTH~20XX{}}%
+\markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~X, No.~X, MONTH~20XX}%
 {Lera; Alves; Albertini: A Scalable and Hardware-Efficient Convolution Accelerator}
 
 % Compsoc new pubid style
 \IEEEpubid{\makebox[\columnwidth]{\hfill 0000--0000/00/\$00.00~\copyright~\the\year{} IEEE}%
 \hspace{\columnsep}\makebox[\columnwidth]{Published by the IEEE Computer Society\hfill}}
 
-% Abstract and Keywords
-\IEEEtitleabstractindextext{%
-  \begin{abstract}% 100~200 word limit (compsoc guidelines)
-    Lorem
-  \end{abstract}
-  \begin{IEEEkeywords}
-    Lorem, ipsum, dolor sit.
-  \end{IEEEkeywords}
-}
-
 \maketitle
-\IEEEpeerreviewmaketitle
 
-\IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
+% Abstract and Keywords
+\begin{abstract}% 100~200 word limit (compsoc guidelines)
+  Lorem ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum ipsum
+\end{abstract}
+\begin{IEEEkeywords}
+  Lorem, ipsum, dolor sit.
+\end{IEEEkeywords}
 
+%\IEEEpeerreviewmaketitle
+
+\section{Introduction}\label{sec:intro}
   \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\todo{[cite]}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\todo{[cite]}, which is even more prominent on three-dimensional CNNs~\todo{[cite]}.
 
-  A survey~\cite{mittal2021survey} on the current state%...
+  A survey~\cite{mittal2021survey} on the current state\todo{[...]}
 
   %\IEEEPARstart{T}{he}
-  The computational cost of large-scale convolution has been a limiting factor since the inception of CNNs. LeCun%...
+  The computational cost of large-scale convolution has been a limiting factor since the inception of CNNs. LeCun\todo{[...]}
 
-  A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently. Notable applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}.
+  A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently. Notable applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}. These accelerator topologies aim to maximize parallelization via matrix-multiplication. The TPU, for instance, uses the \texttt{im2col} algorithm which re-arranges the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}.
 
-\section{Algorithms \& Complexity}
-  Current accelerator topologies aim to maximize parallelization, for instance: the TPU uses the \texttt{im2col} algorithm which re-organizes the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}. While this method enables highly-parallelized systolic array implementations, its hardware cost scales drastically with the size of the convolution kernel~\cite{lera2023hardware}.
+\section{Algorithms \& Complexity}\label{sec:alg}
+  In a previous project we demonstrated that \texttt{im2col} does not reduce the algorithmic complexity of the convolution operation, and as such its hardware cost scales linearly with each dimension of the convolution kernel~\cite{lera2023hardware}. \todo{is it ok to be so direct about our self-sourcing? or maybe it's better than to do it surreptitiously?}
 
-  Regarding kernel size, a larger number of layers with smaller kernels can provide the same receptive field as a single layer with a large kernel, at a lower processing cost~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3×3, opting instead to increase network depth and number of kernels \todo{[maybe cite MobileNet and such here]}. 
+  Due to the algorithmic inefficiency of large-scale matrix multiplication, a property further exacerbated in 3D spaces, new algorithms have been developed as an attempt to lower its complexity bounds. Of note, two algorithms have displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: {\bf{Toom-Cook}}\IEEEpubidadjcol\footnote{~Lavin \& Grey originally referred to this algorithm as ``Winograd convolution'', a term which has since been contested~\cite{barabasz2020error,alam2022winograd}.} and {\bf{Fourier convolution}}~\todo{[cite]}.
+
+  Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}\cite{lavin2016fast}\todo{[check citation]}.
+
+  The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$ Real-domain multiplications. 
+
+  \subsection{Overlap-Add \todo{and maybe other stuff?}}\label{ssec:oa}
+    \todo{present Overlap-Add (and maybe talk about other scaling methods such as 3D = n2D)}
+
+  \subsection{Kernel Size}\label{ssec:ksize}
+    Regarding kernel size, small kernels can provide the same receptive field as a larger kernel by increasing the number of layers, lowering the overall processing load~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3x3, opting instead to increase network depth and number of kernels \todo{[cite MobileNet and such?]}. Similarly, most 3D CNNs rely on kernels of up to 3x3x3~\todo{[cite]}, with some relevant exceptions~\todo{[cite, also maybe add ``in the field of...?'']}.
+
+    Both of the low-complexity algorithms presented become more efficient (in relation to matrix-multiplication) as the kernel size increases. \todo{answer the question: ``has it been demonstrated that Toom-Cook/Fourier can be more efficient than MX for 3x3 and 3x3x3 kernels, despite the transform time?''}
+
+    \todo{state why you opted for Fourier for this project; maybe you don't need a new paragraph. also you can quote the cordic subsection (\ref{ssec:cmul})}
+
+  \subsection{Handling Complex Multiplication}\label{ssec:cmul}
+    Naively, Complex multiplication implies a computation task 4x larger than Real multiplication, due to the nature of Complex numbers (Equation~\ref{eq:cmul-rect}).
+
+    \begin{equation}\label{eq:cmul-rect}
+      (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+    \end{equation}
+
+    Instead, we can represent the same operation in polar coordinates (Equation~\ref{eq:cmul-pol}) reducing the total operation count to 1 Real multiplication and 1 Real addition, both independent and thus parallelizeable.\todo{``parallelizable''? {\tiny fuck english}}
+    
+    \begin{equation}\label{eq:cmul-pol}
+      A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
+    \end{equation}
+    
+    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the length of its input values. This gives it a relative asymptotic complexity is $O(1)$.
   
+\section{Proposed Architecture}\label{sec:arch}
   
+  \subsection{2D and 3D CNNs}\label{ssec:cnn}
+    \todo{specify whether you'll even attempt to go for 2D or if all the tests will be made for 3D}
 
-  %the size of the input and kernel, while its respective performance improvement scales linearly.
+    \todo{contextualize C3D and other necessary benchmarks}
 
-\section{Proposed Architecture}
+  \subsection{Overview}\label{ssec:over}
+    \todo{provide overview diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it}
 
-\section{Testing Procedures}
+  \subsection{Implementation}\label{ssec:impl}
+    \todo{describe xilinx and its bullshit. show all the relevant generated hardware}
 
-\section{Results}
+\section{Testing Procedures}\label{sec:test}
+  Lorem
+
+\section{Results}\label{sec:res}
+  Lorem
  
-\section{Conclusion}
-
+\section{Conclusion}\label{sec:conc}
+  Lorem
 
 \section*{Acknowledgments}% limit to one paragraph
-  Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{Also thank the other institution you forgot the name of.}
+  Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{[also thank the other institution you forgot the name of]}
+
+  ~\\\todo{pretty sure I gotta put the git repo somewhere, I have no idea where}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}{}
-
 % BibTeX documentation can be obtained at:
 % http://mirror.ctan.org/biblio/bibtex/contrib/doc/
 % IEEEtran BibTeX style support page:
