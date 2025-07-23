@@ -1,84 +1,114 @@
-% Page limit: 12 (including references)
-% Refer to: https://www.computer.org/csdl/journal/td/write-for-us/15085
+% Guideline documents used:
+% (1) IEEE Author Guidelines (https://www.computer.org/publications/author-resources) [2025]
+% (2) Computer_Society_LaTeX_template (https://template-selector.ieee.org/) [2020]
+%   -> bare_jrnl_new_sample4.pdf
+%   -> New_IEEEtran_how-to.pdf
+% (3) IEEEtran (https://www.ctan.org/pkg/ieeetran) [2015]
+%   -> bare_jrnl_compsoc.tex
+%   -> IEEEtran_HOWTO.pdf
+%   -> IEEEtran_bst_HOWTO.pdf
 
-% from 2020 template "bare_jrnl_new_sample4.tex":
-\documentclass[lettersize,journal]{IEEEtran}
+\documentclass[10pt,journal,compsoc]{IEEEtran}
+% \documentclass[10pt,peerreview,compsoc]{IEEEtran}
+
+% Template packages and settings
 \usepackage{amsmath,amsfonts}
+\interdisplaylinepenalty=2500
+\usepackage[nocompress]{cite}
+\usepackage[pdftex]{graphicx}
+\graphicspath{{figs/}}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
 \usepackage{algorithmic}
-\usepackage{algorithm}
 \usepackage{array}
 \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
-\usepackage{textcomp}
 \usepackage{stfloats}
 \usepackage{url}
+\usepackage{hyperref}
+\usepackage{breakurl}
+\usepackage{textcomp}
 \usepackage{verbatim}
-\usepackage{graphicx}
-\usepackage{cite}
+\usepackage{balance}
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
-
-% from 2020 template "New_IEEEtran_how-to.tex":
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
   T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
-\usepackage{balance}
-
-% from 2015 template "bare_jrnl_compsoc.tex": -- ignored in lieu of most recent template
-% \documentclass[10pt,journal,compsoc]{IEEEtran}
-% \usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
-% \usepackage{amsmath, amsfonts}
-%   \interdisplaylinepenalty=2500
-% \usepackage[pdftex]{graphicx}
-%   \graphicspath{{figs/}}
-%   \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-% \usepackage[nocompress]{cite}
+\ifCLASSOPTIONcaptionsoff
+  \usepackage[nomarkers]{endfloat}
+  \let\MYoriglatexcaption\caption
+  \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
+\fi
 
 % Author-included packages and settings
-\usepackage{datetime} % Dates
-\usepackage[colorlinks=true,allcolors=blue]{hyperref} % Hyperlinks
+\usepackage{xcolor}
+\usepackage{datetime}
 \usepackage{steinmetz} % Polar coordinate representation
+\hypersetup{colorlinks = true, allcolors = {blue}}
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 
-% included for editing:   --- REMOVE BEFORE SUBMISSION
-\usepackage{xcolor}\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+% -- Editing settings [REMOVE BEFORE SUBMISSION] --
+%\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
+% -------------------------------------------------
 
-\begin{document}
+\begin{document} % Page limit: 12 (including references)
 
+% Title
 \title{A Scalable and Hardware-Efficient\\Convolution Accelerator}
 
+% Authors
 \author{
   Ricardo~Di~Curzio~Lera,
-  Miguel~Velasques~Abilio~Piola~Alves, and~%
+  Miguel~Velasques~Abilio~Piola~Alves, and
   Bruno~de~Carvalho~Albertini,~\IEEEmembership{\todo{Albertini membership},~IEEE}%
-  \thanks{
-    \IEEEcompsocthanksitem R. Lera, M. Alves and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil (e-mail \href{mailto:ricardodclera@usp.br}{ricardodclera@usp.br}; \href{mailto:me@somewhere.com}{\todo{miguel's email}}; \href{mailto:me@somewhere.com}{\todo{albertini's email}})\protect
+  \thanks{%
+  R. Lera, M. Alves and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.\protect\\
+    E-mails: \href{mailto:ricardodclera@usp.br}{ricardodclera@usp.br}; \href{mailto:me@somewhere.com}{\todo{miguel's email}}; \href{mailto:me@somewhere.com}{\todo{albertini's email}}
   }%
-  \thanks{Received --; revised --.}%
+  \thanks{Received \monthname~\the\day,~\the\year.}%
 }
 
-% Headers
-\markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~0, No.~0, \monthname~\the\year}%
-{Lera; Alves; Albertini: A Scalable and Hardware-Efficient Convolution Accelerator}
+% Running heads
+\ifCLASSOPTIONjournal
+  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~0, No.~0, \monthname~\the\year}%
+  {Lera \MakeLowercase{\textit{et al.}}: A Scalable and Hardware-Efficient Convolution Accelerator}
+\else
+  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~0, No.~0, \monthname~\the\year}%
+  {A Scalable and Hardware-Efficient Convolution Accelerator}
+\fi
 
-% Compsoc new pubid style
-% \IEEEpubid{\makebox[\columnwidth]{\hfill 0000--0000/00/\$00.00~\copyright~\the\year{} IEEE}%
-
-% Footers
-\IEEEpubid{\makebox[\columnwidth]{\hspace{\columnsep}\makebox[\columnwidth]{\copyright~\the\year~The~Authors. Published by the IEEE Computer Society.\hfill}}}
-
-\maketitle
+% Copyright line
+\IEEEpubid{\copyright~\the\year~The~Authors. Published by the IEEE Computer Society}
 
 % Abstract and Keywords
-\begin{abstract}% 100~200 word limit (compsoc guidelines)
-  This is an abstract with 200 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words.
-\end{abstract}
-\begin{IEEEkeywords}
-  Lorem, ipsum, dolor sit.
-\end{IEEEkeywords}
+% Compsoc guidelines: 100~200 word limit. Must clearly state the nature and significance of the paper; must not include mathematical expressions or bibliographic references.
+\IEEEtitleabstractindextext{
+  \begin{abstract}
+    \todo{THIS IS A TEMPLATE} %
+    % CONTEXTUALIZATION
+    The Convolutional Neural Network (CNN) is a technology of vast importance in image processing and computer vision applications. The bottleneck of CNNs is the multidimensional convolution, which often demands accelerator hardware.
+    %
+    % PROBLEM
+    The convolution algorithms these accelerators use directly affect the ratio between speed increase and hardware resource consumption during scaling, a metric known as hardware efficiency. The lower this metric, the more power and area are spent on minor performance improvements.
+    %
+    % OBJECTIVE
+    In this review, we analyze the potential for hardware efficiency in the current proven algorithms used in convolutional layers: im2col convolution used by most modern applications, Toom-Cook convolution, and FFT convolution.
+    %
+    % RESULTS
+    Our analysis reveals the inefficiency of \texttt{im2col} convolution regarding hardware scaling and confirms the potential for hardware-efficient applications using Toom-Cook and FFT convolutions, each with its caveats.
+    %
+    % CONCLUSIONS
+    Further, we identify possible hardware applications for these algorithms, which may be expanded upon in future works.
+  \end{abstract}
+  \begin{IEEEkeywords} % http://www.computer.org/mc/keywords/keywords.htm
+    Lorem, ipsum, dolor sit.
+  \end{IEEEkeywords}
+}
 
-%\IEEEpeerreviewmaketitle
+\maketitle
+\IEEEdisplaynontitleabstractindextext
+\IEEEpeerreviewmaketitle
 
-\section{Introduction}\label{sec:intro}
+\IEEEraisesectionheading{\section{Introduction}\label{sec:intro}}
   \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\todo{[cite]}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\todo{[cite]}, which is even more prominent on three-dimensional CNNs~\todo{[cite]}.
 
   A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently.
@@ -91,23 +121,29 @@
 
   Commercial applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}. These accelerator topologies aim to maximize parallelization via matrix-multiplication. The TPU uses the \texttt{im2col} algorithm which re-arranges the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}.
 
-  In a previous project we demonstrated that \texttt{im2col} does not reduce the algorithmic complexity of the convolution operation, and as such its hardware cost scales linearly with each dimension of the convolution kernel~\cite{lera2023hardware}. \todo{is it ok to be so direct about our self-sourcing? or maybe it's better than to do it surreptitiously?}
+  It has been shown that \texttt{im2col} does not reduce the algorithmic complexity of convolution, and as such its hardware cost scales linearly with each dimension of the kernel~\cite{lera2023hardware}.\todo{This article will be peer-reviewed double-blind, so we can't state that we authored that paper.}
 
-  We identified two algorithms as having displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: {\bf{Toom-Cook}} %
+  There are two algorithms that displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: \textbf{Toom-Cook} %
   %\footnote{~Lavin \& Grey originally referred to this algorithm as ``Winograd convolution'', a term which has since been contested~\cite{barabasz2020error,alam2022winograd}.}
-  and {\bf{Fourier convolution}}~\todo{[cite]}.
+  and \textbf{Fourier convolution}~\todo{[cite]}.
 
-  Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}\cite{lavin2016fast}\todo{[check citation]}.
+  Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}~\cite{lavin2016fast}\todo{[check citation]}.
 
   The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$ Real-domain multiplications.
 
-  Regarding kernel size, small kernels can provide the same receptive field as a larger kernel by increasing the number of layers, lowering the overall processing load~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3x3, opting instead to increase network depth and number of kernels \todo{[cite MobileNet and such?]}. Similarly, most 3D CNNs rely on kernels of up to 3x3x3~\todo{[cite]}, with some relevant exceptions~\todo{[cite, also maybe add ``in the field of...?'']}.
+  Regarding kernel size, small kernels can provide the same receptive field as a larger kernel by increasing the number of layers, lowering the overall processing load~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3x3, opting instead to increase network depth and number of kernels \todo{[cite MobileNet and such?]}. Similarly, most 3D CNNs rely on kernels of up to 3x3x3~\todo{[cite]}, with some relevant exceptions~\todo{[cite, also maybe add ``in the field of...'' and a brief description]}.
 
   Both of the low-complexity algorithms presented become more efficient (in relation to matrix-multiplication) as the kernel size increases. \todo{answer the question: ``has it been demonstrated that Toom-Cook/Fourier can be more efficient than MX for 3x3 and 3x3x3 kernels, despite the transform time?''}
 
-  \todo{state why you opted for Fourier for this project. Then write ``we propose a...''. You can quote the subsections below to hint at how you'll solve the presented issues}
+  \todo{state why you opted for Fourier for this project. Then write ``we propose a...''. You can quote the subsections below to hint at how you'll solve the presented issues. ALSO remember to mention why you chose FPGA}
 
-\section{Architecture Design}\label{sec:arch}\IEEEpubidadjcol
+  \todo{finally, describe the contents of each section}
+
+\section{Architecture Design}\label{sec:arch}
+
+  %\subsection{Overview}\label{ssec:over}
+  \todo{provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it. Refer to following subsections if necessary}
+
   \subsection{Algorithmic Decomposition}\label{ssec:alg}
     \todo{present overlap-add and maybe talk about other scaling methods (for comparison) such as 3D = n2D. Maybe also expansions to full CNNs and/or Fourier nets}
 
@@ -124,22 +160,30 @@
       A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
     \end{equation}
     
-    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the length of its input values. This gives it a relative asymptotic complexity is $O(1)$.
+    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values. This gives it a relative asymptotic complexity of $O(1)$.
   
-\section{Implementation}\label{sec:impl}
+\section{FPGA Implementation}\label{sec:impl}
   
   % \subsection{2D and 3D CNNs}\label{ssec:cnn}
   %   \todo{specify whether you'll even attempt to go for 2D or if all the tests will be made for 3D}
 
-  \subsection{Overview}\label{ssec:over}
-    \todo{provide overview diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it}
+  \todo{describe xilinx and its bullshit. show all the relevant generated hardware}
 
-  \subsection{FPGA Implementation}\label{ssec:fpga}
-    \todo{describe xilinx and its bullshit. show all the relevant generated hardware}
+  \subsection{Simulation}\label{ssec:sim}
+    \todo{[...]}
+
+  \subsection{Synthesis}\label{ssec:synth}
+    \todo{[...]}
 
 \section{Testing Procedures}\label{sec:test}
   \subsection{Benchmarks}\label{bench}
     \todo{contextualize C3D and other necessary benchmarks}
+
+  \subsection{Simulated Tests}\label{ssec:stest}
+    \todo{[...]}
+
+  \subsection{On-Board Tests}\label{ssec:btest}
+    \todo{[...]}
 
 \section{Results}\label{sec:res}
   \todo{[...]}
@@ -147,21 +191,18 @@
 \section{Conclusion}\label{sec:conc}
   \todo{[...]}
 
-\section*{Acknowledgments}% limit to one paragraph
-  Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{[also thank the other institution you forgot the name of]}
+\ifCLASSOPTIONjournal
+  \section*{Acknowledgments} % limit of one paragraph
+    Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{[also thank the other institution you forgot the name of]}
 
-  ~\\\todo{pretty sure I gotta put the git repo somewhere, I have no idea where}
+    ~\\\todo{pretty sure I gotta put the git repo somewhere; I have no idea where}
+\fi
 
+% References
 \bibliographystyle{IEEEtran}
-\bibliography{references}
-% BibTeX documentation can be obtained at:
-% http://mirror.ctan.org/biblio/bibtex/contrib/doc/
-% IEEEtran BibTeX style support page:
-% http://www.michaelshell.org/tex/ieeetran/bibtex/
+\bibliography{IEEEabrv,references}
 
-% Biographies are not required in compsoc's journals (https://www.computer.org/publications/author-resources)
-% \begin{IEEEbiographynophoto}{John Doe}%\vspace{-33pt}
-%   Biography text here.
-% \end{IEEEbiographynophoto}
+% Biography
+% Compsoc guidelines: Author biographies are not required.
 
 \end{document}
