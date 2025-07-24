@@ -8,8 +8,9 @@
 %   -> IEEEtran_HOWTO.pdf
 %   -> IEEEtran_bst_HOWTO.pdf
 
-\documentclass[10pt,journal,compsoc]{IEEEtran}
-% \documentclass[10pt,peerreview,compsoc]{IEEEtran}
+\def\FORMAT-MODE{compsoc} % {} or {compsoc}
+\def\REVIEW-MODE{peerreview} % {journal} or {peerreview}
+\documentclass[10pt,\FORMAT-MODE,\REVIEW-MODE]{IEEEtran}
 
 % Template packages and settings
 \usepackage{amsmath,amsfonts}
@@ -46,7 +47,7 @@
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
-%\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
 % -------------------------------------------------
 
@@ -64,23 +65,26 @@
   R. Lera, M. Alves and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.\protect\\
     E-mails: \href{mailto:ricardodclera@usp.br}{ricardodclera@usp.br}; \href{mailto:me@somewhere.com}{\todo{miguel's email}}; \href{mailto:me@somewhere.com}{\todo{albertini's email}}
   }%
-  \thanks{Received \monthname~\the\day,~\the\year.}%
+  \thanks{Received --}%
 }
 
 % Running heads
 \ifCLASSOPTIONjournal
-  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~0, No.~0, \monthname~\the\year}%
+  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~--, No.~--, --~--}%
   {Lera \MakeLowercase{\textit{et al.}}: A Scalable and Hardware-Efficient Convolution Accelerator}
 \else
-  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~0, No.~0, \monthname~\the\year}%
+  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~--, No.~--, --~--}%
   {A Scalable and Hardware-Efficient Convolution Accelerator}
 \fi
 
 % Copyright line
-\IEEEpubid{\copyright~\the\year~The~Authors. Published by the IEEE Computer Society}
+\ifCLASSOPTIONjournal
+  \IEEEpubid{\copyright~\the\year~The~Authors. Published by the IEEE Computer Society}
+\fi
 
 % Abstract and Keywords
 % Compsoc guidelines: 100~200 word limit. Must clearly state the nature and significance of the paper; must not include mathematical expressions or bibliographic references.
+
 \IEEEtitleabstractindextext{
   \begin{abstract}
     \todo{THIS IS A TEMPLATE} %
@@ -108,7 +112,11 @@
 \IEEEdisplaynontitleabstractindextext
 \IEEEpeerreviewmaketitle
 
-\IEEEraisesectionheading{\section{Introduction}\label{sec:intro}}
+\ifCLASSOPTIONcompsoc
+  \IEEEraisesectionheading{\section{Introduction}}
+\else
+  \section{Introduction}
+\fi
   \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\todo{[cite]}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\todo{[cite]}, which is even more prominent on three-dimensional CNNs~\todo{[cite]}.
 
   A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently.
@@ -140,6 +148,10 @@
   \todo{finally, describe the contents of each section}
 
 \section{Architecture Design}\label{sec:arch}
+  \ifCLASSOPTIONcompsoc\else
+    \IEEEpubidadjcol
+    \todo{command IEEEpubidadjcol needs to be at second column of first page}
+  \fi
 
   %\subsection{Overview}\label{ssec:over}
   \todo{provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it. Refer to following subsections if necessary}
