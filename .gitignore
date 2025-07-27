@@ -8,6 +8,7 @@
 *.edn
 **/build
 templates
+*.code-workspace
 
 ## Vivado
 *.cache
