@@ -117,19 +117,29 @@
 \else
   \section{Introduction}
 \fi
-  \IEEEPARstart{M}{ulti-dimensional} convolution incurs a large processing load which is not well optimized for everyday processors~\todo{[cite]}. Two-dimensional Convolutional Neural Networks (CNNs) inferred on CPU and GPU technology display a time bottleneck on their convolutional layer~\todo{[cite]}, which is even more prominent on three-dimensional CNNs~\todo{[cite]}.
+  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success Convolutional Neural Networks (CNNs) in two-dimensional image recognition. The step into the third dimension poses a difficult task for CNN architectures, as the complexity of its algorithm outscales every other processing layer, including Fully Connected layers, often consuming over 99.8\% of total processing time~\cite{hegde2018morph}. One solution to this issue is to develop accelerator architectures targetted to convolution processing, a method that has seen wide success in two-dimensional convolution~\todo{[cite? maybe give an example. or a mittal survey, i'm sure they have one]}.
 
-  A proposed countermeasure to this issue are \textit{accelerator architectures}. These are, in essence, dedicated systems to which large processing loads can be offloaded and processed more efficiently.
+  \todo{In this paragraph, comment on the consequences of large-scale image processing acceleration, pointing to the power consumption of widely-used accelerators such as the TPU and their possible environmental impact (with due citations). This consolites the theming of this project and justifies its focus on power- and hardware-efficiency.}
+
+  A 2021 survey~\cite{mittal2021survey} of accelerator architectures for 3D CNNs across multiple platforms highlights the particular challenges of acceleration in 3D space, and how 2D accelerators cannot be naivelly applied to a higher dimensional space while maintaining efficiency.
   
-  A 202\todo{X} survey~\cite{mittal2021survey} on the current state\todo{[...]}
+  \todo{Cite here and comment on any newer surveys or significant developments since mittal2021.}
 
-  Since then, \todo{[...]}
+  Of particular note to our project, these surveys reveal the steep increase in accelerator power comsumption due to higher component counts used to parallelize the algorithm's complexity. To increase power-efficiency, FPGA and ASIC platforms are the most common candidates. FPGA is inherently more energy-efficient than CPUs and GPUs, and while ASICs can be designed to be even more efficient, their design costs often outweight their benefits~\cite{mittal2021survey}.
+  
+  Power-efficiency can also be achieved by implementing convolution algorithms with lower complexity, in turn lowering the parallelization needed to achieve a similar throughput~\todo{[cite conv algorithm survey]}.
+  
+  To our knowledge, the most energy-efficient FPGA implementation of a complete 3D CNN is \todo{[``text''cite]}, achieving \todo{metrics}. As for single-kernel 3D convolution, \todo{[``text''cite]} achieves \todo{other metrics}.
 
-  %Due to the algorithmic inefficiency of large-scale matrix multiplication, a property further exacerbated in 3D spaces, new algorithms have been developed as an attempt to lower its complexity bounds. 
 
-  Commercial applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}. These accelerator topologies aim to maximize parallelization via matrix-multiplication. The TPU uses the \texttt{im2col} algorithm which re-arranges the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}.
 
-  It has been shown that \texttt{im2col} does not reduce the algorithmic complexity of convolution, and as such its hardware cost scales linearly with each dimension of the kernel~\cite{lera2023hardware}.\todo{This article will be peer-reviewed double-blind, so we can't state that we authored that paper.}
+  % review stopped here
+
+
+
+  % Commercial applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}. These accelerator topologies aim to maximize parallelization via matrix-multiplication. The TPU uses the \texttt{im2col} algorithm which re-arranges the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}.
+
+  It is known that \texttt{im2col} does not reduce the algorithmic complexity of convolution, and as such its hardware cost scales linearly with each dimension of the kernel~\cite{lera2023hardware}.\todo{This article will be peer-reviewed double-blind, so we can't state that we authored that paper.}
 
   There are two algorithms that displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: \textbf{Toom-Cook} %
   %\footnote{~Lavin \& Grey originally referred to this algorithm as ``Winograd convolution'', a term which has since been contested~\cite{barabasz2020error,alam2022winograd}.}
@@ -137,7 +147,7 @@
 
   Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}~\cite{lavin2016fast}\todo{[check citation]}.
 
-  The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$ Real-domain multiplications.
+  The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$\todo{[fact-check, it's supposed to be a matrix mul]} Real-domain multiplications.
 
   Regarding kernel size, small kernels can provide the same receptive field as a larger kernel by increasing the number of layers, lowering the overall processing load~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3x3, opting instead to increase network depth and number of kernels \todo{[cite MobileNet and such?]}. Similarly, most 3D CNNs rely on kernels of up to 3x3x3~\todo{[cite]}, with some relevant exceptions~\todo{[cite, also maybe add ``in the field of...'' and a brief description]}.
 
