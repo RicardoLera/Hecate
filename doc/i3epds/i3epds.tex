@@ -117,45 +117,44 @@
 \else
   \section{Introduction}
 \fi
-  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success Convolutional Neural Networks (CNNs) in two-dimensional image recognition. The step into the third dimension poses a difficult task for CNN architectures, as the complexity of its algorithm outscales every other processing layer, including Fully Connected layers, often consuming over 99.8\% of total processing time~\cite{hegde2018morph}. One solution to this issue is to develop accelerator architectures targetted to convolution processing, a method that has seen wide success in two-dimensional convolution~\todo{[cite? maybe give an example. or a mittal survey, i'm sure they have one]}.
+  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success Convolutional Neural Networks (CNNs) in two-dimensional image recognition. The step into the third dimension poses a difficult task for CNN architectures, as the complexity of the convolution layers outscale every other processing layer, including Fully Connected layers, and often consuming over 99.8\% of total processing time~\cite{hegde2018morph}. To mitigate this issue, several targetted accelerator architectures have been developed, a method that has seen wide success in two-dimensional convolution~\todo{[cite? maybe give an example. or a mittal survey, i'm sure they have one]}.
 
-  \todo{In this paragraph, comment on the consequences of large-scale image processing acceleration, pointing to the power consumption of widely-used accelerators such as the TPU and their possible environmental impact (with due citations). This consolites the theming of this project and justifies its focus on power- and hardware-efficiency.}
+  \todo{In this paragraph, comment on the consequences of large-scale image processing acceleration, pointing to the resource use of widely-used accelerators such as the TPU. Maybe comment of the resulting environmental effects, but let's try not to deviate from the focus of the project. This is meant to consolidate the theming of the project and justify its focus on power- and hardware-efficiency.}
 
   A 2021 survey~\cite{mittal2021survey} of accelerator architectures for 3D CNNs across multiple platforms highlights the particular challenges of acceleration in 3D space, and how 2D accelerators cannot be naivelly applied to a higher dimensional space while maintaining efficiency.
   
   \todo{Cite here and comment on any newer surveys or significant developments since mittal2021.}
 
-  Of particular note to our project, these surveys reveal the steep increase in accelerator power comsumption due to higher component counts used to parallelize the algorithm's complexity. To increase power-efficiency, FPGA and ASIC platforms are the most common candidates. FPGA is inherently more energy-efficient than CPUs and GPUs, and while ASICs can be designed to be even more efficient, their design costs often outweight their benefits~\cite{mittal2021survey}.
+  Of particular note to our project, these surveys reveal the steep increase in accelerator power comsumption \todo{[any other resources?]} due in large part to the parallelization methods used to compute the algorithm's high complexity.
   
-  Power-efficiency can also be achieved by implementing convolution algorithms with lower complexity, in turn lowering the parallelization needed to achieve a similar throughput~\todo{[cite conv algorithm survey]}.
+  In terms of platforms, FPGA and ASIC display generally higher power-efficiency, however FPGAs have gained more prevalence in this particular field due to its ease of implementation and energy-efficiency. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}.
   
-  To our knowledge, the most energy-efficient FPGA implementation of a complete 3D CNN is \todo{[``text''cite]}, achieving \todo{metrics}. As for single-kernel 3D convolution, \todo{[``text''cite]} achieves \todo{other metrics}.
+  Power-efficiency is also achieved by implementing convolution algorithms with lower complexity, in turn lowering the parallelization needed to achieve a similar throughput~\todo{[cite conv algorithm survey]}.
+  
+  To our knowledge, the most energy- \todo{and hardware?} efficient FPGA implementation of a complete 3D CNN is \todo{[``text''cite]}, achieving \todo{metrics}. As for single-kernel 3D convolution, \todo{[``text''cite]} achieves \todo{other metrics}.
 
+  \todo{Discuss here the possible limitations or extensions of the state-of-the-art mentioned on the last paragraph. With it, you will justify your choice of algorithm on the next paragraph.}
 
+  \todo{Choice of algorithm. Mention at least im2col as the standard (if it still is), ``Winograd'' aka Toom-3, and of course Fourier Conv. To beat Toom-3, refer to your own paper (as well as its sources) which explain how OA is possible in fconv (due to inherent Full convolution) which isn't possible in Toom; and how Toom's transform has a much higher asymp. complexity than the FFT. Use the following commented paragraphs as a template.}
 
-  % review stopped here
+  % Commercial applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}. These accelerator topologies aim to maximize parallelization via matrix-multiplication. The TPU uses the \texttt{im2col} algorithm which re-arranges the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}. It is known that \texttt{im2col} does not reduce the algorithmic complexity of convolution, and as such its hardware cost scales linearly with each dimension of the kernel~\cite{lera2023hardware}.\todo{This article will be peer-reviewed double-blind, so we can't state that we authored that paper.}
 
-
-
-  % Commercial applications include Google's TPU~\cite{jouppi2020domain} and NVIDIA's Tensor Cores~\cite{choquette2021nvidia}. These accelerator topologies aim to maximize parallelization via matrix-multiplication. The TPU uses the \texttt{im2col} algorithm which re-arranges the input and kernel into matrices such that their multiplication is equivalent to the convolution of their original signals~\cite{vasudevan2017parallel}.
-
-  It is known that \texttt{im2col} does not reduce the algorithmic complexity of convolution, and as such its hardware cost scales linearly with each dimension of the kernel~\cite{lera2023hardware}.\todo{This article will be peer-reviewed double-blind, so we can't state that we authored that paper.}
-
-  There are two algorithms that displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: \textbf{Toom-Cook} %
+  % There are two algorithms that displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: \textbf{Toom-Cook} %
   %\footnote{~Lavin \& Grey originally referred to this algorithm as ``Winograd convolution'', a term which has since been contested~\cite{barabasz2020error,alam2022winograd}.}
-  and \textbf{Fourier convolution}~\todo{[cite]}.
+  % and \textbf{Fourier convolution}~\todo{[cite]}.
 
-  Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}~\cite{lavin2016fast}\todo{[check citation]}.
+  % Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}~\cite{lavin2016fast}\todo{[check citation]}.
 
-  The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$\todo{[fact-check, it's supposed to be a matrix mul]} Real-domain multiplications.
+  % The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$\todo{[fact-check, it's supposed to be a matrix mul]} Real-domain multiplications.
 
   Regarding kernel size, small kernels can provide the same receptive field as a larger kernel by increasing the number of layers, lowering the overall processing load~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3x3, opting instead to increase network depth and number of kernels \todo{[cite MobileNet and such?]}. Similarly, most 3D CNNs rely on kernels of up to 3x3x3~\todo{[cite]}, with some relevant exceptions~\todo{[cite, also maybe add ``in the field of...'' and a brief description]}.
 
-  Both of the low-complexity algorithms presented become more efficient (in relation to matrix-multiplication) as the kernel size increases. \todo{answer the question: ``has it been demonstrated that Toom-Cook/Fourier can be more efficient than MX for 3x3 and 3x3x3 kernels, despite the transform time?''}
+  \todo{The previous paragraph introduced the issue of kernel-size, and its tendency to be lower. Explain here how the state-of-the-art (which if I recall is toom-3) managed to beat MX despite this, at least in 3D. Then, leverage these arguments in favor of Fourier, thus completing the algorithm justification.}
 
-  \todo{state why you opted for Fourier for this project. Then write ``we propose a...''. You can quote the subsections below to hint at how you'll solve the presented issues. ALSO remember to mention why you chose FPGA}
+  % Both of the low-complexity algorithms presented become more efficient (in relation to matrix-multiplication) as the kernel size increases. \todo{answer the question: ``has it been demonstrated that Toom-Cook/Fourier can be more efficient than MX for 3x3 and 3x3x3 kernels, despite the transform time?''}
+  % Afterthought comment: If the state-of-the-art is Toom-Cook/Fourier then yes, it has to. Question is "how". Find that and try to apply the same reasoning to Fourier. That plus the previous comparison of asymp. complexity should be a good enough justification
 
-  \todo{finally, describe the contents of each section}
+  \todo{This paragraph directly states our objective. Something like ``As such, we propose a...'' or even ``Based on this literature review, we propose...'' but try not to be too verbose. After that (maybe in a new paragraph?) describe the contents of each section, which solves as a nice summary (other papers have done the same). This ends the Introduction.}
 
 \section{Architecture Design}\label{sec:arch}
   \ifCLASSOPTIONcompsoc\else
@@ -164,25 +163,28 @@
   \fi
 
   %\subsection{Overview}\label{ssec:over}
-  \todo{provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it. Refer to following subsections if necessary}
+  \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it. Refer to following subsections if necessary}
 
   \subsection{Algorithmic Decomposition}\label{ssec:alg}
-    \todo{present overlap-add and maybe talk about other scaling methods (for comparison) such as 3D = n2D. Maybe also expansions to full CNNs and/or Fourier nets}
+    \todo{Present overlap-add and maybe talk about other scaling methods (for comparison) such as 3D = n2D. Maybe also expansions to full CNNs and/or Fourier nets, if the algorithm is affecte. Of note, OA is \textbf{impossible} unless the convolution algorithm returns Full. This is why OA cannot be done in MX nor Toom-3, and also in a lot of Fourier Conv accelerators I remember seeing. Go hunt those references.}
+
+  \subsection{Numeric Representation}
+    \todo{aka ``why we chose fixed-point and not floating-point''. Important here is that reference you had of CNNs being surprisingly resilient to precision loss. I wanna say it was in Lavin \& Grey but I'm not sure. Also, if it is in L\&G, that's an old reference, you should try to find a newer one too.}
 
   \subsection{Complex Multiplication}\label{ssec:cmul}
-    Naively, Complex multiplication implies a computation task 4x larger than Real multiplication, due to the nature of Complex numbers (Equation~\ref{eq:cmul-rect}).
+    Naively, Complex-domain multiplication implies a computation task 4x larger than Real-domain multiplication, due to the nature of Complex numbers (Equation~\ref{eq:cmul-rect}).
 
     \begin{equation}\label{eq:cmul-rect}
       (a+bi)(c+di) = (ac-bd) + (ad+bc)i
     \end{equation}
 
-    Instead, we can represent the same operation in polar coordinates (Equation~\ref{eq:cmul-pol}) reducing the total operation count to 1 Real multiplication and 1 Real addition, both independent and thus parallelizable.
+    Instead, we can represent the same operation in polar coordinates (Equation~\ref{eq:cmul-pol}) reducing the total operation count to 1 Real multiplication and 1 Real addition, which are independent and thus parallelizable.
     
     \begin{equation}\label{eq:cmul-pol}
       A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
     \end{equation}
     
-    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values. This gives it a relative asymptotic complexity of $O(1)$.
+    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity.  \todo{Also to mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
   
 \section{FPGA Implementation}\label{sec:impl}
   
@@ -199,7 +201,7 @@
 
 \section{Testing Procedures}\label{sec:test}
   \subsection{Benchmarks}\label{bench}
-    \todo{contextualize C3D and other necessary benchmarks}
+    \todo{To justify the chosen proceedures, find a clear comparison method between our project and the state-of-the-art. You might have to contextualize C3D and other necessary benchmarks}
 
   \subsection{Simulated Tests}\label{ssec:stest}
     \todo{[...]}
@@ -208,10 +210,10 @@
     \todo{[...]}
 
 \section{Results}\label{sec:res}
-  \todo{[...]}
+  \todo{Consider making this a subsection of the last section instead.}
  
 \section{Conclusion}\label{sec:conc}
-  \todo{[...]}
+  \todo{Comment on the relevant comparisons made and the observed causation of their results. On another paragraph, wrap up by describing how these results achieve our objective. Lastly, consider including a ``Future Work or smtn idfk'' section/subsection/paragraph. Some papers include a whole section called ``Related Work'' but that just seems stupid to me. That should have been part of the lit review, or at most in ``Benchmarks``, but it doesn't concern the paper after the conclusion. Future or possible extentions of the project (aka, how the scientific community can build upon it), do.}
 
 \ifCLASSOPTIONjournal
   \section*{Acknowledgments} % limit of one paragraph
