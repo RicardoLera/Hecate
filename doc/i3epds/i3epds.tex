@@ -47,7 +47,7 @@
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
-\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+%\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
 % -------------------------------------------------
 
@@ -117,19 +117,29 @@
 \else
   \section{Introduction}
 \fi
-  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success Convolutional Neural Networks (CNNs) in two-dimensional image recognition. The step into the third dimension poses a difficult task for CNN architectures, as the complexity of the convolution layers outscale every other processing layer, including Fully Connected layers, and often consuming over 99.8\% of total processing time~\cite{hegde2018morph}. To mitigate this issue, several targetted accelerator architectures have been developed, a method that has seen wide success in two-dimensional convolution~\todo{[cite? maybe give an example. or a mittal survey, i'm sure they have one]}.
+  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success Convolutional Neural Networks (CNNs) in two-dimensional image recognition. The step into the third dimension poses a difficult task for CNN architectures, as the complexity of the convolution layers outscale every other processing layer, including Fully Connected layers, and often consuming over 99.8\% of total processing time~\cite{hegde2018morph}. To mitigate this issue, several targetted accelerator architectures have been developed, a method that has seen wide success in two-dimensional convolution~\cite{mittal2020survey}.
 
-  \todo{In this paragraph, comment on the consequences of large-scale image processing acceleration, pointing to the resource use of widely-used accelerators such as the TPU. Maybe comment of the resulting environmental effects, but let's try not to deviate from the focus of the project. This is meant to consolidate the theming of the project and justify its focus on power- and hardware-efficiency.}
+  % In this paragraph, comment on the consequences of large-scale image processing acceleration, pointing to the resource use of widely-used accelerators such as the TPU. Maybe comment on the resulting environmental effects, but let's try not to deviate from the focus of the project. This is meant to consolidate the theming of the project and justify its focus on power- and hardware-efficiency.
 
-  A 2021 survey~\cite{mittal2021survey} of accelerator architectures for 3D CNNs across multiple platforms highlights the particular challenges of acceleration in 3D space, and how 2D accelerators cannot be naivelly applied to a higher dimensional space while maintaining efficiency.
+  A consequence of large-scale image processing acceleration is a steep increase in power requirements, as seen in commercial 2D accelerators such as the TPU~\cite{jouppi2020domain} and Tensor Cores~\cite{choquette2021nvidia}. This is due to the parallelization techniques employed by these applications, such as systolic array, which incur extra arithmetic blocks. These techniques do not reduce the overall complexity of the algorithm (i.e., the total number of elemental operations required to complete the task) instead employing extra hardware proportional to the desired speed gain. % In order to reduce power consumption while maintaining performance, %% I'll mention this later
+
+  A 2021 survey~\cite{mittal2021survey} of accelerator architectures for 3D CNNs across multiple platforms highlights the particular challenges of acceleration in 3D space, and how 2D accelerators cannot be naivelly applied to a higher dimensional space while maintaining efficiency. This further emphasises the need for acceleration techquines beyond parallelism, as the required hardware for this task grows in one extra dimension.
   
   \todo{Cite here and comment on any newer surveys or significant developments since mittal2021.}
 
-  Of particular note to our project, these surveys reveal the steep increase in accelerator power comsumption \todo{[any other resources?]} due in large part to the parallelization methods used to compute the algorithm's high complexity.
+  \todo{Maybe join this with last paragraph} To achieve higher energy-efficiency, this body of literature reveals a tendency to employ more optimal convolution algorithms, while addressing their particular needs. Of note, two classes of algorithms stand out among the surveyed projects: \textbf{lower-bound matrix multiplication} algorithms~\todo{(cite relevant articles, at least 3)} and \textbf{Fourier convolution} algorithms ~\todo{(same)}.
   
-  In terms of platforms, FPGA and ASIC display generally higher power-efficiency, however FPGAs have gained more prevalence in this particular field due to its ease of implementation and energy-efficiency. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}.
+  Lower-bound matrix multiplication exploits the property of discrete convolution which allows it to be represented as a matrix multiplication between the input and the filter, often handled by the \texttt{im2col} algorithm~\todo{cite that one article which described it open-source}. This change in representation does \textit{not} lower the complexity of the operation by itself~\cite{lera2023hardware} but enables the use of matrix multiplication algorithms with lower complexity bounds such as Coppersmith-Winograd~\todo{cite}.
   
-  Power-efficiency is also achieved by implementing convolution algorithms with lower complexity, in turn lowering the parallelization needed to achieve a similar throughput~\todo{[cite conv algorithm survey]}.
+  Fourier convolution instead applies the Theorem of Convolution~\todo{cite?} which defines the convolution of two matrices as the dot-product of their respective Fourier transforms. This allows the use of the Fast Fourier Transform (FFT) algorithm, at the cost of incurring Complex-domain operations~\todo{cite (maybe L\&G?)}.
+
+  
+  \todo{I'll clarify the normenclature shennanigans (toom-3, coppersmith) later (section 2 maybe)}
+  
+  
+  Regarding the choice of platform, FPGA and ASIC generally display higher power-efficiency, while FPGAs have gained more prevalence in this particular field due to its ease of implementation. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}. Additionally, when employing these platforms, an additional metric is used to measure the efficiency of an accelerator: \textit{hardware-efficiency}, defined as the ratio between the performance gain and hardware cost. In FPGA, hardware cost is often used interchangeably with  DSP consumption, as these are the blocks capable of processing complex arithmetic tasks most efficiently \todo{maybe add ``and are in scarce supply'' or something}. 
+  
+  % As for algorithms, 
   
   To our knowledge, the most energy- \todo{and hardware?} efficient FPGA implementation of a complete 3D CNN is \todo{[``text''cite]}, achieving \todo{metrics}. As for single-kernel 3D convolution, \todo{[``text''cite]} achieves \todo{other metrics}.
 
@@ -166,7 +176,10 @@
   \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it. Refer to following subsections if necessary}
 
   \subsection{Algorithmic Decomposition}\label{ssec:alg}
-    \todo{Present overlap-add and maybe talk about other scaling methods (for comparison) such as 3D = n2D. Maybe also expansions to full CNNs and/or Fourier nets, if the algorithm is affecte. Of note, OA is \textbf{impossible} unless the convolution algorithm returns Full. This is why OA cannot be done in MX nor Toom-3, and also in a lot of Fourier Conv accelerators I remember seeing. Go hunt those references.}
+
+    In Fourier convolution, multidimensional data is represented as padded 1D arrays. The size of these arrays determines the complexity of the transform, and in order to convolve two inputs, the size of their arrays must be equivalent. However, in the case of image processing, the image is often much larger than the filter, In order to avoid padding the filter to match the image, which would result in very high complexity, we instead employ a decomposition method known as Overlap-Add~\todo{cite here, or maybe later in the paragraph}. The image is broken down in kernel-sized pieces which are individually convolved with the kernel. Each piece has overlapping points with its neighbors, which are added together to form the complete convolution. This process is only possible because the Fourier convolution of two arrays of size $n$ returns an array of size $2n-1$~\todo{(aka ``full'' convolution)}, while matrix multiplication methods return only the non-overlaping array of size $n$.
+
+    There are other methods of convolution decomposition such as \todo{etc, include 3D = n2D here}
 
   \subsection{Numeric Representation}
     \todo{aka ``why we chose fixed-point and not floating-point''. Important here is that reference you had of CNNs being surprisingly resilient to precision loss. I wanna say it was in Lavin \& Grey but I'm not sure. Also, if it is in L\&G, that's an old reference, you should try to find a newer one too.}
@@ -184,7 +197,7 @@
       A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
     \end{equation}
     
-    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity.  \todo{Also to mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
+    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity.  \todo{Also mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
   
 \section{FPGA Implementation}\label{sec:impl}
   
