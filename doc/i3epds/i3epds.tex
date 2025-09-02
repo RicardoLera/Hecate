@@ -133,9 +133,12 @@
   
   Fourier convolution instead applies the Theorem of Convolution~\todo{cite?} which defines the convolution of two matrices as the dot-product of their respective Fourier transforms. This allows the use of the Fast Fourier Transform (FFT) algorithm, at the cost of incurring Complex-domain operations~\todo{cite (maybe L\&G?)}.
 
-  
   \todo{I'll clarify the normenclature shennanigans (toom-3, coppersmith) later (section 2 maybe)}
   
+  \ifCLASSOPTIONcompsoc\else
+    \IEEEpubidadjcol
+    \todo{command IEEEpubidadjcol needs to be at second column of first page}
+  \fi
   
   Regarding the choice of platform, FPGA and ASIC generally display higher power-efficiency, while FPGAs have gained more prevalence in this particular field due to its ease of implementation. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}. Additionally, when employing these platforms, an additional metric is used to measure the efficiency of an accelerator: \textit{hardware-efficiency}, defined as the ratio between the performance gain and hardware cost. In FPGA, hardware cost is often used interchangeably with  DSP consumption, as these are the blocks capable of processing complex arithmetic tasks most efficiently \todo{maybe add ``and are in scarce supply'' or something}. 
   
@@ -166,23 +169,30 @@
 
   \todo{This paragraph directly states our objective. Something like ``As such, we propose a...'' or even ``Based on this literature review, we propose...'' but try not to be too verbose. After that (maybe in a new paragraph?) describe the contents of each section, which solves as a nice summary (other papers have done the same). This ends the Introduction.}
 
+  This document is organized as follows: our design choices and optimizations in Section~\ref{sec:arch}; the simulation, synthesis, and implementation of the design in Section~\ref{sec:impl}; the procedures used to test and verify the architecture in Section~\ref{sec:test}; and the compilation of results followed by our conclusions in Section~\ref{sec:conc}.
+
+
 \section{Architecture Design}\label{sec:arch}
-  \ifCLASSOPTIONcompsoc\else
-    \IEEEpubidadjcol
-    \todo{command IEEEpubidadjcol needs to be at second column of first page}
-  \fi
 
-  %\subsection{Overview}\label{ssec:over}
-  \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA) and explain it. Refer to following subsections if necessary}
+  \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA)}
 
-  \subsection{Algorithmic Decomposition}\label{ssec:alg}
-
-    In Fourier convolution, multidimensional data is represented as padded 1D arrays. The size of these arrays determines the complexity of the transform, and in order to convolve two inputs, the size of their arrays must be equivalent. However, in the case of image processing, the image is often much larger than the filter, In order to avoid padding the filter to match the image, which would result in very high complexity, we instead employ a decomposition method known as Overlap-Add~\todo{cite here, or maybe later in the paragraph}. The image is broken down in kernel-sized pieces which are individually convolved with the kernel. Each piece has overlapping points with its neighbors, which are added together to form the complete convolution. This process is only possible because the Fourier convolution of two arrays of size $n$ returns an array of size $2n-1$~\todo{(aka ``full'' convolution)}, while matrix multiplication methods return only the non-overlaping array of size $n$.
-
-    There are other methods of convolution decomposition such as \todo{etc, include 3D = n2D here}
+  \todo{Describe standard Fourier Convolution. Then segue into the subsections, which describe the specifics of our design and how we optimized over the standard.} 
 
   \subsection{Numeric Representation}
-    \todo{aka ``why we chose fixed-point and not floating-point''. Important here is that reference you had of CNNs being surprisingly resilient to precision loss. I wanna say it was in Lavin \& Grey but I'm not sure. Also, if it is in L\&G, that's an old reference, you should try to find a newer one too.}
+    Our design uses fixed-point representation. The bit size and point location are arbitrary and chosen during synthesis to enable a trade-off between performance and precision.
+
+    The choice between fixed-point and floating-point was not trivial. Fixed-point can represent values in the range $2^{{\pm}n}$, where $n$ is the number of bits; while floating-point representations disperse their values in a wider exponential range, increasing precision for values closer to zero. Recent FPGA designs have also included floating-point arithmetic cells, bringing performance closer to that of a fixed-point application.
+    
+    However, \todo{mention here the reference about CNNs being surprisingly resilient to precision loss (I think it was Lavin \& Grey?)}
+
+    Furthermore, the values represented in fixed-point notation are explicitly decomposed in powers of two, enabling the optimization methods described in Section~\ref{ssec:symm}.
+    
+    
+    
+
+
+
+
 
   \subsection{Complex Multiplication}\label{ssec:cmul}
     Naively, Complex-domain multiplication implies a computation task 4x larger than Real-domain multiplication, due to the nature of Complex numbers (Equation~\ref{eq:cmul-rect}).
@@ -197,36 +207,56 @@
       A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
     \end{equation}
     
-    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950}. Its complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity.  \todo{Also mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
+    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950} \todo{describe CORDIC more in depth, show the image that describes it}
+
+    CORDIC's complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity. \todo{Also mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
+
+
+
+
+
+
+    %later
+    The FFT and Fourier convolution achieve lower complexity by exploiting the symmetry of \textit{harmonics} in the Fourier Transform, which are powers of two. Extracting powers of two from a value in fixed-point notation is trivial, as the notation directly represents them as bits
+
+
+
+
+
+
+  \subsection{Algorithmic Decomposition}\label{ssec:alg}
+    \todo{(}In Fourier convolution, multidimensional data is represented as padded 1D arrays. The size of these arrays determines the complexity of the transform, and in order to convolve two inputs, the size of their arrays must be equivalent.\todo{) rewrite/remove this depending on context given before.} However, in the case of image processing, the image is often much larger than the filter, In order to avoid padding the filter to match the image, which would result in very high complexity, we instead employ a decomposition method known as Overlap-Add~\todo{cite here, or maybe later in the paragraph}. The image is broken down in kernel-sized pieces which are individually convolved with the kernel. Each piece has overlapping points with its neighbors, which are added together to form the complete convolution. This process is only possible because the Fourier convolution of two arrays of size $N$ returns an array of size $2N-1$~\todo{(aka ``full'' convolution)}, while matrix multiplication methods return only the non-overlaping array of size $N$.
+
+    There are other methods of convolution decomposition such as \todo{etc, include 3D = n2D here}
+
+
+
+
   
 \section{FPGA Implementation}\label{sec:impl}
-  
-  % \subsection{2D and 3D CNNs}\label{ssec:cnn}
-  %   \todo{specify whether you'll even attempt to go for 2D or if all the tests will be made for 3D}
 
-  \todo{describe xilinx and its bullshit. show all the relevant generated hardware}
+  \todo{sim, synth, and impl. No need for subsections}
 
-  \subsection{Simulation}\label{ssec:sim}
-    \todo{[...]}
-
-  \subsection{Synthesis}\label{ssec:synth}
-    \todo{[...]}
 
 \section{Testing Procedures}\label{sec:test}
-  \subsection{Benchmarks}\label{bench}
+  \subsection{Benchmarks}
     \todo{To justify the chosen proceedures, find a clear comparison method between our project and the state-of-the-art. You might have to contextualize C3D and other necessary benchmarks}
 
-  \subsection{Simulated Tests}\label{ssec:stest}
+  \subsection{Simulated Tests}
     \todo{[...]}
 
-  \subsection{On-Board Tests}\label{ssec:btest}
+  \subsection{On-Board Tests}
     \todo{[...]}
 
-\section{Results}\label{sec:res}
-  \todo{Consider making this a subsection of the last section instead.}
  
 \section{Conclusion}\label{sec:conc}
+
+  \todo{Result compilation}
+
   \todo{Comment on the relevant comparisons made and the observed causation of their results. On another paragraph, wrap up by describing how these results achieve our objective. Lastly, consider including a ``Future Work or smtn idfk'' section/subsection/paragraph. Some papers include a whole section called ``Related Work'' but that just seems stupid to me. That should have been part of the lit review, or at most in ``Benchmarks``, but it doesn't concern the paper after the conclusion. Future or possible extentions of the project (aka, how the scientific community can build upon it), do.}
+
+
+
 
 \ifCLASSOPTIONjournal
   \section*{Acknowledgments} % limit of one paragraph
