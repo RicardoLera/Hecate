@@ -9,6 +9,8 @@
 **/build
 templates
 *.code-workspace
+*.zip
+*.ods
 
 ## Vivado
 *.cache
