@@ -11,6 +11,7 @@ templates
 *.code-workspace
 *.zip
 *.ods
+*.png
 
 ## Vivado
 *.cache

@@ -165,121 +165,207 @@
 
   \todo{This paragraph directly states our objective. Something like ``As such, we propose a...'' or even ``Based on this literature review, we propose...'' but try not to be too verbose. After that (maybe in a new paragraph?) describe the contents of each section, which solves as a nice summary (other papers have done the same). This ends the Introduction.}
 
-  This document is organized as follows: In Section~\ref{sec:arch}, we present our proposed architecture, its design choices, and optimizations; In Section~\ref{sec:impl} we detail its simulation, synthesis, and implementation; Section~\ref{sec:test} details the procedures used to test and verify the architecture; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
+  This document is organized as follows: In Section~\ref{sec:arch}, we present our proposed architecture, its design choices, and optimizations; Section~\ref{sec:test} details the procedures used to test and verify the architecture; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
 
 \section{Architecture Design}\label{sec:arch}
 
   \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA)}
 
-  \todo{Describe standard Fourier Convolution. Then segue into the subsections, which describe the specifics of our design and how we optimized over the standard.} 
+  \todo{Describe standard Fourier Convolution (formulas too, including complexity). Then segue into the subsections, which describe the specifics of our design and how we optimized over the standard.} 
 
   \subsection{Numeric Representation}
     Our design uses fixed-point representation. The bit size and point location are arbitrary and chosen during synthesis to enable a trade-off between performance and precision.
 
     The choice between fixed-point and floating-point was not trivial. Fixed-point can represent values in the range $2^{{\pm}n}$, where $n$ is the number of bits; while floating-point representations disperse their values in a wider exponential range, increasing precision for values closer to zero. Recent FPGA designs have also included floating-point arithmetic cells, bringing performance closer to that of a fixed-point application.
     
-    However, \todo{mention here the reference about CNNs being surprisingly resilient to precision loss (I think it was Lavin \& Grey?)}
+    However, \todo{mention here the reference about CNNs being surprisingly resilient to precision loss (I think it was Lavin \& Grey?) although some recent papers have argued the opposite... I think it was Fan or Shen?}
 
     Furthermore, the values represented in fixed-point notation are explicitly decomposed in powers of two, enabling the optimization methods described in Section~\ref{ssec:cmul}.
 
+  \subsection{FFT \& IFFT}\label{ssec:fft}
+    \todo{If possible, present a rough diagram of the FFT pipeline, showing each DSP slice. Maybe show the butterclusterfluck too, as a comparison.}
+
+    FFT is a class of algorithms capable of computing an $N$-point Discrete Fourier Transform (DFT) in $O(N.{\log}_{2}N)$. The radix-2 DIT FFT~\cite{gauss1866nachlass,cooley1965algorithm} was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
+
+    \begin{figure}[!t]
+      \centering
+      \includegraphics[width=2.5in]{fig/fft_alg.png}
+      \caption{16-point radix-2 DIT FFT}
+      \label{fig:fft_alg}
+    \end{figure}
+    
+    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps. Each step consists of $\frac{N}{2}$ ``butterfly operations'' follwed by $N$ twiddle-factor multiplications. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers \todo{footnote: unless it's the first stage of an FFT or last stage of an IFFT, in a they are Real adds/subs}. Each result is then multiplied by a corresponding root-of-unity (known as \textit{twiddle-factor}) with the form $e^{\frac{2{\pi}i}{N}k}$, where $k \in \mathbb{Z} \cap [0,N-1]$.  Figure~\ref{fig:fft_alg} exemplifies the algorithm for $N=16$.
+
+    While the input array is one-dimensional, it can represent an arbritrary number of input dimensions using zero-padding. \todo{elaborate}
+    
+    %%% Unnecessary and a pain in the ass to describe
+    % Equation~\label{eq:twiddle} defines the twiddle-factor as a function of the number of points $N$, the stage $s$, and the index $i$ of the corresponding value.
+    
+    % \begin{equation}\label{eq:twiddle}
+    %   e^{\frac{}{N}}
+    % \end{equation}
+
+    \todo{maybe mention the other FFT algorithms? (ie split-radix, prime-factor, etc)}
+
   \subsection{Complex Multiplication}\label{ssec:cmul}
-    Naively, Complex-domain multiplication implies a computation task 4x larger than Real-domain multiplication, due to the nature of Complex numbers (Equation~\ref{eq:cmul-rect}).
+    Naively, Complex-domain multiplication implies 4 Real-domain multiplications (Equation~\ref{eq:cmul-rect}).
 
     \begin{equation}\label{eq:cmul-rect}
       (a+bi)(c+di) = (ac-bd) + (ad+bc)i
     \end{equation}
 
-    Instead, we can represent the same operation in polar coordinates (Equation~\ref{eq:cmul-pol}) reducing the total operation count to 1 Real multiplication and 1 Real addition, which are independent and thus parallelizable.
+    Instead, we can represent the same operation in polar coordinates (Equation~\ref{eq:cmul-pol}), reducing the total operation count to 1 Real multiplication and 1 Real addition, which are independent and thus parallelizable.
     
     \begin{equation}\label{eq:cmul-pol}
       A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
     \end{equation}
     
-    In order to convert to-and-from these representations, we make use of the efficient trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950} \todo{describe CORDIC more in depth, show the image that describes it}
+    In order to convert to-and-from these representations, we make use of the trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950} \todo{describe CORDIC more in depth, show the image that describes it}
 
     CORDIC's complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity. \todo{Also mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
 
-    \todo{Present the twiddle-factor cordic arctangent thing}
+    \todo{Present the twiddle-factor cordic arctangent thing. Remember to justify fixed-point (commented below)}
     % The FFT and Fourier convolution achieve lower complexity by exploiting the symmetry of \textit{harmonics} in the Fourier Transform, which are powers of two. Extracting powers of two from a value in fixed-point notation is trivial, as the notation directly represents them as bits
 
   \subsection{Algorithmic Decomposition}\label{ssec:alg}
-    \todo{(}In Fourier convolution, multidimensional data is represented as padded 1D arrays. The size of these arrays determines the complexity of the transform, and in order to convolve two inputs, the size of their arrays must be equivalent.\todo{) rewrite/remove this depending on context given before.} However, in the case of image processing, the image is often much larger than the filter, In order to avoid padding the filter to match the image, which would result in very high complexity, we instead employ a decomposition method known as Overlap-Add~\todo{cite here, or maybe later in the paragraph}. The image is broken down in kernel-sized pieces which are individually convolved with the kernel. Each piece has overlapping points with its neighbors, which are added together to form the complete convolution. This process is only possible because the Fourier convolution of two arrays of size $N$ returns an array of size $2N-1$~\todo{(aka ``full'' convolution)}, while matrix multiplication methods return only the non-overlaping array of size $N$.
+    In Fourier convolution, multidimensional data is represented as padded 1D arrays. The size of these arrays determines the complexity of the transform, and in order to convolve two inputs, the size of their arrays must be equivalent. However, in image processing, the image is often much larger than the kernels. In order to avoid padding the kernel to match the image, which would result in very high complexity, we instead employ a decomposition method known as Overlap-Add~\todo{cite here, or maybe later in the paragraph}. The image is broken down in kernel-sized pieces which are individually convolved with the kernel. Each piece has overlapping points with its neighbors, which are added together to form the complete convolution. This process is only possible because the Fourier convolution of two arrays of size $N$ returns an array of size $2N-1$~\todo{(aka ``full'' convolution)}, while matrix multiplication methods return only the non-overlaping array of size $N$.
 
     \todo{REMINDER: chen2024fast also uses OaA, remember to reference them again}
 
     % There are other methods of convolution decomposition such as \todo{etc, include 3D = n2D here}
   
-\section{FPGA Implementation}\label{sec:impl}
-  \todo{sim, synth, and impl. No need for subsections}
+  \subsection{Pipelining}\label{ssec:pipe}
+    \todo{make a single figure (double-column) describing the complete pipeline}
+    \begin{figure*}[!t]
+      \centering
+      \includegraphics[width=2.5in]{fig/fullpipe.png}
+      \caption{lorem}
+      \label{fig:fullpipe}
+    \end{figure*}
 
 \section{Testing Procedures}\label{sec:test}
   \subsection{Benchmarks}
-    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}~\todo{cite a bunch of others too}. We were unable to validate whether these publications acknoledged and remediated this issue in their calculations, and as such we cannot use their data directly in a comparative analysis. Instead, we will calculate the relevant metrics independently, sourcing the original technical reports for C3D and UCF101, and transposing the results given by the state-of-the-art to this benchmark. In doing so, we hope to achieve a fairer and verifiable comparison.
+    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}~\todo{cite a bunch of others too}. This is due to differences in their choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the total operation count of the network, making a direct comparison of their throughput (measured in GOP/s) misleading. We were unable to verify whether these publications accounted for differing hyperparameters in their calculations. For the sake of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results first as they were originally published, then transpose their results to the established standard.
     
-    The total number of MAC operations in a convolutional layer is the product of all input dimensions, all kernel dimensions, and the number of filters in the layer. Each MAC operation consists of two operations, so this value is further multiplied by two.
+    The total number of MAC operations in a convolutional layer is the product of all input dimensions, all kernel dimensions, and the number of filters in the layer. Each MAC operation consists of two operations.
 
     \todo{insert formula}
 
     C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
     
     Table~\ref{tab:c3d} presents the total number of operations required by the C3D convolutional layers. Respectivelly: Resolution (D1xD2); Depth (D3); Frames (D4); Filters (D5); Giga-Multiply-Accumulate-Operations (GMAC);Giga-Operations (GOP).
-    
-    \begin{table}
-      \caption{C3D Convolutional Layer Operation Count}
-      \centering
-      \label{tab:c3d}
-      \begin{tabular}{|c|c|c|c|c|c|c|c|}
-        \hline
-        Layer  & D1  & D2  & D3 & D4  & D5  & GMAC  & GOP    \\\hline
-        Conv1  & 128 & 171 & 3  & 16  & 64  & 1.82  & 3.63   \\\hline
-        Conv2  & 64  & 86  & 16 & 64  & 128 & 19.48 & 38.96  \\\hline
-        Conv3a & 32  & 43  & 8  & 128 & 256 & 9.74  & 19.48  \\\hline
-        Conv3b & 32  & 43  & 8  & 256 & 256 & 19.48 & 38.96  \\\hline
-        Conv4a & 16  & 22  & 4  & 256 & 512 & 4.98  & 9.97   \\\hline
-        Conv4b & 16  & 22  & 4  & 512 & 512 & 9.97  & 19.93  \\\hline
-        Conv5a & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
-        Conv5b & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
-        Total  & -   & -   & -  & -   & -   & 58.21 & 116.42 \\\hline
-      \end{tabular}
-    \end{table}
 
-  \subsection{Simulated Tests}
+    \begin{table*}[!t]
+      \caption{C3D Convolutional Layer Operation Count (std vs $F(2^3,3^3)$)}
+      \centering
+      \subfloat[]{%
+        \begin{tabular}{|c|c|c|c|c|c|c|c|}
+          \hline
+          Layer  & D1  & D2  & D3 & D4  & D5  & GMAC  & GOP    \\\hline
+          Conv1  & 128 & 171 & 16 & 3   & 64  & 1.82  & 3.63   \\\hline
+          Conv2  & 64  & 86  & 16 & 64  & 128 & 19.48 & 38.96  \\\hline
+          Conv3a & 32  & 43  & 8  & 128 & 256 & 9.74  & 19.48  \\\hline
+          Conv3b & 32  & 43  & 8  & 256 & 256 & 19.48 & 38.96  \\\hline
+          Conv4a & 16  & 22  & 4  & 256 & 512 & 4.98  & 9.97   \\\hline
+          Conv4b & 16  & 22  & 4  & 512 & 512 & 9.97  & 19.93  \\\hline
+          Conv5a & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
+          Conv5b & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
+          Total  & -   & -   & -  & -   & -   & 58.21 & 116.42 \\\hline
+        \end{tabular}%
+        \label{tab:c3d_a}}
+      \hfil
+        \subfloat[]{%
+          \begin{tabular}{|c|c|c|c|c|c|c|c|}
+            \hline
+            Layer  & D1  & D2  & D3 & D4 & D5 & GMAC  & GOP   \\\hline
+            Conv1  & 128 & 171 & 16 & 3  & 8  & 0.227 & 0.454 \\\hline
+            Conv2  & 64  & 86  & 16 & 8  & 8  & 0.152 & 0.304 \\\hline
+            Conv3a & 32  & 43  & 8  & 8  & 8  & 0.019 & 0.038 \\\hline
+            Conv3b & 32  & 43  & 8  & 8  & 8  & 0.019 & 0.038 \\\hline
+            Conv4a & 16  & 22  & 4  & 8  & 8  & 0.002 & 0.005 \\\hline
+            Conv4b & 16  & 22  & 4  & 8  & 8  & 0.002 & 0.005 \\\hline
+            Conv5a & 8   & 11  & 2  & 8  & 8  & ~0    & ~0    \\\hline
+            Conv5b & 8   & 11  & 2  & 8  & 8  & ~0    & ~0    \\\hline
+            Total  & -   & -   & -  & -  & -  & 0.423 & 0.845 \\\hline
+          \end{tabular}%
+        \label{tab:c3d_b}}
+      \label{tab:c3d}
+    \end{table*}
+
+  \subsection{Implementation}
     \todo{[...]}
 
-  \subsection{On-Board Tests}
+  \subsection{Experimental Results}
     \todo{[...]}
 
   \subsection{Comparison}
-    \begin{table}
+    \begin{table*}
       \caption{Comparison}
       \centering
       \label{tab:res}
       \begin{tabular}{|c|c|c|c|c|}
         \hline
-        Project    & [x] & [x] & [x] & Ours \\\hline
-        Latency    & --- & --- & --- & ---  \\\hline
-        Frequency  & --- & --- & --- & ---  \\\hline
-        Technology & --- & --- & --- & ---  \\\hline
-        DSP        & --- & --- & --- & ---  \\\hline
-        ALM/other  & --- & --- & --- & ---  \\\hline
-        $GOP/s$    & --- & --- & --- & ---  \\\hline
-        $\frac{GOP}{(s{\cdot}MHz{\cdot}DSP)}$ & --- & --- & --- & --- \\\hline
-        $\frac{GOP}{(s{\cdot}MHz{\cdot}ALM)}$ & --- & --- & --- & --- \\\hline
+        Project                  & \cite{shen2018towards} & \cite{shen2018towards} & [x] & Ours  \\\hline
+        Board                    & VC709                  & VUS440                 & --- & VC709 \\\hline
+        Technology (nm)          & 28                     & 20                     & --- & 28    \\\hline
+        Latency (us)             & (rec)                  & (rec)                  & --- & (rec) \\\hline
+        Frequency (MHz)          & 150                    & 200                    & --- & 100   \\\hline
+        DSP                      & 1536                   & 1536                   & --- & 529   \\\hline
+        BRAM                     & 1508                   & 1476                   & --- & -     \\\hline
+        LUT                      & 242K                   & 209K                   & --- & 37K   \\\hline
+        FF                       & 286K                   & 285K                   & --- & 12K   \\\hline
+        $GOP/s$                  & 474.3                  & 940.6                  & --- & 145.8 \\\hline
+        $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
+        $\frac{OP}{LUT*10^{-3}}$ & 13.1                   & 22.5                   & --- & (rec) \\\hline % ours is 39.4 ish
       \end{tabular}
-    \end{table}
+    \end{table*}
+
+    % Yu-TCAD2019 HE_DSP = 2.71
+    % fan2021high HE_DSP = 5.29 yeah except on a 4x4x4 kernel you cheating sonzabitches
+
+    %%% Full pipeline analysis
+    % A fully pipelined 512-point one-sample-per-cycle radix-2 FFT takes only 27 DSPs. Fill latency is 520 cycles (actually lower, see below) after which it outputs 1 complex result per cycle. If you process each cordic-multiplication-cordic individually, and do the same for the IFFT, the complete pipeline has a throughput of 2*(4^6)/(512*1-over-frequency). So HE is that divided by frequency*(2*27+1+1). Freq cancels out and you're left with 2*(7^6)/(512 * 56) = 8.21 [OP/DSP]. For 128-point, that's 2*(5^6)/(128 * (2*21+2)) = 5.55 [OP/DSP]. That's checkmate even if they used 3x3x3 kernels.
+
+    % Fill latency (24b, 100MHz):
+      % 2*log2(N) [FFT/IFFT] + 2*Nb [CORDIC] + 1 [MUL] + 1 [KCOR] + 1 [ADD] = 65 or 69 cycles = (0.65us [3x3x3]; 0.69[4x4x4])
+      % + kernel preprocess
+
+    % DSP count:
+      % 2*3*log2(N) [FFT/IFFT, Karatsuba] + 2 [MUL, KCOR+ADD] = 6*log2N + 2 = (44 [3x3x3]; 56 [4x4x4])
+      % Note: CORDICs are synthesized as LUTs. 2*Nb CORDICs = 144 adders and some muxes
+
+    % Operation count (1 filled cycle):
+      % 2*((2*ks-1)^6)/N [Full Convolution every N cycles] = (244.14 [3x3x3]; 459.57 [4x4x4])
+
+    % Logic Throughput (filled):
+      % OP/(1 cycle) = (24.414 GOP/s [3x3x3]; 45.957 GOP/s [4x4x4])
+      % Note: this does not account for routing latency
+
+    % Hardware-Efficiency [OP/(s.Hz.DSP)]:
+      % 5.549 OP/DSP [3x3x3]; 8.207 OP/DSP [4x4x4]
+
+    % Memory usage (24b, image = 128x171x16 (channels don't interact, neither do different kernels):
+      % 24 [input] + 2*24*2*(log2(N)-1) [FFT/IFFT] + 2*24*(24*2+16) [CORDICs] + 24+16 [MUL(img)] + 24*(is+ks-1)^3 [output] + (24+16)*(N/2+1) [kernel preprocess]
+      % = 24 + 96(log2(N)-1) + 3072 + 40 + 24*[(128+ks-1)(171+ks-1)(16+ks-1)] + 40*(N/2+1) = (9.27 MB [3x3x3]; 9.93 MB [4x4x4])
+      % Most of that is the output. If that was stored externally, the real (cache) memory use becomes: (6.16 KB [3x3x3]; 13.85 KB [4x4x4])
+      % There are also the CORDIC arctan constants, but I'm guessing those would be stored as LUTs. Same for twiddle factors.
+
+    % Critical Path:
+      % FFT/IFFT: 24b-ADD -> (24b-ADD | read LUT) -> 24b-kMUL -> 24b-ADD [Butterfly -> Karatsuba wmul]
+      % CORDICs: 24b-ADD 
+      % MUL/KCOR/OaA: 24b-MUL at most
+
+    % I have no way of calculating the total number of LUTs here, but it's clear that it would be the scaling bottleneck, and not DSPs or memory.
+
+    % Reminder: review Radix-2 FFT and Radix-N CORDIC to see if they address pipelining issues
 
     Table~\ref{tab:res}...
-
-    \todo{We need to research the state-of-the-art concerning hardware-efficiency. Specifically, we are concerned with approaches that change the convolution operation itself, so not like fan2021high and more like shen2018towards. The former will be mentioned in Related Work. Remember, we need a benchmark to compare our project with, but our project can currently only calculate latency for a single C3D layer.}
- 
 
 \section{Related Work}\label{sec:rela}
   Fan et al.~\cite{fan2021high} presents an accelerator which processes C3D in 93.95 ms using 1345 DSPs and a frequency of 220 MHz, giving it a hardware-efficiency of $5.19 [\frac{GOP}{s{\cdot}MHz{\cdot}DSP}]$. Their method involves quantization of weights and activations with static block floating point, while the convolution algorithm remains the standard matrix-multiplication method. This method, however, does not reduce the overall number of multiplication operations required by the convolution layer, which are still performed using fixed-point representation.
 
-
 \section{Conclusion}\label{sec:conc}
   \todo{Comment on the relevant comparisons made and the observed causation of their results. On another paragraph, wrap up by describing how these results achieve our objective.}
-
 
 \ifCLASSOPTIONjournal
   \section*{Acknowledgments} % limit of one paragraph
