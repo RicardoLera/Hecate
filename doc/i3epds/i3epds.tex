@@ -46,6 +46,8 @@
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 \renewcommand{\arraystretch}{1.5}
+\usepackage{tikz}
+\usetikzlibrary{matrix,calc,positioning,arrows,intersections}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
 %\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
@@ -124,9 +126,9 @@
 
   A 2021 survey~\cite{mittal2021survey} of accelerator architectures for 3D CNNs across multiple platforms highlights the particular challenges of acceleration in 3D space, and how 2D accelerators cannot be naivelly applied to a higher dimensional space while maintaining efficiency. This further emphasises the need for acceleration techniques beyond parallelism, as the required hardware for this task grows in one extra dimension.
 
-  FPGA and ASIC implementations generally display higher power-efficiency, with the former being more prevalent in the field due to its ease of implementation. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}. When employing these platforms, an additional metric is used to measure the efficiency of an accelerator: \textit{hardware-efficiency}, defined as the ratio between the performance gain and hardware cost. In FPGA, performance is generally measured in GOPS (giga-operations per second), and hardware cost is often used interchangeably with  DSP consumption, as these are the blocks capable of processing complex arithmetic tasks most efficiently. Additionaly, the metric is often divided by the clock frequency used, to better evaluate the architecture's design regardless of the frequency limitations of its platform.
+  FPGA and ASIC implementations generally display higher power-efficiency, with the former being more prevalent in the field due to its ease of implementation. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}. When employing these platforms, an additional metric is used to measure the efficiency of an accelerator: \textit{hardware-efficiency}, defined as the ratio between the performance gain and hardware cost. In FPGA, performance is generally measured in GOPS (giga-operations per second), and hardware cost is often used interchangeably with  DSP consumption, as these are the blocks capable of processing complex arithmetic tasks most efficiently. Additionaly, the metric is often divided by the clock frequency used, to better evaluate the architecture's design regardless of the frequency limitations of its platform \todo{cite}.
 
-  We reviewed recent developments in the field concerning 3D convolution accelerators in FPGA. This body of work revealed a tendency to employ more optimal convolution algorithms, while addressing their particular needs. Of note, two classes of algorithms stand out among the surveyed projects: \textbf{lower-bound matrix multiplication} algorithms~\cite{shen2018towards,fan2021high} \todo{add at least 1 more reference} and \textbf{Fourier convolution} algorithms~\cite{chi2020fast,chitsaz2020acceleration,chen2024fast} \todo{check how to make multi-citations look better}.
+  We reviewed recent developments in the field concerning 3D convolution accelerators in FPGA. This body of work revealed a tendency to employ more optimal convolution algorithms, while addressing their particular needs. Of note, two classes of algorithms stand out among the surveyed projects: \textbf{lower-bound matrix multiplication} algorithms~\cite{shen2018towards,fan2021high} \todo{add at least 1 more reference} and \textbf{Fourier convolution} algorithms~\cite{chi2020fast,chitsaz2020acceleration,chen2024fast} \todo{fix multi-citation}.
     
   Lower-bound matrix multiplication exploits the property of discrete convolution which allows it to be represented as a matrix multiplication between the input and the filter, often handled by the \texttt{im2col} algorithm~\todo{cite that one article which described it open-source}. This change in representation does \textit{not} lower the complexity of the operation by itself~\cite{lera2023hardware} but enables the use of matrix multiplication algorithms with lower complexity bounds such as Coppersmith-Winograd~\cite{shen2018towards}, or algorithms that reduce the complexity of the matrix multiplication step~\cite{fan2021high}.
   
@@ -165,13 +167,24 @@
 
   \todo{This paragraph directly states our objective. Something like ``As such, we propose a...'' or even ``Based on this literature review, we propose...'' but try not to be too verbose. After that (maybe in a new paragraph?) describe the contents of each section, which solves as a nice summary (other papers have done the same). This ends the Introduction.}
 
-  This document is organized as follows: In Section~\ref{sec:arch}, we present our proposed architecture, its design choices, and optimizations; Section~\ref{sec:test} details the procedures used to test and verify the architecture; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
+  This document is organized as follows: In Section~\ref{sec:arch}, we present our proposed architecture, its design choices, and optimizations; Section~\ref{sec:test} details the procedures used to verify and test the architecture, and the results of these tests; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
 
 \section{Architecture Design}\label{sec:arch}
 
   \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA)}
 
-  \todo{Describe standard Fourier Convolution (formulas too, including complexity). Then segue into the subsections, which describe the specifics of our design and how we optimized over the standard.} 
+  Fourier Convolution achieves lower complexity via the the Convolution Theorem~\cite{mcgillem1991continuous}. Let $a,b$ be two discrete signals in $\mathbb{R}^N$. The convolution of $a$ and $b$ can be represented as:
+%
+  \begin{equation}\label{eq:theo}
+    a * b = \mathcal{F}^{-1}[\mathcal{F}(a) \cdot \mathcal{F}(b)]\,,
+  \end{equation}
+%
+  where $\cdot$ represents the pointwise product and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse.
+
+  The pointwise product of two signals incurs $O(N)$ multiplications, whereas convolution in the space domain incurs $O(N^2)$. There are two main caveats to this method: the signals must be transformed to-and-from the Complex domain via a DFT; and the pointwise operation must be performed in the Complex domain. We address these issues in Sections \ref{ssec:fft} and \ref{ssec:cmul}, respectivelly.
+
+
+  We also make use of a decomposition algorithm to further decrease complexity, described in Section~\ref{ssec:alg}. The resulting system can be fully pipelined to increase its throughput, and the methods used for such as described in Section~\ref{ssec:pipe}.
 
   \subsection{Numeric Representation}
     Our design uses fixed-point representation. The bit size and point location are arbitrary and chosen during synthesis to enable a trade-off between performance and precision.
@@ -180,52 +193,290 @@
     
     However, \todo{mention here the reference about CNNs being surprisingly resilient to precision loss (I think it was Lavin \& Grey?) although some recent papers have argued the opposite... I think it was Fan or Shen?}
 
-    Furthermore, the values represented in fixed-point notation are explicitly decomposed in powers of two, enabling the optimization methods described in Section~\ref{ssec:cmul}.
+    Furthermore, the values represented in fixed-point notation are explicitly decomposed in powers of two, enabling some of the optimizations described in Section~\ref{ssec:cmul}. Fixed-point also enables the CORDIC algorithm, described in the same section.
 
   \subsection{FFT \& IFFT}\label{ssec:fft}
-    \todo{If possible, present a rough diagram of the FFT pipeline, showing each DSP slice. Maybe show the butterclusterfluck too, as a comparison.}
-
     FFT is a class of algorithms capable of computing an $N$-point Discrete Fourier Transform (DFT) in $O(N.{\log}_{2}N)$. The radix-2 DIT FFT~\cite{gauss1866nachlass,cooley1965algorithm} was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
 
-    \begin{figure}[!t]
-      \centering
-      \includegraphics[width=2.5in]{fig/fft_alg.png}
-      \caption{16-point radix-2 DIT FFT}
-      \label{fig:fft_alg}
-    \end{figure}
+    %%% Unnecessary
+    % \begin{figure}[!t]
+    %   \centering
+    %   \includegraphics[width=2.5in]{fig/fft_alg.png}
+    %   \caption{16-point radix-2 DIT FFT}
+    %   \label{fig:fft_alg}
+    % \end{figure}
     
-    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps. Each step consists of $\frac{N}{2}$ ``butterfly operations'' follwed by $N$ twiddle-factor multiplications. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers \todo{footnote: unless it's the first stage of an FFT or last stage of an IFFT, in a they are Real adds/subs}. Each result is then multiplied by a corresponding root-of-unity (known as \textit{twiddle-factor}) with the form $e^{\frac{2{\pi}i}{N}k}$, where $k \in \mathbb{Z} \cap [0,N-1]$.  Figure~\ref{fig:fft_alg} exemplifies the algorithm for $N=16$.
+    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
+%
+    \begin{equation}
+      \omega_{N}^{k} = e^{\frac{2{\pi}i}{N}k}\,,
+    \end{equation}
+%
+    where $k \in \mathbb{Z} \cap [0,N-1]$.
 
-    While the input array is one-dimensional, it can represent an arbritrary number of input dimensions using zero-padding. \todo{elaborate}
+    While the input signal is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Let $M$ be a three-dimensional signal of size $M_x,M_y,M_z$. Figure~\ref{fig:Ma} represents $M$ for $M_x = M_y - M_z = 2$. To convolve this array with another signal of the same shape, we must first pad each dimension by $2.dim-1$, in order to convey its dimensionaliry and avoid cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the green line representing the order of rasterization.
+
+    \begin{figure*}[htp]\centering
+      \subfloat[]{%
+        \makebox[0.8\columnwidth]{\begin{tikzpicture}[
+          >=stealth,
+          line width=0.75pt,
+          every node/.style={anchor=north east,fill=white,minimum width=1.1cm,minimum height=7mm},
+          ampersand replacement=\&
+        ]%
+          \matrix (mA) [draw,matrix of math nodes]
+          {
+            M_{0,0,1} \& M_{1,0,1} \\
+            M_{0,1,1} \& M_{1,1,1} \\
+          };
+
+          \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(0.8,0.2)$)
+          {
+            M_{0,0,0} \& M_{1,0,0} \\
+            M_{0,1,0} \& M_{1,1,0} \\
+          };
+
+          \draw[dashed](mA.north east)--(mB.north east);
+          \draw[dashed](mA.north west)--(mB.north west);
+          \draw[dashed](mA.south east)--(mB.south east);
+        \end{tikzpicture}\label{fig:Ma}\rule[-5ex]{0pt}{15ex}}}\qquad
+      \subfloat[]{%
+        \makebox[0.8\columnwidth]{\begin{tikzpicture}[
+          >=stealth,
+          line width=0.75pt,
+          every node/.style={anchor=north east,fill=white,minimum width=1.0cm,minimum height=5mm},
+          ampersand replacement=\&
+        ]%
+          \matrix (mA) [draw,matrix of math nodes]
+          {
+            |(mA1)| 0 \& 0 \& |(mA2)| 0 \\
+            |(mA3)| 0 \& 0 \& |(mA4)| 0 \\
+            |(mA5)| 0 \& 0 \& |(mA6)| 0 \\
+          };
+
+          \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(0.8,0.2)$)
+          {
+            |(mB1)| M_{0,0,1} \& M_{1,0,1} \& |(mB2)| 0 \\
+            |(mB3)| M_{0,1,1} \& M_{1,1,1} \& |(mB4)| 0 \\
+            |(mB5)| 0         \& 0         \& |(mB6)| 0 \\
+          };
+
+          \matrix (mC) [draw,matrix of math nodes] at ($(mB.south west)+(0.8,0.2)$)
+          {
+            |(mC1)| M_{0,0,0} \& M_{1,0,0} \& |(mC2)| 0 \\
+            |(mC3)| M_{0,1,0} \& M_{1,1,0} \& |(mC4)| 0 \\
+            |(mC5)| 0         \& 0         \& |(mC6)| 0 \\
+          };
+
+          \draw[dashed](mA.north east)--(mC.north east);
+          \draw[dashed](mA.north west)--(mC.north west);
+          \draw[dashed](mA.south east)--(mC.south east);
+
+          \draw[->,color=green!40]     (mC1.west) -- ($(mC2.west)+(0.2,0)$);
+          \draw[color=green!40]        (mC2.west) -- (mC2.east);
+          \draw[color=green!40]        (mC2.east) -- (mC3.west);
+          \draw[->,color=green!40]     (mC3.west) -- ($(mC4.west)+(0.2,0)$);
+          \draw[color=green!40]        (mC4.west) -- (mC4.east);
+          \draw[color=green!40]        (mC4.east) -- (mC5.west);
+          \draw[->,color=green!40]     (mC5.west) -- ($(mC6.west)+(0.2,0)$);
+          \draw[color=green!40]        (mC6.west) -- (mC6.east);
+          \draw[dashed,color=green!40] (mC6.east) -- (mB1.west);
+
+          \draw[->,color=green!40]     (mB1.west) -- ($(mB2.west)+(0.2,0)$);
+          \draw[color=green!40]        (mB2.west) -- (mB2.east);
+          \draw[color=green!40]        (mB2.east) -- (mB3.west);
+          \draw[->,color=green!40]     (mB3.west) -- ($(mB4.west)+(0.2,0)$);
+          \draw[color=green!40]        (mB4.west) -- (mB4.east);
+          \draw[color=green!40]        (mB4.east) -- (mB5.west);
+          \draw[->,color=green!40]     (mB5.west) -- ($(mB6.west)+(0.2,0)$);
+          \draw[color=green!40]        (mB6.west) -- (mB6.east);
+          \draw[dashed,color=green!40] (mB6.east) -- (mA1.west);
+
+          \draw[->,color=green!40]     (mA1.west) -- ($(mA2.west)+(0.2,0)$);
+          \draw[color=green!40]        (mA2.west) -- (mA2.east);
+          \draw[color=green!40]        (mA2.east) -- (mA3.west);
+          \draw[->,color=green!40]     (mA3.west) -- ($(mA4.west)+(0.2,0)$);
+          \draw[color=green!40]        (mA4.west) -- (mA4.east);
+          \draw[color=green!40]        (mA4.east) -- (mA5.west);
+          \draw[->,color=green!40]     (mA5.west) -- ($(mA6.west)+(0.2,0)$);
+          \draw[color=green!40]        (mA6.west) -- (mA6.east);
+
+        \end{tikzpicture}\label{fig:Mb}\rule[-5ex]{0pt}{15ex}}}%
+      \caption{A three-dimensional signal (a) and the required zero-padding to avoid cyclic convolution (b).}\label{fig:M}
+    \end{figure*}
     
     %%% Unnecessary and a pain in the ass to describe
     % Equation~\label{eq:twiddle} defines the twiddle-factor as a function of the number of points $N$, the stage $s$, and the index $i$ of the corresponding value.
-    
     % \begin{equation}\label{eq:twiddle}
     %   e^{\frac{}{N}}
     % \end{equation}
 
     \todo{maybe mention the other FFT algorithms? (ie split-radix, prime-factor, etc)}
 
+    \todo{also consider adding an image for the FFT in question. sounds like more trouble than it's worth tbh}
+
   \subsection{Complex Multiplication}\label{ssec:cmul}
-    Naively, Complex-domain multiplication implies 4 Real-domain multiplications (Equation~\ref{eq:cmul-rect}).
-
+    Naively, Complex-domain multiplication implies 4 Real-domain multiplications. Let $a,b,c,d \in \mathbb{R}$ and $X,Y \in \mathbb{C} \mid X=a+bi,Y=c+di$. As such:
+%
     \begin{equation}\label{eq:cmul-rect}
-      (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+      XY = (a+bi)(c+di) = (ac-bd) + (ad+bc)i\,.
     \end{equation}
 
-    Instead, we can represent the same operation in polar coordinates (Equation~\ref{eq:cmul-pol}), reducing the total operation count to 1 Real multiplication and 1 Real addition, which are independent and thus parallelizable.
-    
+    However, X and Y can also be represented in polar coordinates, or more formally $X,Y \in \mathbb{C} \mid X=A\phase{\alpha_1},Y=B\phase{\alpha_2}$, where $A,B$ are the radial distances and $\alpha_1,\alpha_2$ are the respective angular coordinates. As such:
+%  
     \begin{equation}\label{eq:cmul-pol}
-      A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
+      XY = A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}\,.
     \end{equation}
-    
-    In order to convert to-and-from these representations, we make use of the trigonometric algorithm CORDIC ({\bf{co}}ordinate {\bf{r}}otation {\bf{di}}gital {\bf{c}}omputer)~\cite{meher200950} \todo{describe CORDIC more in depth, show the image that describes it}
 
-    CORDIC's complexity does not increase with image- or kernel-size, depending instead on the number of bits of its input values, giving it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity. \todo{Also mention the target precision we settled on. Or maybe do that in the Testing Procedures section}
+    This representation reduces the total operation count to 1 Real multiplication and 1 Real addition, which are mutually independent and can thus be parallelized.
+    
+    In order to convert to-and-from these representations, we implement the trigonometric algorithm CORDIC ({\bf{CO}}ordinate {\bf{R}}otation {\bf{DI}}gital {\bf{C}}omputer)~\cite{volder1959cordic}. This algorithm iterativelly calculates the rotation of a given vector by decreasingly large angles. It has two modes of operation: rotation and vectorization; as well as three inputs, here labeled $(x,y,z)$. In vectorization mode, the rectangular coordinates of a Complex number are inputed as $(x_0,y_0)$, and after $j$ iterations, $(x_j,z_j)$ are the radial distance and angular coordinate, respectively. Similarly, in rotation mode, the polar coordinates of a Complex number are inputed at $(x_0,z_0)$ and after $j$ iterations, $(x_j,y_j)$ are the respective rectangular coordinates. This is generally expressed as:
+%
+    \begin{equation}\label{eq:cordic1}
+      \begin{bmatrix}
+        x_{j+1} \\
+        y_{j+1} \\
+        z_{j+1}
+      \end{bmatrix}
+      =
+      \begin{bmatrix}
+        x_{j} - \sigma_{j}2^{-j}y_{j} \\
+        y_{j} + \sigma_{j}2^{-j}x_{j} \\
+        z_{j} + \sigma_{j}\arctan(2^{-j})
+      \end{bmatrix}\,,
+    \end{equation}
+%
+    where
+%
+    \begin{equation}\label{eq:cordic2}
+      \sigma_j = 
+      \begin{cases}
+        sign(y_j);~in~\textbf{vectorization}~mode \\
+        -sign(z_j);~in~\textbf{rotation}~mode
+      \end{cases}\,.
+    \end{equation}
+
+    The precision of the algorithm is equivalent to $2^{-j}$, or 1-bit of precision per iteration. Note that when using fixed-point notation, it is enough to iterate once for each bit after the point. The total number of bits of a variable is herefore denoted $S_t$, and the number of bits after the point is denoted $S_p$. Our implementation defaults to 24 and 16, respectivelly.
+
+    As such, a simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$.
+    
+    The outputs of $x_j$ and $y_j$ are scaled by $K_j$ on each iteration, where
+    \begin{equation}\label{eq:cordic3}
+      K_j = \cos(\arctan(2^{-j}))\,,
+    \end{equation}
+    and must be corrected to obtain the desired result. The correction can be made after the process completes, by diving each output by the scaling factor:
+%
+    \begin{equation}\label{eq:cordic4}
+      \frac{1}{K} = \prod_{j=0}^{S_p-1}{\frac{1}{\sqrt{1+2^{-2j}}}} \stackrel{S_p=16}{\approx} 1.64676\,.
+    \end{equation}
+
+    In our implementation, CORDIC is used 3 times. The first two convert the input image slice and kernel to polar coordinates, and the last converts the result back to rectangular coordinates. The scaling factor carries over across operations, including pointwise multiplication, and as such we can apply the correction at any point in the process (image, kernel or product). The combined scaling factor is:
+%
+    % (Product[Sqrt[1+2^(-2x)],{x,0,signed_point-1}])^-3
+    \begin{equation}\label{eq:cordic5}
+      \frac{1}{K^3} \stackrel{S_p=16}{\approx} 0.22393\,.
+    \end{equation}
+
+    The values of $\arctan(2^{-j})$ are also constant and are usually pre-calculated and stored in a lookup table. However, our implementation requires adding two angular coordinates before the transformation back into rectangular coordinates. The resulting angle can exceed $\pi$ radians, causing issues with the algorithm. To circumvent this, we store the \textit{quadrant} of each angular coordinate in the unit circle, normalize them to the first quadrant, perform the add operation, and convert the result into the respective quadrant. To simplify this computation, we divide each $\arctan(2^{-j})$ by $2\pi$. The resulting binary, encoded in 16-bits, represents fractions of $pi$, with its two most-significant bits representing the quadrant of the vector in the unit circle, as shown in Figure~\ref{fig:pfb}. This allows quick access to the quadrant of the angle, as well as normalizing it to any quadrant by simply setting its first two bits.
+%
+    \begin{figure}[htp]\centering
+      \makebox[0.8\columnwidth]{\begin{tikzpicture}[scale=3]%
+        % Quadrants
+        \filldraw[fill=gray!20,draw]
+          (0,0) -- (1 cm,0pt) arc [start angle=0, end angle=90, radius=1cm] -- cycle;
+        \filldraw[fill=gray!60,draw]
+          (0,0) -- (0pt,1 cm) arc [start angle=90, end angle=180, radius=1cm] -- cycle;
+        \filldraw[fill=gray!20,draw]
+          (0,0) -- (-1 cm,0pt) arc [start angle=180, end angle=270, radius=1cm] -- cycle;
+        \filldraw[fill=gray!60,draw]
+          (0,0) -- (0pt,- 1cm) arc [start angle=270, end angle=360, radius=1cm] -- cycle;
+
+        % Unit circle and lines
+        \path [name path=unit circle,draw] (0,0) circle [radius=1cm];
+        \path [name path=q1 line,draw] (0,0) -- (60:1.0cm);
+        \path [name path=q2 line,draw] (0,0) -- (120:1.0cm);
+        \path [name path=q3 line,draw] (0,0) -- (240:1.0cm);
+        \path [name path=q4 line,draw] (0,0) -- (300:1.0cm);
+
+        % Grid and coordinate plane
+        % \draw[step=.5cm,gray,very thin] (-1.2,-1.2) grid (1.2,1.2);
+        \draw[->] (-1.3,0) -- (1.3,0) coordinate (x axis)node[right]{$\mathbb{R}$};
+        \draw[->] (0,-1.3) -- (0,1.3) coordinate (y axis)node[above]{$\mathbb{I}$};
+        \draw (1 cm,1pt) -- (1 cm,0pt) node[anchor=east,xshift=10pt,yshift=6pt] {1};
+        \draw (-1 cm,1pt) -- (-1 cm,0pt) node[anchor=west,xshift=-14pt,yshift=6pt] {-1};
+        \draw (1pt,1 cm) -- (0pt, 1 cm) node[anchor=north,xshift=-4pt,yshift=12pt] {i};
+        \draw (1pt,-1 cm) -- (0pt, -1 cm) node[anchor=south,xshift=-6pt,yshift=-12pt] {-i};
+
+        % Angles
+        \path[draw=red]
+          (0,0) -- (3mm,0mm) arc [start angle=0, end angle=60, radius=3mm] -- cycle;
+        \node[red] at (30:2mm) {$\alpha_1$};
+
+        \path[draw=red]
+          (0,0) -- (-3mm,0mm) arc [start angle=180, end angle=120, radius=3mm] -- cycle;
+        \node[red] at (150:2mm) {$\alpha_2$};
+
+        \path[draw=blue]
+          (0,0) -- (-3mm,0mm) arc [start angle=180, end angle=240, radius=3mm] -- cycle;
+        \node[blue] at (210:2mm) {$\alpha_3$};
+
+        \path[draw=blue]
+          (0,0) -- (3mm,0mm) arc [start angle=0, end angle=-60, radius=3mm] -- cycle;
+        \node[blue] at (-30:2mm) {$\alpha_4$};
+
+        % Reflections
+        \path [name intersections={of=unit circle and q1 line, by=q1inter}] (0,0);
+        \path [name intersections={of=unit circle and q2 line, by=q2inter}] (0,0);
+        \path [name intersections={of=unit circle and q3 line, by=q3inter}] (0,0);
+        \path [name intersections={of=unit circle and q4 line, by=q4inter}] (0,0);
+
+        \draw [dashed] (q1inter) -- (q2inter);
+        \draw [dashed] (q2inter) -- (q3inter);
+        \draw [dashed] (q3inter) -- (q4inter);
+        \draw [dashed] (q4inter) -- (q1inter);
+
+        % Sines and cosines
+        \draw[very thick,orange]
+          (0,0) -- node[above,xshift=16pt,yshift=0.5cm] {\footnotesize$\sin(\alpha)$} (y axis |- 60:1cm);
+        \draw[very thick,orange]
+          (0:0) -- node[below,xshift=-16pt,yshift=-0.5cm] {\footnotesize$-\sin(\alpha)$} (y axis |- 240:1cm);
+        \draw[very thick,cyan]
+          (0,0) -- node[above,xshift=1cm,yshift=2pt,fill=gray!20] {\footnotesize$\cos(\alpha)$} (60:1cm |- x axis);
+        \draw[very thick,cyan]
+          (0,0) -- node[below,xshift=-1cm,yshift=-2pt,fill=gray!20] {\footnotesize$-\cos(\alpha)$} (120:1cm |- x axis);
+
+        % Angle descriptions
+        \node[xshift=8pt] at (60:1.2 cm) {$\alpha_1 = \textcolor{red}{00}101\ldots$};
+        \node[xshift=-8pt] at (120:1.2 cm) {$\alpha_2 = \textcolor{red}{01}101\ldots$};
+        \node[xshift=-8pt] at (240:1.2 cm) {$\alpha_3 = \textcolor{red}{10}101\ldots$};
+        \node[xshift=8pt] at (300:1.2 cm) {$\alpha_4 = \textcolor{red}{11}101\ldots$};
+
+        % Rotated version
+        % \node[rotate=-30,xshift=8pt] at (60:1.2 cm) {$\alpha_1 = \textcolor{red}{00}101\ldots$};
+        % \node[rotate=30,xshift=-8pt] at (120:1.2 cm) {$\alpha_2 = \textcolor{red}{01}101\ldots$};
+        % \node[rotate=-30,xshift=-8pt] at (240:1.2 cm) {$\alpha_3 = \textcolor{red}{10}101\ldots$};
+        % \node[rotate=30,xshift=8pt] at (300:1.2 cm) {$\alpha_4 = \textcolor{red}{11}101\ldots$};
+
+      \end{tikzpicture}}%
+      \caption{Four symmetric angles encoded as $\pi$-fractions.}\label{fig:pfb}
+    \end{figure}
+    
+    CORDIC's complexity does not increase with image- or kernel-size, depending instead on $S_p$, which gives it a relative asymptotic complexity of $O(1)$. This also enables a trade-off between numerical precision and operation complexity.
+    
+
 
     \todo{Present the twiddle-factor cordic arctangent thing. Remember to justify fixed-point (commented below)}
+
+    
+
+    \todo{check for applications of CORDIC semi-rotation in FFT or FConv}
+
+    % (blablabla) justifies our choice of fixed-point representation (also talk about them papers)
     % The FFT and Fourier convolution achieve lower complexity by exploiting the symmetry of \textit{harmonics} in the Fourier Transform, which are powers of two. Extracting powers of two from a value in fixed-point notation is trivial, as the notation directly represents them as bits
+
+
+
+
 
   \subsection{Algorithmic Decomposition}\label{ssec:alg}
     In Fourier convolution, multidimensional data is represented as padded 1D arrays. The size of these arrays determines the complexity of the transform, and in order to convolve two inputs, the size of their arrays must be equivalent. However, in image processing, the image is often much larger than the kernels. In order to avoid padding the kernel to match the image, which would result in very high complexity, we instead employ a decomposition method known as Overlap-Add~\todo{cite here, or maybe later in the paragraph}. The image is broken down in kernel-sized pieces which are individually convolved with the kernel. Each piece has overlapping points with its neighbors, which are added together to form the complete convolution. This process is only possible because the Fourier convolution of two arrays of size $N$ returns an array of size $2N-1$~\todo{(aka ``full'' convolution)}, while matrix multiplication methods return only the non-overlaping array of size $N$.
@@ -253,7 +504,7 @@
 
     C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
     
-    Table~\ref{tab:c3d} presents the total number of operations required by the C3D convolutional layers. Respectivelly: Resolution (D1xD2); Depth (D3); Frames (D4); Filters (D5); Giga-Multiply-Accumulate-Operations (GMAC);Giga-Operations (GOP).
+    Table~\ref{tab:c3d} presents the total number of operations required by the C3D convolutional layers. Respectivelly: Resolution (D1xD2); Depth (D3); Frames (D4); Filters (D5); Giga Multiply-Accumulate Operations (GMAC); Giga Operations (GOP).
 
     \begin{table*}[!t]
       \caption{C3D Convolutional Layer Operation Count (std vs $F(2^3,3^3)$)}
@@ -315,7 +566,7 @@
         LUT                      & 242K                   & 209K                   & --- & 37K   \\\hline
         FF                       & 286K                   & 285K                   & --- & 12K   \\\hline
         $GOP/s$                  & 474.3                  & 940.6                  & --- & 145.8 \\\hline
-        $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
+         $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
         $\frac{OP}{LUT*10^{-3}}$ & 13.1                   & 22.5                   & --- & (rec) \\\hline % ours is 39.4 ish
       \end{tabular}
     \end{table*}
