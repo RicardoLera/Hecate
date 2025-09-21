@@ -13,10 +13,12 @@
 **/build
 templates
 ref
-doc/i3epds/fig/*.tex
 *.pdf
 !doc/i3epds/fig/*.pdf
 doc/i3epds/fig/tikz*.pdf
+doc/i3epds/fig/*.tex
+!doc/i3epds/fig/tikz*.tex
+
 
 ## Vivado
 *.cache
