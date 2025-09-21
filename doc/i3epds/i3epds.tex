@@ -199,13 +199,12 @@
   \subsection{FFT \& IFFT}\label{ssec:fft}
     FFT is a class of algorithms capable of computing an $N$-point Discrete Fourier Transform (DFT) in $O(N.{\log}_{2}N)$. The radix-2 FFT~\cite{gauss1866nachlass,cooley1965algorithm} was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
 
-    %%% Not worth it
-    % \begin{figure}[!t]\centering
-    %   \makebox[0.8\columnwidth]{\rule[-5ex]{0pt}{15ex}}%
-    %   \caption{An 8-point radix-2 DIT FFT.}\label{fig:fft}
-    % \end{figure}
+    \begin{figure}[!t]\centering
+      \includegraphics[width=0.9\columnwidth]{fig/fft-0.pdf}
+      \caption{An 8-point radix-2 DIT FFT.}\label{fig:fft}
+    \end{figure}
     
-    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
+    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications; as illustrated on Figure~\ref{fig:fft}. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
 %
     \begin{equation}
       \omega_{N}^{k} = e^{\frac{2{\pi}i}{N}k}\,,
@@ -213,7 +212,7 @@
 %
     where $k \in \mathbb{Z} \cap [0,N-1]$.
 
-    While the input signal is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Let $M$ be a three-dimensional signal of size $M_x,M_y,M_z$. Figure~\ref{fig:Ma} represents $M$ for $M_x = M_y - M_z = 2$. To convolve this array with another signal of the same shape, we must first pad each dimension by $2.dim-1$, in order to convey its dimensionaliry and avoid cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the green line representing the order of rasterization.
+    While the input signal is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Let $M$ be a three-dimensional signal of size $M_x,M_y,M_z$. Figure~\ref{fig:Ma} represents $M$ given its dimensions all have size 2. To convolve this array with another signal of the same shape, we must first pad each dimension by $2.dim-1$, in order to convey its dimensionaliry and avoid cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the green line representing the order of rasterization.
 
     \begin{figure*}[!t]\centering
       \subfloat[]{%
@@ -234,8 +233,6 @@
     % \end{equation}
 
     \todo{maybe mention the other FFT algorithms? (ie split-radix, prime-factor, etc)}
-
-    \todo{also consider adding an image for the FFT in question. sounds like more trouble than it's worth tbh}
 
   \subsection{Complex Multiplication}\label{ssec:cmul}
     Naively, Complex-domain multiplication implies 4 Real-domain multiplications. Let $a,b,c,d \in \mathbb{R}$ and $X,Y \in \mathbb{C} \mid X=a+bi,Y=c+di$. As such:
@@ -301,7 +298,7 @@
 
     The values of $\arctan(2^{-j})$ are also constant and are usually pre-calculated and stored in a lookup table. However, our implementation requires adding two angular coordinates before the transformation back into rectangular coordinates. The resulting angle can exceed $\pi$ radians, causing issues with the algorithm. To circumvent this, we store the \textit{quadrant} of each angular coordinate in the unit circle, normalize them to the first quadrant, perform the add operation, and convert the result into the respective quadrant. To simplify this computation, we divide each $\arctan(2^{-j})$ by $2\pi$. The resulting binary, encoded in 16-bits, represents fractions of $pi$, with its two most-significant bits representing the quadrant of the vector in the unit circle, as shown in Figure~\ref{fig:pfb}. This allows quick access to the quadrant of the angle, as well as normalizing it to any quadrant by simply setting its first two bits.
 %
-    \begin{figure}[htp]\centering
+    \begin{figure}[!t]\centering
       \includegraphics[width=0.9\columnwidth]{fig/unit_circle-0.pdf}
       \caption{Four symmetric angles encoded as $\pi$-fractions.}\label{fig:pfb}
     \end{figure}
@@ -310,7 +307,7 @@
     
 
 
-    \todo{Present the twiddle-factor cordic arctangent thing. Remember to justify fixed-point (commented below)}
+    \todo{remember to justify fixed-point (commented below)}
 
     
 
@@ -331,13 +328,11 @@
     % There are other methods of convolution decomposition such as \todo{etc, include 3D = n2D here}
   
   \subsection{Pipelining}\label{ssec:pipe}
-    \todo{make a single figure (double-column) describing the complete pipeline}
-  %   \begin{figure*}[!t]
-  %     \centering
-  %     \includegraphics[width=2.5in]{fig/fullpipe.pdf}
-  %     \caption{lorem}
-  %     \label{fig:fullpipe}
-  %   \end{figure*}
+    Figure~\ref{fig:pipeline}...
+    \begin{figure*}[!t]\centering
+      \includegraphics[width=2.5in]{fig/pipeline-0.pdf}
+      \caption{lorem}\label{fig:pipeline}
+    \end{figure*}
 
 \section{Testing Procedures}\label{sec:test}
   \subsection{Benchmarks}
