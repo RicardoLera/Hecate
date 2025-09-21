@@ -46,8 +46,9 @@
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 \renewcommand{\arraystretch}{1.5}
-\usepackage{tikz}
-\usetikzlibrary{matrix,calc,positioning,arrows,intersections}
+% \usepackage{tikz,ifthen}
+% \usetikzlibrary{matrix,calc,positioning,arrows,intersections,math,circuits.ee.IEC}
+% \usepackage{amssymb}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
 %\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
@@ -184,9 +185,9 @@
   The pointwise product of two signals incurs $O(N)$ multiplications, whereas convolution in the space domain incurs $O(N^2)$. There are two main caveats to this method: the signals must be transformed to-and-from the Complex domain via a DFT; and the pointwise operation must be performed in the Complex domain. We address these issues in Sections \ref{ssec:fft} and \ref{ssec:cmul}, respectivelly.
 
 
-  We also make use of a decomposition algorithm to further decrease complexity, described in Section~\ref{ssec:alg}. The resulting system can be fully pipelined to increase its throughput, and the methods used for such as described in Section~\ref{ssec:pipe}.
+  Our design uses fixed-point representation; Section~\ref{ssec:num} details it's implementation. We also make use of a decomposition algorithm to further decrease complexity, described in Section~\ref{ssec:alg}. The resulting system can be fully pipelined to increase its throughput, and the methods used for such as described in Section~\ref{ssec:pipe}.
 
-  \subsection{Numeric Representation}
+  \subsection{Numeric Representation}\label{ssec:num}
     Our design uses fixed-point representation. The bit size and point location are arbitrary and chosen during synthesis to enable a trade-off between performance and precision.
 
     The choice between fixed-point and floating-point was not trivial. Fixed-point can represent values in the range $2^{{\pm}n}$, where $n$ is the number of bits; while floating-point representations disperse their values in a wider exponential range, increasing precision for values closer to zero. Recent FPGA designs have also included floating-point arithmetic cells, bringing performance closer to that of a fixed-point application.
@@ -196,14 +197,12 @@
     Furthermore, the values represented in fixed-point notation are explicitly decomposed in powers of two, enabling some of the optimizations described in Section~\ref{ssec:cmul}. Fixed-point also enables the CORDIC algorithm, described in the same section.
 
   \subsection{FFT \& IFFT}\label{ssec:fft}
-    FFT is a class of algorithms capable of computing an $N$-point Discrete Fourier Transform (DFT) in $O(N.{\log}_{2}N)$. The radix-2 DIT FFT~\cite{gauss1866nachlass,cooley1965algorithm} was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
+    FFT is a class of algorithms capable of computing an $N$-point Discrete Fourier Transform (DFT) in $O(N.{\log}_{2}N)$. The radix-2 FFT~\cite{gauss1866nachlass,cooley1965algorithm} was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
 
-    %%% Unnecessary
-    % \begin{figure}[!t]
-    %   \centering
-    %   \includegraphics[width=2.5in]{fig/fft_alg.png}
-    %   \caption{16-point radix-2 DIT FFT}
-    %   \label{fig:fft_alg}
+    %%% Not worth it
+    % \begin{figure}[!t]\centering
+    %   \makebox[0.8\columnwidth]{\rule[-5ex]{0pt}{15ex}}%
+    %   \caption{An 8-point radix-2 DIT FFT.}\label{fig:fft}
     % \end{figure}
     
     An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
@@ -216,92 +215,15 @@
 
     While the input signal is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Let $M$ be a three-dimensional signal of size $M_x,M_y,M_z$. Figure~\ref{fig:Ma} represents $M$ for $M_x = M_y - M_z = 2$. To convolve this array with another signal of the same shape, we must first pad each dimension by $2.dim-1$, in order to convey its dimensionaliry and avoid cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the green line representing the order of rasterization.
 
-    \begin{figure*}[htp]\centering
+    \begin{figure*}[!t]\centering
       \subfloat[]{%
-        \makebox[0.8\columnwidth]{\begin{tikzpicture}[
-          >=stealth,
-          line width=0.75pt,
-          every node/.style={anchor=north east,fill=white,minimum width=1.1cm,minimum height=7mm},
-          ampersand replacement=\&
-        ]%
-          \matrix (mA) [draw,matrix of math nodes]
-          {
-            M_{0,0,1} \& M_{1,0,1} \\
-            M_{0,1,1} \& M_{1,1,1} \\
-          };
-
-          \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(0.8,0.2)$)
-          {
-            M_{0,0,0} \& M_{1,0,0} \\
-            M_{0,1,0} \& M_{1,1,0} \\
-          };
-
-          \draw[dashed](mA.north east)--(mB.north east);
-          \draw[dashed](mA.north west)--(mB.north west);
-          \draw[dashed](mA.south east)--(mB.south east);
-        \end{tikzpicture}\label{fig:Ma}\rule[-5ex]{0pt}{15ex}}}\qquad
+        \makebox[0.7\columnwidth]{
+          \includegraphics{fig/matrix-0.pdf}
+        \label{fig:Ma}\rule[-5ex]{0pt}{15ex}}}\qquad
       \subfloat[]{%
-        \makebox[0.8\columnwidth]{\begin{tikzpicture}[
-          >=stealth,
-          line width=0.75pt,
-          every node/.style={anchor=north east,fill=white,minimum width=1.0cm,minimum height=5mm},
-          ampersand replacement=\&
-        ]%
-          \matrix (mA) [draw,matrix of math nodes]
-          {
-            |(mA1)| 0 \& 0 \& |(mA2)| 0 \\
-            |(mA3)| 0 \& 0 \& |(mA4)| 0 \\
-            |(mA5)| 0 \& 0 \& |(mA6)| 0 \\
-          };
-
-          \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(0.8,0.2)$)
-          {
-            |(mB1)| M_{0,0,1} \& M_{1,0,1} \& |(mB2)| 0 \\
-            |(mB3)| M_{0,1,1} \& M_{1,1,1} \& |(mB4)| 0 \\
-            |(mB5)| 0         \& 0         \& |(mB6)| 0 \\
-          };
-
-          \matrix (mC) [draw,matrix of math nodes] at ($(mB.south west)+(0.8,0.2)$)
-          {
-            |(mC1)| M_{0,0,0} \& M_{1,0,0} \& |(mC2)| 0 \\
-            |(mC3)| M_{0,1,0} \& M_{1,1,0} \& |(mC4)| 0 \\
-            |(mC5)| 0         \& 0         \& |(mC6)| 0 \\
-          };
-
-          \draw[dashed](mA.north east)--(mC.north east);
-          \draw[dashed](mA.north west)--(mC.north west);
-          \draw[dashed](mA.south east)--(mC.south east);
-
-          \draw[->,color=green!40]     (mC1.west) -- ($(mC2.west)+(0.2,0)$);
-          \draw[color=green!40]        (mC2.west) -- (mC2.east);
-          \draw[color=green!40]        (mC2.east) -- (mC3.west);
-          \draw[->,color=green!40]     (mC3.west) -- ($(mC4.west)+(0.2,0)$);
-          \draw[color=green!40]        (mC4.west) -- (mC4.east);
-          \draw[color=green!40]        (mC4.east) -- (mC5.west);
-          \draw[->,color=green!40]     (mC5.west) -- ($(mC6.west)+(0.2,0)$);
-          \draw[color=green!40]        (mC6.west) -- (mC6.east);
-          \draw[dashed,color=green!40] (mC6.east) -- (mB1.west);
-
-          \draw[->,color=green!40]     (mB1.west) -- ($(mB2.west)+(0.2,0)$);
-          \draw[color=green!40]        (mB2.west) -- (mB2.east);
-          \draw[color=green!40]        (mB2.east) -- (mB3.west);
-          \draw[->,color=green!40]     (mB3.west) -- ($(mB4.west)+(0.2,0)$);
-          \draw[color=green!40]        (mB4.west) -- (mB4.east);
-          \draw[color=green!40]        (mB4.east) -- (mB5.west);
-          \draw[->,color=green!40]     (mB5.west) -- ($(mB6.west)+(0.2,0)$);
-          \draw[color=green!40]        (mB6.west) -- (mB6.east);
-          \draw[dashed,color=green!40] (mB6.east) -- (mA1.west);
-
-          \draw[->,color=green!40]     (mA1.west) -- ($(mA2.west)+(0.2,0)$);
-          \draw[color=green!40]        (mA2.west) -- (mA2.east);
-          \draw[color=green!40]        (mA2.east) -- (mA3.west);
-          \draw[->,color=green!40]     (mA3.west) -- ($(mA4.west)+(0.2,0)$);
-          \draw[color=green!40]        (mA4.west) -- (mA4.east);
-          \draw[color=green!40]        (mA4.east) -- (mA5.west);
-          \draw[->,color=green!40]     (mA5.west) -- ($(mA6.west)+(0.2,0)$);
-          \draw[color=green!40]        (mA6.west) -- (mA6.east);
-
-        \end{tikzpicture}\label{fig:Mb}\rule[-5ex]{0pt}{15ex}}}%
+        \makebox[0.9\columnwidth]{
+          \includegraphics{fig/matrix-1.pdf}
+        \label{fig:Mb}\rule[-5ex]{0pt}{15ex}}}%
       \caption{A three-dimensional signal (a) and the required zero-padding to avoid cyclic convolution (b).}\label{fig:M}
     \end{figure*}
     
@@ -380,84 +302,7 @@
     The values of $\arctan(2^{-j})$ are also constant and are usually pre-calculated and stored in a lookup table. However, our implementation requires adding two angular coordinates before the transformation back into rectangular coordinates. The resulting angle can exceed $\pi$ radians, causing issues with the algorithm. To circumvent this, we store the \textit{quadrant} of each angular coordinate in the unit circle, normalize them to the first quadrant, perform the add operation, and convert the result into the respective quadrant. To simplify this computation, we divide each $\arctan(2^{-j})$ by $2\pi$. The resulting binary, encoded in 16-bits, represents fractions of $pi$, with its two most-significant bits representing the quadrant of the vector in the unit circle, as shown in Figure~\ref{fig:pfb}. This allows quick access to the quadrant of the angle, as well as normalizing it to any quadrant by simply setting its first two bits.
 %
     \begin{figure}[htp]\centering
-      \makebox[0.8\columnwidth]{\begin{tikzpicture}[scale=3]%
-        % Quadrants
-        \filldraw[fill=gray!20,draw]
-          (0,0) -- (1 cm,0pt) arc [start angle=0, end angle=90, radius=1cm] -- cycle;
-        \filldraw[fill=gray!60,draw]
-          (0,0) -- (0pt,1 cm) arc [start angle=90, end angle=180, radius=1cm] -- cycle;
-        \filldraw[fill=gray!20,draw]
-          (0,0) -- (-1 cm,0pt) arc [start angle=180, end angle=270, radius=1cm] -- cycle;
-        \filldraw[fill=gray!60,draw]
-          (0,0) -- (0pt,- 1cm) arc [start angle=270, end angle=360, radius=1cm] -- cycle;
-
-        % Unit circle and lines
-        \path [name path=unit circle,draw] (0,0) circle [radius=1cm];
-        \path [name path=q1 line,draw] (0,0) -- (60:1.0cm);
-        \path [name path=q2 line,draw] (0,0) -- (120:1.0cm);
-        \path [name path=q3 line,draw] (0,0) -- (240:1.0cm);
-        \path [name path=q4 line,draw] (0,0) -- (300:1.0cm);
-
-        % Grid and coordinate plane
-        % \draw[step=.5cm,gray,very thin] (-1.2,-1.2) grid (1.2,1.2);
-        \draw[->] (-1.3,0) -- (1.3,0) coordinate (x axis)node[right]{$\mathbb{R}$};
-        \draw[->] (0,-1.3) -- (0,1.3) coordinate (y axis)node[above]{$\mathbb{I}$};
-        \draw (1 cm,1pt) -- (1 cm,0pt) node[anchor=east,xshift=10pt,yshift=6pt] {1};
-        \draw (-1 cm,1pt) -- (-1 cm,0pt) node[anchor=west,xshift=-14pt,yshift=6pt] {-1};
-        \draw (1pt,1 cm) -- (0pt, 1 cm) node[anchor=north,xshift=-4pt,yshift=12pt] {i};
-        \draw (1pt,-1 cm) -- (0pt, -1 cm) node[anchor=south,xshift=-6pt,yshift=-12pt] {-i};
-
-        % Angles
-        \path[draw=red]
-          (0,0) -- (3mm,0mm) arc [start angle=0, end angle=60, radius=3mm] -- cycle;
-        \node[red] at (30:2mm) {$\alpha_1$};
-
-        \path[draw=red]
-          (0,0) -- (-3mm,0mm) arc [start angle=180, end angle=120, radius=3mm] -- cycle;
-        \node[red] at (150:2mm) {$\alpha_2$};
-
-        \path[draw=blue]
-          (0,0) -- (-3mm,0mm) arc [start angle=180, end angle=240, radius=3mm] -- cycle;
-        \node[blue] at (210:2mm) {$\alpha_3$};
-
-        \path[draw=blue]
-          (0,0) -- (3mm,0mm) arc [start angle=0, end angle=-60, radius=3mm] -- cycle;
-        \node[blue] at (-30:2mm) {$\alpha_4$};
-
-        % Reflections
-        \path [name intersections={of=unit circle and q1 line, by=q1inter}] (0,0);
-        \path [name intersections={of=unit circle and q2 line, by=q2inter}] (0,0);
-        \path [name intersections={of=unit circle and q3 line, by=q3inter}] (0,0);
-        \path [name intersections={of=unit circle and q4 line, by=q4inter}] (0,0);
-
-        \draw [dashed] (q1inter) -- (q2inter);
-        \draw [dashed] (q2inter) -- (q3inter);
-        \draw [dashed] (q3inter) -- (q4inter);
-        \draw [dashed] (q4inter) -- (q1inter);
-
-        % Sines and cosines
-        \draw[very thick,orange]
-          (0,0) -- node[above,xshift=16pt,yshift=0.5cm] {\footnotesize$\sin(\alpha)$} (y axis |- 60:1cm);
-        \draw[very thick,orange]
-          (0:0) -- node[below,xshift=-16pt,yshift=-0.5cm] {\footnotesize$-\sin(\alpha)$} (y axis |- 240:1cm);
-        \draw[very thick,cyan]
-          (0,0) -- node[above,xshift=1cm,yshift=2pt,fill=gray!20] {\footnotesize$\cos(\alpha)$} (60:1cm |- x axis);
-        \draw[very thick,cyan]
-          (0,0) -- node[below,xshift=-1cm,yshift=-2pt,fill=gray!20] {\footnotesize$-\cos(\alpha)$} (120:1cm |- x axis);
-
-        % Angle descriptions
-        \node[xshift=8pt] at (60:1.2 cm) {$\alpha_1 = \textcolor{red}{00}101\ldots$};
-        \node[xshift=-8pt] at (120:1.2 cm) {$\alpha_2 = \textcolor{red}{01}101\ldots$};
-        \node[xshift=-8pt] at (240:1.2 cm) {$\alpha_3 = \textcolor{red}{10}101\ldots$};
-        \node[xshift=8pt] at (300:1.2 cm) {$\alpha_4 = \textcolor{red}{11}101\ldots$};
-
-        % Rotated version
-        % \node[rotate=-30,xshift=8pt] at (60:1.2 cm) {$\alpha_1 = \textcolor{red}{00}101\ldots$};
-        % \node[rotate=30,xshift=-8pt] at (120:1.2 cm) {$\alpha_2 = \textcolor{red}{01}101\ldots$};
-        % \node[rotate=-30,xshift=-8pt] at (240:1.2 cm) {$\alpha_3 = \textcolor{red}{10}101\ldots$};
-        % \node[rotate=30,xshift=8pt] at (300:1.2 cm) {$\alpha_4 = \textcolor{red}{11}101\ldots$};
-
-      \end{tikzpicture}}%
+      \includegraphics[width=0.9\columnwidth]{fig/unit_circle-0.pdf}
       \caption{Four symmetric angles encoded as $\pi$-fractions.}\label{fig:pfb}
     \end{figure}
     
@@ -487,12 +332,12 @@
   
   \subsection{Pipelining}\label{ssec:pipe}
     \todo{make a single figure (double-column) describing the complete pipeline}
-    \begin{figure*}[!t]
-      \centering
-      \includegraphics[width=2.5in]{fig/fullpipe.png}
-      \caption{lorem}
-      \label{fig:fullpipe}
-    \end{figure*}
+  %   \begin{figure*}[!t]
+  %     \centering
+  %     \includegraphics[width=2.5in]{fig/fullpipe.pdf}
+  %     \caption{lorem}
+  %     \label{fig:fullpipe}
+  %   \end{figure*}
 
 \section{Testing Procedures}\label{sec:test}
   \subsection{Benchmarks}

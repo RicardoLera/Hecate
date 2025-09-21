@@ -6,12 +6,17 @@
 *.toml
 *.ghw
 *.edn
-**/build
-templates
 *.code-workspace
 *.zip
 *.ods
 *.png
+**/build
+templates
+ref
+doc/i3epds/fig/*.tex
+*.pdf
+!doc/i3epds/fig/*.pdf
+doc/i3epds/fig/tikz*.pdf
 
 ## Vivado
 *.cache
@@ -62,7 +67,7 @@ latex.out/
 # these rules might exclude image files for figures etc.
 # *.ps
 # *.eps
-*.pdf
+# *.pdf
 
 ## Auxiliary and intermediate files from other packages:
 # algorithms
