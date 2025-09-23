@@ -57,7 +57,10 @@
 \begin{document} % Page limit: 12 (including references)
 
 % Title
-\title{A Scalable and Hardware-Efficient\\Convolution Accelerator}
+\title{Hardware-Efficient 3D Convolution Acceleration using }
+
+%% HECATE - Hardware-Efficient Convolution Accelerator using Trigonometric Equality
+%% "Expansion" is good too
 
 % Authors
 \author{
@@ -130,11 +133,13 @@
 
   Fourier convolution was deemed innefficient for modern CNN designs as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks that use many small (usually 3x3) kernels~\cite{simonyan2014very}. The algorithm is also not, as of yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
   
-  The algorithm has since resurged in a range of applications better suited to apply it efficiently, such as fully-spectral CNNs~\cite{liu2021accelerating}, including the implementation of generic neural-net functions in the spectral domain~\cite{ayat2019spectral,watanabe2021image}. New techquines were found to optimize key parts of the algorithm, including convolution splitting~\cite{chitsaz2020acceleration} complemented by overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}. And, as is the topic of this article, it has found success in 3D CNN applications~\cite{nguyen2016energy}\todo{cite at least one more}
+  The algorithm has since resurged in a range of applications better suited to apply it efficiently, such as spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating}, including the implementation of generic neural-net functions in the spectral domain~\cite{ayat2019spectral,watanabe2021image}. New techquines were found to optimize key parts of the algorithm, including convolution splitting~\cite{chitsaz2020acceleration} complemented by overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}. And, as is the topic of this article, it has found success in 3D CNN applications~\cite{nguyen2016energy}\todo{cite at least one more}
 
   There remains, however, the issue of Complex-domain multiplication in non-spectral CNNs. Recent hardware implementations in FPGA have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}, however, these methods do not increase the system's hardware-efficiency (measured in thoughput per component) as it they do not lower the number of operations required to complete Complex multiplications.
   
   We propose a polar-coordinate multiplication unit, designed along a pipelined FFT and IFFT chain, optimized with both input slicing and overlap-add. We synthesize the architecture using HDL and implement the it in a VC709 FPGA board. We demonstrate, via comparison with state-of-the-art benchmarks, the viability of Fourier convolution in Real-domain 3D CNNs.
+
+  \todo{ALSO MENTION: rotation invariance}~\cite{kim2020cycnn,mo2024ric} \todo{CORDIC activation function}~\cite{kokane2025retrospective} \todo{and those guys who stole from you}~\cite{reis2024phasor}. \todo{Gonna have to rewrite the proposal paragraph.}
   
   \ifCLASSOPTIONcompsoc\else % this needs to be at second column of first page
     \IEEEpubidadjcol
