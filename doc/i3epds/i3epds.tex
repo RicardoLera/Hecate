@@ -46,9 +46,6 @@
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 \renewcommand{\arraystretch}{1.5}
-% \usepackage{tikz,ifthen}
-% \usetikzlibrary{matrix,calc,positioning,arrows,intersections,math,circuits.ee.IEC}
-% \usepackage{amssymb}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
 %\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
@@ -326,16 +323,63 @@
 
     \todo{describe each block of the design}
 
-\section{Testing Procedures}\label{sec:test}
-  \subsection{Implementation}
-    \todo{[...]}
+\section{Implementation \& Testing Procedures}\label{sec:test}
+  Two versions of our architecture were conveived: parallel-core and pipeline-core. The parallel version disregards the pipelining optimizations discussed in Section~\ref{ssec:pipe}, instead opting to increase the number of parallel processing blocks. % For instance, the FFT in parallel mode completes 1 full transform in $\log_2{N}$ cycles, instead of $\frac{N}{2}$ in the pipelined version. It incurs, however, a much higher resource cost.
+  
+  In order to assess the hardware-usage of this design, we synthesized the parallel-core version on a VC709 FPGA board, the results of which are presented on Table~\ref{tab:parallel}.
+
+  \begin{table}
+    \caption{Resource usage of parallel HECATE core in vc709 environment.}
+    \centering
+    \label{tab:parallel}
+    \begin{tabular}{|c|c|c|c|c|}
+      \hline
+      Block    & DSP  & LUT  & FF   & BRAM(?) \\\hline
+      FFT      & ---  & ---  & ---  & ---     \\\hline
+      CORDIC-V & ---  & ---  & ---  & ---     \\\hline
+      PMUL     & ---  & ---  & ---  & ---     \\\hline
+      CORDIC-R & ---  & ---  & ---  & ---     \\\hline
+      IFFT     & ---  & ---  & ---  & ---     \\\hline
+      OaA      & ---  & ---  & ---  & ---     \\\hline
+      Total    & ---  & ---  & ---  & ---     \\\hline
+    \end{tabular}
+  \end{table}
+
+  \subsection{Throughput calculation}\label{ssec:tp}
+    By evaluating the resource utilization of the individual processing stages (FFT, CORDIC, polar multiplication), we estimated the hardware-utilization of the fully-pipelined design.
+    
+    \todo{formulas}
+
+    \begin{table}
+      \caption{Throughput and Hardware-Efficiency of parallel and pipelined HECATE cores.}
+      \centering
+      \label{tab:tp}
+      \begin{tabular}{|c|c|c|}
+        \hline
+        Design              & Parallel & Pipelined \\\hline
+        Frequency           & ---      & ---       \\\hline
+        $\frac{I*K}{s}$     & ---      & ---       \\\hline
+        DSPs                & ---      & ---       \\\hline      
+        LUTs                & ---      & ---       \\\hline 
+        FFs                 & ---      & ---       \\\hline
+        $\frac{I*K}{s.DSP}$ & ---      & ---       \\\hline   
+        $\frac{I*K}{s.LUT}$ & ---      & ---       \\\hline
+        $\frac{I*K}{s.FF}$  & ---      & ---       \\\hline
+      \end{tabular}
+    \end{table}
 
   \subsection{Benchmarks}
-    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}~\todo{cite a bunch of others too}. This is due to differences in their choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the total operation count of the network, making a direct comparison of their throughput (measured in GOP/s) misleading. We were unable to verify whether these publications accounted for differing hyperparameters in their calculations. For the sake of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results first as they were originally published, then transpose their results to the established standard.
+    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}~\todo{cite a bunch of others too}. This is due to differences in their choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether these publications accounted for differing hyperparameters in their calculations. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results as they were originally published, then transpose their results to the established standard.
     
-    The total number of MAC operations in a convolutional layer is the product of all input dimensions, all kernel dimensions, and the number of filters in the layer. Each MAC operation consists of two operations.
+    The baseline method of convolution is convolution-over-space \todo{cite?}, and will be used in our evaluation. The total number of MAC operations in a 3D convolution-over-space the product of all input dimensions, kernel dimensions, channels, and number of filters in the layer. Each MAC operation consists of two operations, thus totalling:
+    %
+    \todo{equation}.
 
-    \todo{insert formula}
+    Convolution via Matrix-Multiplication retains the total number of operations of convolution-over-space~\cite{lera2023hardware}. Additional complexity is added \todo{by the im2col thing, explain that}
+    
+    \todo{calc fourier complexity}
+
+    For 3D convolution, only the three input dimensions and the three kernel dimensions are topologically organized. In other words, the convolution only takes into account the correlations between three dimensions (height, width, frame) and \textit{does not} find correlations across color channels and filter \todo{name of the convolved filter layers}. This does not affect MM Convolution, as its complexity increases linearly with each of these metrics, but is relevant for Fourier Convolution.
 
     C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
     
@@ -378,9 +422,6 @@
       \label{tab:c3d}
     \end{table*}
 
-  \subsection{Experimental Results}
-    \todo{[...]}
-
   \subsection{Comparison}
     \begin{table*}
       \caption{Comparison}
@@ -403,47 +444,21 @@
       \end{tabular}
     \end{table*}
 
-    % Yu-TCAD2019 HE_DSP = 2.71
-    % fan2021high HE_DSP = 5.29 yeah except on a 4x4x4 kernel you cheating sonzabitches
-
-    %%% Full pipeline analysis
-    % A fully pipelined 512-point one-sample-per-cycle radix-2 FFT takes only 27 DSPs. Fill latency is 520 cycles (actually lower, see below) after which it outputs 1 complex result per cycle. If you process each cordic-multiplication-cordic individually, and do the same for the IFFT, the complete pipeline has a throughput of 2*(4^6)/(512*1-over-frequency). So HE is that divided by frequency*(2*27+1+1). Freq cancels out and you're left with 2*(7^6)/(512 * 56) = 8.21 [OP/DSP]. For 128-point, that's 2*(5^6)/(128 * (2*21+2)) = 5.55 [OP/DSP]. That's checkmate even if they used 3x3x3 kernels.
-
-    % Fill latency (24b, 100MHz):
-      % 2*log2(N) [FFT/IFFT] + 2*Nb [CORDIC] + 1 [MUL] + 1 [KCOR] + 1 [ADD] = 65 or 69 cycles = (0.65us [3x3x3]; 0.69[4x4x4])
-      % + kernel preprocess
-
-    % DSP count:
-      % 2*3*log2(N) [FFT/IFFT, Karatsuba] + 2 [MUL, KCOR+ADD] = 6*log2N + 2 = (44 [3x3x3]; 56 [4x4x4])
-      % Note: CORDICs are synthesized as LUTs. 2*Nb CORDICs = 144 adders and some muxes
-
-    % Operation count (1 filled cycle):
-      % 2*((2*ks-1)^6)/N [Full Convolution every N cycles] = (244.14 [3x3x3]; 459.57 [4x4x4])
-
-    % Logic Throughput (filled):
-      % OP/(1 cycle) = (24.414 GOP/s [3x3x3]; 45.957 GOP/s [4x4x4])
-      % Note: this does not account for routing latency
-
-    % Hardware-Efficiency [OP/(s.Hz.DSP)]:
-      % 5.549 OP/DSP [3x3x3]; 8.207 OP/DSP [4x4x4]
-
-    % Memory usage (24b, image = 128x171x16 (channels don't interact, neither do different kernels):
-      % 24 [input] + 2*24*2*(log2(N)-1) [FFT/IFFT] + 2*24*(24*2+16) [CORDICs] + 24+16 [MUL(img)] + 24*(is+ks-1)^3 [output] + (24+16)*(N/2+1) [kernel preprocess]
-      % = 24 + 96(log2(N)-1) + 3072 + 40 + 24*[(128+ks-1)(171+ks-1)(16+ks-1)] + 40*(N/2+1) = (9.27 MB [3x3x3]; 9.93 MB [4x4x4])
-      % Most of that is the output. If that was stored externally, the real (cache) memory use becomes: (6.16 KB [3x3x3]; 13.85 KB [4x4x4])
-      % There are also the CORDIC arctan constants, but I'm guessing those would be stored as LUTs. Same for twiddle factors.
-
-    % Critical Path:
-      % FFT/IFFT: 24b-ADD -> (24b-ADD | read LUT) -> 24b-kMUL -> 24b-ADD [Butterfly -> Karatsuba wmul]
-      % CORDICs: 24b-ADD 
-      % MUL/KCOR/OaA: 24b-MUL at most
-
-    % I have no way of calculating the total number of LUTs here, but it's clear that it would be the scaling bottleneck, and not DSPs or memory.
-
-    % Reminder: review Radix-2 FFT and Radix-N CORDIC to see if they address pipelining issues
-
     Table~\ref{tab:res}...
 
+\section{Limitations and Future Work}\label{sec:lim}
+  In the interest of research integrity, this section discloses the limitations of this project, how they were addressed, and how this project can be expanded upon.
+  
+  Only the parallel-core version of the architecture was fully synthesized and tested on a live board, due to time- and resource-constraints. From it, we extracted the relevant resource utilization metrics -- DSP, LUT, and FF \todo{any others?} -- for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, the metrics provided in Section~\ref{sec:test} regarding the pipelined design were calculated assuming no further design optimization can be made (i.e., the worst case scenario). All the calculations performed regarding the evaluation of our architecture are described in Section~\ref{ssec:tp}, for transparency.
+
+  Timing closure proved difficult for the parallel-core synthesis, as its size \todo(provide percentiles) makes it more prone to congestion issues. Separate testing was made using smaller designs while maintaining the largest critical path, which is shared by both the parallel and pipelined versions of the architecture. Timing was successfuly closed at 200MHz in these designs, while the complete parallel design was timed at 150 MHz. Further optimizations of the synthesis process will likely enable higher operational frequencies.
+
+  Despite these limitations...
+  
+  Future work...
+
+  % calcs moved to notes
+    
 \section{Related Work}\label{sec:rela}
   Fan et al.~\cite{fan2021high} presents an accelerator which processes C3D in 93.95 ms using 1345 DSPs and a frequency of 220 MHz, giving it a hardware-efficiency of $5.19 [\frac{GOP}{s{\cdot}MHz{\cdot}DSP}]$. Their method involves quantization of weights and activations with static block floating point, while the convolution algorithm remains the standard matrix-multiplication method. This method, however, does not reduce the overall number of multiplication operations required by the convolution layer, which are still performed using fixed-point representation.
 

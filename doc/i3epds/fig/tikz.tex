@@ -11,12 +11,16 @@
   arrows,
   intersections,
   math,
-  circuits.ee.IEC}
+  circuits.ee.IEC,
+  external}
+\usepackage{pgfplots}
+  \usepgfplotslibrary{external}
+  \pgfplotsset{compat=1.18}
 \usepackage{ifthen}
 \usepackage{amssymb}
 \usepackage{currfile}
 \usepackage{etoolbox}
-\usetikzlibrary{external}
+
 \tikzexternalize[prefix=./]
 \tikzsetfigurename{figure-}
 \newcommand*\setmyname{%
@@ -25,6 +29,108 @@
 \makeatletter
 \apptocmd{\sa@document}{\setmyname}{\typeout{Append to document: OK!}}{\typeout{Append to document: Oh, no!}}
 \makeatother
+
+\begin{filecontents*}[overwrite]{plot.tex}
+\documentclass[tikz]{standalone}
+\usepackage{pgfplots}
+  \usetikzlibrary{positioning}
+  \usepgfplotslibrary{external}
+  \pgfplotsset{
+    % width=10cm,
+    compat=1.18
+  }
+\begin{document}
+\begin{tikzpicture}
+  \begin{axis}[
+    domain=3:6,
+    y domain=3:11, 
+    % samples=100,
+    % grid=major,
+    restrict z to domain=0:10^9,
+    xlabel=$i$,
+    ylabel=$k$,
+    zlabel=$GCONV/s$,
+    legend pos=north west
+  ]
+    \addplot3[
+      surf
+    ]{
+      (1/(x^3*y^3))*1530000000
+    };
+    \addplot3[
+      surf
+    ]{
+      (2/(((x^3)/(y^3))*((2*y-1)^3)))*200000000
+    };
+  \end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}
+  % \pgfplotsset{colormap={bluemap}{
+  %   rgb=(0.8,0.0,0.0)
+  %   rgb=(0.0,0.8,0.0)
+  %   rgb=(0.0,0.0,0.8)
+  % }}
+  \begin{semilogyaxis}[
+    domain=3:9,
+    xtick={3,...,9},
+    % y domain=3:11, 
+    grid=major,
+    xlabel=$k$,
+    ylabel=$(I*K)/s$,
+    legend style={font=\scriptsize},
+    legend cell align=left,
+    legend pos=south west,
+    % colormap={bw},
+  ]
+    \addplot[
+      scatter src=none,
+      samples=7,
+      only marks,
+      color=blue,
+      draw opacity=0.5,
+    ]{
+      (1/((128*171*16)*x^3))*1530000000
+    };
+    \addplot[
+      samples=100,
+      color=blue,
+      draw opacity=0.5,
+    ]{
+      (1/((128*171*16)*x^3))*1530000000
+    };
+    \addplot[
+      scatter src=none,
+      samples=7,
+      color=red,
+      only marks
+    ]{
+      (2/(
+        (ceil(128/x) * ceil(171/x) * ceil(16/x))
+        *(pow(2,ceil(log2((2*x-1)^3))))
+      ))*200000000
+    };
+    \addplot[
+      samples=7,
+      draw opacity=0.5,
+      color=red,
+    ]{
+      (2/(
+        (ceil(128/x) * ceil(171/x) * ceil(16/x))
+        *(pow(2,ceil(log2((2*x-1)^3))))
+      ))*200000000
+    };
+    % \addplot[
+    %   samples=100,
+    %   draw opacity=0.5,
+    %   color=green,
+    % ]{
+    %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
+    % };
+  \legend{CUDA core (1.53 GHz),,HECATE core (0.2 GHz)}
+  \end{semilogyaxis}
+\end{tikzpicture}
+\end{document}
+\end{filecontents*}
 
 \begin{filecontents*}[overwrite]{matrix.tex}
 \documentclass[tikz]{standalone}
@@ -142,10 +248,10 @@
   % \draw[step=.5cm,gray,very thin] (-1.2,-1.2) grid (1.2,1.2);
   \draw[->] (-1.3,0) -- (1.3,0) coordinate (x axis)node[right]{$\mathbb{R}$};
   \draw[->] (0,-1.3) -- (0,1.3) coordinate (y axis)node[above]{$\mathbb{I}$};
-  \draw (1 cm,1pt) -- (1 cm,0pt) node[anchor=east,xshift=10pt,yshift=6pt] {1};
-  \draw (-1 cm,1pt) -- (-1 cm,0pt) node[anchor=west,xshift=-14pt,yshift=6pt] {-1};
-  \draw (1pt,1 cm) -- (0pt, 1 cm) node[anchor=north,xshift=-4pt,yshift=12pt] {i};
-  \draw (1pt,-1 cm) -- (0pt, -1 cm) node[anchor=south,xshift=-6pt,yshift=-12pt] {-i};
+  \draw (1 cm,1pt) -- (1 cm,0pt) node[anchor=east,xshift=10pt,yshift=6pt] {$1$};
+  \draw (-1 cm,1pt) -- (-1 cm,0pt) node[anchor=west,xshift=-14pt,yshift=6pt] {-$1$};
+  \draw (1pt,1 cm) -- (0pt, 1 cm) node[anchor=north,xshift=-4pt,yshift=12pt] {$i$};
+  \draw (1pt,-1 cm) -- (0pt, -1 cm) node[anchor=south,xshift=-6pt,yshift=-12pt] {-$i$};
 
   % Angles
   \path[draw=red]
@@ -376,6 +482,26 @@
       --++ (-90:1.3222cm) coordinate (cordic1zout)
     ($(cin1)!0.5!(cin2)$) --++ (0:1) coordinate (cin0);
 
+  \draw 
+    (4,1) coordinate (O1)--++
+    (90:3)  coordinate (A1)--++
+    (-30:1) coordinate (B1)--++
+    (-90:2) coordinate (C1)--
+    cycle
+    (4,-1) coordinate--++ 
+    (-90:3) coordinate (A2)--++
+    (30:1)  coordinate (B2)--++
+    (90:2)  coordinate (C2)--
+    cycle
+    ($(B1)!0.5!(C1)$)--++(0:1) coordinate (bfly0)
+    ($(C2)!0.5!(B2)$)--++(0:1) coordinate (bfly1)
+    ($(O1)!0.5!(C1)$)
+      node[below,yshift=-5]{\scriptsize{$\log_{2}N$}}--++
+      (-90:0.4)
+    ($(A2)!0.5!(B2)$)
+      node[below,yshift=-5]{\scriptsize{$\log_{2}N$}}--++
+      (-90:0.4);
+
   \draw
     (cin1) --++ (0:1) --++ (-90:2.5cm-0.6666cm) -- (cordic1xin)
     (cordic1zin) --++ (180:1cm) --++ (-90:0.25cm) node[ground,rotate=-90,xshift=0.1cm]{};
@@ -398,4 +524,5 @@
   \input{unit_circle}
   \input{fft}
   \input{pipeline}
+  \input{plot}
 \end{document}
