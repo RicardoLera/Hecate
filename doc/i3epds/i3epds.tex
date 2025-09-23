@@ -46,6 +46,8 @@
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 \renewcommand{\arraystretch}{1.5}
+\usepackage{mathtools}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
 %\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
@@ -329,44 +331,180 @@
   In order to assess the hardware-usage of this design, we synthesized the parallel-core version on a VC709 FPGA board, the results of which are presented on Table~\ref{tab:parallel}.
 
   \begin{table}
-    \caption{Resource usage of parallel HECATE core in vc709 environment.}
+    \caption{Resource usage of parallel HECATE core in vc709 environment for $K=3{\times}3{\times}3$.}
     \centering
     \label{tab:parallel}
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|}
       \hline
-      Block    & DSP  & LUT  & FF   & BRAM(?) \\\hline
-      FFT      & ---  & ---  & ---  & ---     \\\hline
-      CORDIC-V & ---  & ---  & ---  & ---     \\\hline
-      PMUL     & ---  & ---  & ---  & ---     \\\hline
-      CORDIC-R & ---  & ---  & ---  & ---     \\\hline
-      IFFT     & ---  & ---  & ---  & ---     \\\hline
-      OaA      & ---  & ---  & ---  & ---     \\\hline
-      Total    & ---  & ---  & ---  & ---     \\\hline
+      Stage    & Blocks & DSP  & LUT   \\\hline
+      FFT      & 1      & 192  & 18567 \\\hline
+      CORDIC-V & 17     & 0    & 151   \\\hline
+      PMUL     & 17     & 8    & 414   \\\hline
+      CORDIC-R & 17     & 0    & 167   \\\hline
+      OaA      & 1      & 0    & 3013  \\\hline
+      Other    & 1      & 0    & 5524  \\\hline
+      Total    & ---    & 328  & 39548 \\\hline
     \end{tabular}
   \end{table}
 
   \subsection{Throughput calculation}\label{ssec:tp}
     By evaluating the resource utilization of the individual processing stages (FFT, CORDIC, polar multiplication), we estimated the hardware-utilization of the fully-pipelined design.
     
-    \todo{formulas}
+    \todo{This section is written in casual text so I could get the formulas down. Rewrite more formally later.}
+
+    Standardized convolution complexity:
+    \begin{equation}\label{eq:tp1}
+      [I*K] = (I_xI_yI_z)(K_xK_yK_z)~\texttt{MAC-OP}
+    \end{equation}
+
+    Ass. C3D technical report~\cite{tran2015learning}:
+    \begin{equation}\label{eq:tp2}
+      [I*K] = 2*128*171*16*k^3 = 700416*k^3~\texttt{OP}
+    \end{equation}
+    That is 1 "conv". To complete a layer we gotta do $K_n.C_n$ of those (\# of kernels x channels) which is like a fuckton. So the question is: how many of those can our accelerator make per second? 
+
+    Let's start with a GPU. Say TITAN X PASCAL like~\cite{fan2021high} used. It's got 3584 CUDA cores and runs at 1.53 GHz. We'll compare 1 CUDA core against 1 HECATE core because lolno. We'll argue how many HECATEs you can fit in an FPGA later (spoilers it's like 13).
+
+    1 CUDA core does 1 floating or fixed point MAC a cycle, at 1.53 GHz. Kinda insane. That's exactly:
+    \begin{equation}\label{eq:tp-cuda1}
+      \frac{f}{(I_xI_yI_z)(K_xK_yK_z)}
+    \end{equation}
+    convolutions per second. Or:
+    \begin{equation}\label{eq:tp-cuda2}
+      \frac{1.53\times10^9}{(128.171.16).(k^3)} = 4368.83{\cdot}k^{-3} \left[\frac{I*K}{s}\right]\,.
+    \end{equation}
+
+    1 HECATE pipeline-core does 2 points of a slice per cycle. Points per slice depends on full-padding and power-of-2 padding, and number of slices has to be integer, so:
+    \begin{equation}\label{eq:tp-hec1}
+      \frac{2f}{
+        \ceil{\frac{I_x}{k}}
+        \ceil{\frac{I_y}{k}}
+        \ceil{\frac{I_z}{k}}
+        2^{\ceil{\log_2{(2k-1)^3}}}
+      }
+    \end{equation}
+    convolutions per second---yeah I know that's a clusterfuck, maybe put the denominator on it's own equation later --- so that gives:
+    \begin{equation}\label{eq:tp-hec2}
+      \frac{2{\times}0.2{\times}10^9}{
+        \ceil{\frac{128}{k}}
+        \ceil{\frac{171}{k}}
+        \ceil{\frac{16}{k}}
+        2^{\ceil{\log_2{(2k-1)^3}}}
+      }
+    \end{equation}
+    and I'm not even gonna bother trying to simplify it further, just look at the pretty graph (figure~\ref{fig:cores1}).
+
+    \begin{figure}\centering
+      \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
+      \caption{it gud}\label{fig:cores1}
+    \end{figure}
+
+    Granted, beating a single CUDA core isn't much of a milestone (even tho it fast as fuk) but that depends entirely on how many HEC cores we can stuff into a vc709 until it starts screaming bitstreams. And that in turn depends on how big our core is. So let's calc that. Look at Table~\ref{tab:pipelined}.
 
     \begin{table}
-      \caption{Throughput and Hardware-Efficiency of parallel and pipelined HECATE cores.}
-      \centering
-      \label{tab:tp}
-      \begin{tabular}{|c|c|c|}
-        \hline
-        Design              & Parallel & Pipelined \\\hline
-        Frequency           & ---      & ---       \\\hline
-        $\frac{I*K}{s}$     & ---      & ---       \\\hline
-        DSPs                & ---      & ---       \\\hline      
-        LUTs                & ---      & ---       \\\hline 
-        FFs                 & ---      & ---       \\\hline
-        $\frac{I*K}{s.DSP}$ & ---      & ---       \\\hline   
-        $\frac{I*K}{s.LUT}$ & ---      & ---       \\\hline
-        $\frac{I*K}{s.FF}$  & ---      & ---       \\\hline
-      \end{tabular}
+    \caption{Resource usage of pipelined HECATE core in vc709 environment for $K=3{\times}3{\times}3$.}
+    \centering
+    \label{tab:pipelined}
+    \begin{tabular}{|c|c|c|c|}
+      \hline
+      Stage     & Blocks & DSP   & LUT   \\\hline
+      Bfly      & 7      & 3     & 112   \\\hline
+      CORDIC-V  & 32     & 0     & 151   \\\hline
+      PMUL      & 1      & 1     & 414   \\\hline
+      CORDIC-R  & 32     & 0     & 167   \\\hline
+      OaA       & 1      & 0     & 56    \\\hline
+      Total     & ---    & 22    & 11430 \\\hline
+      Usage     & ---    & 0.6\% & 2.6\% \\\hline
+    \end{tabular}
     \end{table}
+
+    \todo{find them cordic optimizations to reduce number of blocks n' shit}
+
+    With this incredibly non-generous estimation, and also non-generously assuming that we can only stuff the fpga up to 80\% before it starts imploding, we find that we can fit: $443200/11430 = 37.9$ HEC cores into the vc709, and fuck it I'm rounding to 38 because 80.1\% isn't actually gonna dematerialize the fpga.
+
+    Important to note, the only part of any of that that scales with anything is the number of bfly stages with $\log_2{N}$. So let's plot again but accounting for all that, versus the THE FULL POWER OF TITAN X PASCAAAAAL!! {\scriptsize fuck that name is so bad} And this ain't gonna look as pretty. It's Figure~\ref{fig:cores2}.
+
+    \begin{figure}\centering
+      \includegraphics[width=0.9\columnwidth]{fig/plot-1.pdf}
+      \caption{yikes}\label{fig:cores2}
+    \end{figure}
+
+    Yyyyeah we ain't beating a GPU in raw throughput, I'm afraid. At least not without some serious optimization. But this isn't why we're here, we're all about dat hardware-efficiency. And I don't think it makes much sense trying to calc that outside the context of fpgas. But before we move on to the benchmarks and comparisons, let's calc the raw throughput so we can compare with the other fpga implementations.
+
+    Imma assume 4x4x4 because that's better for us and \cite{fan2021high} did it so I can do it too. This is for 1 pipelined-core:
+    \begin{equation}\label{eq:tp-hec3}
+      \frac{OP}{s} = \frac{I*K}{s} (I_xI_yI_z)(K_xK_yK_z)
+    \end{equation}
+    btw find out how to make multiline equations
+    \begin{equation}\label{eq:tp-hec3lol}
+      \frac{2{\times}0.2{\times}10^9}{
+        \ceil{\frac{128}{k}}
+        \ceil{\frac{171}{k}}
+        \ceil{\frac{16}{k}}
+        2^{\ceil{\log_2{(2k-1)^3}}}
+      }(I_xI_yI_z)(K_xK_yK_z)
+    \end{equation}
+    yyyyep. should get on that sometime.
+    \begin{equation}\label{eq:tp-hec3lmao}
+      \begin{cases}
+        1.00~GOP/s;~for~K=3{\times}3{\times}3 \\
+        3.11~GOP/s;~for~K=4{\times}4{\times}4 \\
+        6.05~GOP/s;~for~K=7{\times}3{\times}3
+      \end{cases}
+    \end{equation}
+    ...blazing fast, I know.
+
+    Well this time we can compare DSPs, motherfucker. Here's non-frequency-normalized hardware-efficiency using DSP:
+    \begin{equation}\label{eq:he-hec1}
+      HE = \frac{throughput}{DSP} = \frac{3.11}{28} = 0.11
+    \end{equation}
+    Fan has... 1.14. OK it's fine, DSPs aren't the limiting factor anyways! Compare LUTs:
+        \begin{equation}\label{eq:he-hec2}
+      HE = \frac{throughput}{LUT} = \frac{3.11}{11.430 kLUT} = 0.27
+    \end{equation}
+    Fan has... 3.60 WHAT THE FUCK. That throughput it WAY too high, it beat the GPU in 2D.
+
+    Something's weird with these numbers. We got close to the titan gpu but nowhere close to Fan. Yet he lost by a wide margin to the same GPU. We need to recalc his values and apply them to our conv/s standard so the comparison is valid. rn imma sleep.
+
+    Oh, and yeah, part of this needs to be in the Comparison section instead.
+
+    Oh, and Equation~\ref{eq:tp-hec3} and onward are missing the 2x from the MAC operation. Doesn't change that much, but it helps.
+
+    % \begin{table}
+    %   \caption{Throughput and Hardware-Efficiency of pipelined HECATE cores at various kernel sizes.}
+    %   \centering
+    %   \label{tab:tp}
+    %   \begin{tabular}{|c|c|c|}
+    %     \hline
+    %     Kernel size         & 3{\times}3{\times}3 & 4{\times}4{\times}4 & 7{\times}3{\times}3~\todo{cite} \\\hline
+    %     $\frac{I*K}{s}$     & ---                 & ---                 & ---                             \\\hline
+    %     DSPs                & ---                 & ---                 & ---                             \\\hline      
+    %     LUTs                & ---                 & ---                 & ---                             \\\hline 
+    %     FFs                 & ---                 & ---                 & ---                             \\\hline
+    %     $\frac{I*K}{s.DSP}$ & ---                 & ---                 & ---                             \\\hline   
+    %     $\frac{I*K}{s.LUT}$ & ---                 & ---                 & ---                             \\\hline
+    %     $\frac{I*K}{s.FF}$  & ---                 & ---                 & ---                             \\\hline
+    %   \end{tabular}
+    % \end{table}
+
+
+    % \begin{table}
+    %   \caption{Throughput and Hardware-Efficiency of parallel and pipelined HECATE cores.}
+    %   \centering
+    %   \label{tab:tp}
+    %   \begin{tabular}{|c|c|c|}
+    %     \hline
+    %     Design              & Parallel & Pipelined \\\hline
+    %     Frequency           & ---      & ---       \\\hline
+    %     $\frac{I*K}{s}$     & ---      & ---       \\\hline
+    %     DSPs                & ---      & ---       \\\hline      
+    %     LUTs                & ---      & ---       \\\hline 
+    %     FFs                 & ---      & ---       \\\hline
+    %     $\frac{I*K}{s.DSP}$ & ---      & ---       \\\hline   
+    %     $\frac{I*K}{s.LUT}$ & ---      & ---       \\\hline
+    %     $\frac{I*K}{s.FF}$  & ---      & ---       \\\hline
+    %   \end{tabular}
+    % \end{table}
 
   \subsection{Benchmarks}
     The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}~\todo{cite a bunch of others too}. This is due to differences in their choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether these publications accounted for differing hyperparameters in their calculations. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results as they were originally published, then transpose their results to the established standard.
