@@ -291,7 +291,7 @@
     Each step of the proposed algorithm can be pipelined to greatly increase its throughput. Figure~\ref{fig:pipeline} illustrates our fully-pipelined design, optimized for hardware-efficiency.
 
     \begin{figure*}[htb]\centering
-      \includegraphics[width=1.8\columnwidth]{fig/pipeline-0.pdf}
+      \includegraphics[width=2\columnwidth]{fig/pipeline-0.pdf}
       \caption{Fully-pipelined FCONV design.}\label{fig:pipeline}
     \end{figure*}
 
@@ -303,6 +303,8 @@
   Due to the slow development cycle of pure HDL designs, only the parallel-core version of the architecture was fully synthesized. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case). All aforementioned calculations are described in Section~\ref{ssec:hec2}.
 
   Table~\ref{tab:parallel} displays the resource usage metrics of HEC-1 implemented on a VC709 FPGA board, assuming kernel-size $3{\times}3{\times}3$.
+
+  \todo{Redo table~\ref{tab:parallel} and add FF}
 
   \begin{table}
     \caption{Resource usage of HEC-1 in vc709 environment for $K=3{\times}3{\times}3$.}

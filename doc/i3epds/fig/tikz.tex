@@ -445,74 +445,73 @@
 \begin{filecontents*}[overwrite]{pipeline.tex}
 \documentclass[tikz]{standalone}
 \begin{document}
-\begin{tikzpicture}[
-  circuit ee IEC,
-  scale=0.75
-]%
+\begin{tikzpicture}%
   % Input bus
   \draw [very thick]
-    (0,0) --
-    node[xshift=-0.5cm]{/}
-    node[above,xshift=-0.5cm,yshift=1mm]{\footnotesize{$N \times 2 \times 24$}}
+    (1,0) --
+    node{/}
+    node[above,yshift=1mm]{\footnotesize{$N \times 2 \times 24$}}
     (3,0) coordinate (bin)
-    (bin) --++ (90:2.5) --++ (0:1)
-    (bin) --++ (90:-2.5) --++ (0:1);
+    (bin) --++ (90:1.25) --++ (0:1)
+    (bin) --++ (90:-1.25) --++ (0:1);
 
-  % MUXes
+  % FFT MUXes
   \draw 
-    (4,1) coordinate (O1)--++
-    (90:3)  coordinate (A1)--++
-    (-30:1) coordinate (B1)--++
-    (-90:2) coordinate (C1)--
+    (4,0.5)   coordinate (FMUXO1)--++
+    (90:1.5)  coordinate (FMUXA1)--++
+    (-30:0.5) coordinate (FMUXB1)--++
+    (-90:1)   coordinate (FMUXC1)--
     cycle
-    (4,-1) coordinate--++ 
-    (-90:3) coordinate (A2)--++
-    (30:1)  coordinate (B2)--++
-    (90:2)  coordinate (C2)--
+    (4,-0.5)  coordinate (FMUXO2)--++ 
+    (-90:1.5) coordinate (FMUXA2)--++
+    (30:0.5)  coordinate (FMUXB2)--++
+    (90:1)    coordinate (FMUXC2)--
     cycle
-    ($(B1)!0.5!(C1)$)--++(0:1) coordinate (bfly0)
-    ($(C2)!0.5!(B2)$)--++(0:1) coordinate (bfly1)
-    ($(O1)!0.5!(C1)$)
-      node[below,yshift=-5]{\scriptsize{$\log_{2}N$}}--++
+    ($(FMUXB1)!0.5!(FMUXC1)$) coordinate (muxout0)--++
+      (0:2) coordinate (bfly0)
+    ($(FMUXC2)!0.5!(FMUXB2)$) coordinate (muxout1)--++
+      (0:2) coordinate (bfly1)
+    ($(FMUXO1)!0.5!(FMUXC1)$)
+      node[below,yshift=-5,fill=white]{\scriptsize{$\log_{2}N$}}--++
       (-90:0.4)
-    ($(A2)!0.5!(B2)$)
-      node[below,yshift=-5]{\scriptsize{$\log_{2}N$}}--++
+    ($(FMUXA2)!0.5!(FMUXB2)$)
+      node[below,yshift=-5,fill=white]{\scriptsize{$\log_{2}N$}}--++
       (-90:0.4);
   % \foreach \y/\t in {0.1/1,0.2/2,0.3/3,0.4/4,0.5/5,0.6/6,0.7/7,0.8/8} {
     % \draw ($(C)! \y*1.1 !(O)$)--++(180:1) node[left] {$I_\t$};}
 
-  % Butterfly
+  % FFT Wmul
+  \draw ($(muxout1)!0.5!(bfly1)$) --++ (-90:2)
+    node[rectangle,draw,fill=white] {\scriptsize{LUT}};
+  \node[rectangle,draw,fill=white] at ($(muxout1)!0.5!(bfly1)$)
+    {\textcolor{violet}{\scriptsize{$\times\omega^{n}_{N}$}}};
+
+  % FFT Butterfly
   \draw
-    (bfly0) --++ (0:4) coordinate (bfly2) 
-    (bfly1) --++ (0:4) coordinate (bfly3)
+    (bfly0) --++ (0:3) coordinate (bfly2) 
+    (bfly1) --++ (0:3) coordinate (bfly3)
     (bfly0) -- (bfly3)
     (bfly1) -- (bfly2);
   \filldraw
     (bfly0) circle (2pt)
     (bfly1) circle (2pt);
   \draw 
-    (bfly2) --++ (0:3) coordinate (bout1)
-    (bfly3) --++ (0:3) coordinate (bout2);
+    (bfly2) --++ (0:1) coordinate (bout1)
+    (bfly3) --++ (0:1) coordinate (bout2);
   \node[text=red,circle,draw,fill=white] at (bfly2) {\scriptsize$+$};
   \node[text=blue,circle,draw,fill=white] at (bfly3) {\scriptsize$-$};
 
-  % Wmul
-  \draw ($(bfly3)!0.5!(bout2)$) --++ (-90:3)
-    node[rectangle,draw,fill=white] {\scriptsize{LUT}};
-  \node[rectangle,draw,fill=white] at ($(bfly3)!0.5!(bout2)$)
-    {\textcolor{violet}{\scriptsize{$\times\omega^{n}_{N}$}}};
-
-  % Registers
+  % FFT Registers
   \draw
-    (bout1) --++ (0:1) coordinate (recursion1)
-    (bout2) --++ (0:1) coordinate (recursion2);
+    (bout1) --++ (0:0.6) coordinate (recursion1)
+    (bout2) --++ (0:0.6) coordinate (recursion2);
   \node[rectangle,draw,fill=white,minimum height=1cm] at (bout1) {\scriptsize{REG}};
   \node[rectangle,draw,fill=white,minimum height=1cm] at (bout2) {\scriptsize{REG}};
   \path
-    (recursion1) --++ (0:1) coordinate (cin1)
-    (recursion2) --++ (0:1) coordinate (cin2);
-  \node at ($(recursion1)!0.5!(cin1)$) {\dots};
-  \node at ($(recursion2)!0.5!(cin2)$) {\dots};
+    (recursion1) --++ (0:0.6) coordinate (cordic1in1)
+    (recursion2) --++ (0:0.6) coordinate (cordic1in2);
+  \node[text=blue] at ($(recursion1)!0.5!(cordic1in1)$) {\dots};
+  \node[text=blue] at ($(recursion2)!0.5!(cordic1in2)$) {\dots};
 
   % FFT delimeter
   \path (bout1) -- coordinate (bout0) (bout2);
@@ -520,68 +519,213 @@
     rectangle,
     draw=blue,
     dashed,
-    minimum width=9cm,
-    minimum height=7cm,
-    xshift=0cm,
+    minimum width=7cm,
+    minimum height=5cm,
+    xshift=1.6cm,
     yshift=-0.2cm]
     at ($(bin)!0.5!(bout0)$) {};
-  \node[text=blue,above,yshift=3.3cm] at (bin) {FFT};
-  \node[text=blue,above,yshift=3.3cm] at (bout0) {$\times \log_{2}N$};
+  \node[text=blue,above,xshift=2.5cm,yshift=2.3cm] at (bin) {DIT-FFT};
+  \node[text=blue,above,xshift=0.8cm,yshift=2.3cm] at (bout0) {$\times \log_{2}N$};
 
-  % CORDIC 1
+  % CORDIC-1 points
   \path
-    (bout0) --++ (0:6) coordinate (cordic1)
+    (bout0) --++ (0:5.2) coordinate (cordic1)
     (cordic1)
-      --++ (180:1.5cm)    coordinate (cordic1yin)
-      --++ (90:0.6666cm)  coordinate (cordic1xin)
-      --++ (-90:1.3222cm) coordinate (cordic1zin)
+      --++ (180:1.5)    coordinate (cordic1yin)
+      --++ (90:0.6666)  coordinate (cordic1xin)
+      --++ (-90:1.3222) coordinate (cordic1zin)
     (cordic1)
-      --++ (0:1.5cm)      coordinate (cordic1yout)
-      --++ (90:0.6666cm)  coordinate (cordic1xout)
-      --++ (-90:1.3222cm) coordinate (cordic1zout)
-    ($(cin1)!0.5!(cin2)$) --++ (0:1) coordinate (cin0);
+      --++ (0:1.5)      coordinate (cordic1yout)
+      --++ (90:0.6666)  coordinate (cordic1xout)
+      --++ (-90:1.3222) coordinate (cordic1zout);
 
-  \draw 
-    (4,1) coordinate (O1)--++
-    (90:3)  coordinate (A1)--++
-    (-30:1) coordinate (B1)--++
-    (-90:2) coordinate (C1)--
-    cycle
-    (4,-1) coordinate--++ 
-    (-90:3) coordinate (A2)--++
-    (30:1)  coordinate (B2)--++
-    (90:2)  coordinate (C2)--
-    cycle
-    ($(B1)!0.5!(C1)$)--++(0:1) coordinate (bfly0)
-    ($(C2)!0.5!(B2)$)--++(0:1) coordinate (bfly1)
-    ($(O1)!0.5!(C1)$)
-      node[below,yshift=-5]{\scriptsize{$\log_{2}N$}}--++
-      (-90:0.4)
-    ($(A2)!0.5!(B2)$)
-      node[below,yshift=-5]{\scriptsize{$\log_{2}N$}}--++
-      (-90:0.4);
-
+  % CORDIC-1 connections  
   \draw
-    (cin1) --++ (0:1) --++ (-90:2.5cm-0.6666cm) -- (cordic1xin)
-    (cordic1zin) --++ (180:1cm) --++ (-90:0.25cm) node[ground,rotate=-90,xshift=0.1cm]{};
+    (cordic1in1) --++ (0:0.5) coordinate (cordic1in1b) --
+      (cordic1in1b |- cordic1xin) coordinate (csplit1) -- (cordic1xin)
+    (cordic1zin) --++ (180:0.25) node[text=green,xshift=-0.25cm]{\dots}
+    (cordic1xout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion3)
+    (cordic1yout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots}
+    (cordic1zout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion4);
+  \filldraw (csplit1) circle (2pt);
 
+  % CORDIC-1 MUX
+  \path (cordic1in2) --++ (0:0.75) coordinate (cmux1);
+  \draw 
+    (cmux1) --++ 
+    (90:1.5)  coordinate (CMUXA1)--++
+    (-30:0.5) coordinate (CMUXB1)--++
+    (-90:1)   coordinate (CMUXC1)--
+    cycle;
+  \path (cmux1) --++ (90:0.5) coordinate (cmux1in1) --++ (90:0.5) coordinate (cmux1in2);
+  \draw
+    (cordic1in2) --++ (0:0.5) --++ (90:0.5) -- (cmux1in1)
+    (csplit1) -- (csplit1 |- cmux1in2) -- (cmux1in2)
+    ($(CMUXC1)!0.5!(CMUXB1)$) --++ (0:0.3) coordinate (cmux1out)
+      -- (cmux1out |- cordic1yin) -- (cordic1yin);
+
+  % CORDIC-1 block
   \node[rectangle,draw,fill=white,minimum width=3cm,minimum height=2cm] at (cordic1) {CORDIC};
-    
-  \node[left] at (cordic1xin)  {\scriptsize{X}};
-  \node[left] at (cordic1yin)  {\scriptsize{Y}};
-  \node[left] at (cordic1zin)  {\scriptsize{Z}};
-  \node[right] at (cordic1xout) {\scriptsize{X}};
-  \node[right] at (cordic1yout) {\scriptsize{Y}};
-  \node[right] at (cordic1zout) {\scriptsize{Z}};
+  \node[right] at (cordic1xin)  {\scriptsize{X}};
+  \node[right] at (cordic1yin)  {\scriptsize{Y}};
+  \node[right] at (cordic1zin)  {\scriptsize{Z}};
+  \node[left] at (cordic1xout) {\scriptsize{X}};
+  \node[left] at (cordic1yout) {\scriptsize{Y}};
+  \node[left] at (cordic1zout) {\scriptsize{Z}};
+
+  % CORDIC-1 delimeter
+    \node[
+    rectangle,
+    draw=green,
+    dashed,
+    minimum width=4.75cm,
+    minimum height=5cm,
+    xshift=0cm,
+    yshift=-0.2cm]
+    at (cordic1) {};
+  \node[text=green,above,xshift=-0.35cm,yshift=2.3cm] at (cordic1yin) {VEC};
+  \node[text=green,above,xshift=0.35cm,yshift=2.3cm] at (cordic1yout) {$\times N_b$};
+
+  % MUL/ADD
+  \path
+    (recursion3) --++ (0:0.6) coordinate (mul)
+    (recursion4) --++ (0:0.6) coordinate (add);
+  \draw
+    (mul) --++ (0:1.5) coordinate (cordic2in1)
+    (add) --++ (0:1.5) coordinate (cordic2in2)
+    (mul) --++ (0:1) coordinate (mul0)
+      node[text=violet,circle,draw,fill=white] {\scriptsize$\times$}
+    --++ (90:1)
+      node[rectangle,draw,fill=white] {\scriptsize{$K_x$ LUT}}
+    (add) --++ (0:1) coordinate (add0)
+      node[text=red,circle,draw,fill=white] {\scriptsize$+$}
+    --++ (-90:1)
+      node[rectangle,draw,fill=white] {\scriptsize{$K_z$ LUT}};
+
+  % CORDIC-2 points
+  \path
+    (cordic1) --++ (0:6.7) coordinate (cordic2)
+    (cordic2)
+      --++ (180:1.5)    coordinate (cordic2yin)
+      --++ (90:0.6666)  coordinate (cordic2xin)
+      --++ (-90:1.3222) coordinate (cordic2zin)
+    (cordic2)
+      --++ (0:1.5)      coordinate (cordic2yout)
+      --++ (90:0.6666)  coordinate (cordic2xout)
+      --++ (-90:1.3222) coordinate (cordic2zout);
+
+  % CORDIC-2 connections  
+  \draw
+    (cordic2in1) -- (cordic2xin)
+    (cordic2in2) -- (cordic2zin)
+    (cordic2yin) --++ (180:0.25) node[text=green,xshift=-0.25cm]{\dots}
+    (cordic2xout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion5)
+    (cordic2yout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion6)
+    (cordic2zout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots};
+
+  % CORDIC-2 block
+  \node[rectangle,draw,fill=white,minimum width=3cm,minimum height=2cm] at (cordic2) {CORDIC};
+  \node[right] at (cordic2xin)  {\scriptsize{X}};
+  \node[right] at (cordic2yin)  {\scriptsize{Y}};
+  \node[right] at (cordic2zin)  {\scriptsize{Z}};
+  \node[left] at (cordic2xout) {\scriptsize{X}};
+  \node[left] at (cordic2yout) {\scriptsize{Y}};
+  \node[left] at (cordic2zout) {\scriptsize{Z}};
+
+  % CORDIC-2 delimeter
+  \node[
+    rectangle,
+    draw=green,
+    dashed,
+    minimum width=4.75cm,
+    minimum height=5cm,
+    xshift=0cm,
+    yshift=-0.2cm]
+    at (cordic2) {};
+  \node[text=green,above,xshift=-0.35cm,yshift=2.3cm] at (cordic2yin) {ROT};
+  \node[text=green,above,xshift=0.35cm,yshift=2.3cm] at (cordic2yout) {$\times N_b$};
+  \path
+    (recursion5) --++ (0:0.6) coordinate (fft2in1)
+    (recursion6) --++ (0:0.6) coordinate (fft2in2);
+  \draw
+    (fft2in1) --++ (0:0.8) coordinate (csplit2)
+    (fft2in2) --++ (0:0.4) coordinate (csplit3);
+
+  % IFFT MUX
+  \path (csplit3) --++ (90:0.5) coordinate (ifmux);
+  \draw 
+    (ifmux) --++
+    (-90:1.5) coordinate (IFMUXA)--++
+    (30:0.5)  coordinate (IFMUXB)--++
+    (90:1)    coordinate (IFMUXC)--
+    cycle;
+  \path (csplit3) --++ (90:0.5) coordinate (ifmuxin1) --++ (90:0.5) coordinate (ifmuxin2);
+
+  % IFFT Butterfly
+  \draw
+    (csplit2) --++ (0:0.3) coordinate (ifmuxcomp) --++ (90:0.5) --++ (0:1) coordinate (bflyi0)
+    ($(IFMUXB)!0.5!(IFMUXC)$) coordinate (ifmuxout) -- (ifmuxout -| ifmuxcomp) --++ (-90:1) --++ (0:1) coordinate (bflyi1)
+    (bflyi0) --++ (0:3) coordinate (bflyi2) 
+    (bflyi1) --++ (0:3) coordinate (bflyi3)
+    (bflyi0) -- (bflyi3)
+    (bflyi1) -- (bflyi2);
+  \filldraw
+    (bflyi0) circle (2pt)
+    (bflyi1) circle (2pt);
+  \draw 
+    (bflyi2) --++ (0:2) coordinate (biout1)
+    (bflyi3) --++ (0:2) coordinate (biout2);
+  \node[text=red,circle,draw,fill=white] at (bflyi2) {\scriptsize$+$};
+  \node[text=blue,circle,draw,fill=white] at (bflyi3) {\scriptsize$-$};
+
+  % IFFT Wmul
+  \draw ($(bflyi3)!0.5!(biout2)$) --++ (-90:2)
+    node[rectangle,draw,fill=white] {\scriptsize{LUT}};
+  \node[rectangle,draw,fill=white] at ($(bflyi3)!0.5!(biout2)$)
+    {\textcolor{violet}{\scriptsize{$\times\omega^{n}_{N}$}}};
+
+  % IFFT Registers
+  \draw
+    (biout1) --++ (0:0.8) coordinate (recursion7)
+    (biout2) --++ (0:0.8) coordinate (recursion8);
+  \node[rectangle,draw,fill=white,minimum height=1cm] at (biout1) {\scriptsize{REG}};
+  \node[rectangle,draw,fill=white,minimum height=1cm] at (biout2) {\scriptsize{REG}};
+  \path
+    (recursion7) --++ (0:0.5) coordinate (oa1)
+    (recursion8) --++ (0:0.5) coordinate (oa2);
+  \node[text=blue] at ($(recursion7)!0.5!(oa1)$) {\dots};
+  \node[text=blue] at ($(recursion8)!0.5!(oa2)$) {\dots};
+
+  % IFFT delimeter
+  \path (bflyi0) -- coordinate (biin) (bflyi1);
+  \path (biout1) -- coordinate (biout0) (biout2);
+  \node[
+    rectangle,
+    draw=blue,
+    dashed,
+    minimum width=6.8cm,
+    minimum height=5cm,
+    xshift=0.4cm,
+    yshift=-0.2cm]
+    at ($(biin)!0.5!(biout0)$) {};
+  \node[text=blue,above,xshift=0.2cm,yshift=2.3cm] at (biin) {DIF-FFT};
+  \node[text=blue,above,xshift=0.7cm,yshift=2.3cm] at (biout0) {$\times \log_{2}N$};
+
+  % Overlap-Add
+  \draw
+    (oa1) --++ (0:0.7)
+    (oa2) --++ (0:0.7);
+  \node[right,rectangle,draw,fill=white,minimum height=3cm,xshift=0.5cm]
+    at ($(oa1)!0.5!(oa2)$) {OA};
 
 \end{tikzpicture}
 \end{document}
 \end{filecontents*}
 
 \begin{document}
+  \input{plot}
   \input{matrix}
   \input{unit_circle}
   \input{fft}
   \input{pipeline}
-  \input{plot}
 \end{document}
