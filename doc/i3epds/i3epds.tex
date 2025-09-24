@@ -125,74 +125,33 @@
 \fi
   \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success of Convolutional Neural Networks (CNNs) in two-dimensional image recognition.everal accelerator architectures have been developed; a method that has seen wide success in 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} convolution.
 
-  A variety of optimization approaches have been applied to the task of accelerating CNNs, such as: efficient memory access~\cite{}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia}; optimizing matrix-multiplication~\cite{} or the multiplication operation itself~\cite{fan2021high}; quantizing weights and activations~\cite{}; and deploying complete CNNs in FPGA technology~\cite{} often via software-integration systems such as HLS~\cite{}.
+  A variety of optimization approaches have been applied to the task of accelerating CNNs, such as: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
 
-  One approach that has garnered attention in recent years is the application of more efficient convolution algorithms. The standard algorithm known as convolution-over-space, as well as the more widely used matrix-multiplication (MMX), have a base assymptotic complexity of $O(N^2)$, leading to an increasing demand for more efficient algorithms. This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly outscale every other layer in the network~\cite{hegde2018morph}.
+  One approach that has also garnered attention is the application of more efficient convolution algorithms. The standard algorithm known as convolution-over-space, as well as the more widely used matrix-multiplication (MMX), have a base assymptotic complexity of $O(N^2)$, scaling very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly outscale all other layers in the network~\cite{hegde2018morph}.
 
-  In 2016, Lavin \& Gray~\cite{lavin2016fast} reviewed the relevant convolution algorithms --- which were, at the time, MMX and Fourier convolution --- and proposed a new class of algorithms based on the Coppersmith–Winograd series of matrix multiplication algorithms~\cite{coppersmith1982asymptotic}. MMX Algorithms with lower assymptotic bounds have been discovered~\cite{}, however, they incur increasingly complex transforms which severely hinders applicability. As such, the so-called Winograd class of convolution algorithms has since become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
+  In 2016, Lavin \& Gray~\cite{lavin2016fast} reviewed the relevant convolution algorithms --- which were, at the time, MMX and FFT convolution --- and proposed a new class of algorithms based on the Coppersmith–Winograd series of matrix multiplication methods~\cite{coppersmith1982asymptotic}. MMX Algorithms with lower assymptotic bounds have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which severely hinders their applicability. As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
 
-  Fourier convolution was deemed innefficient for modern CNN designs as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks that use many small (usually 3x3) kernels~\cite{simonyan2014very}. The algorithm is also not, as of yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
+  FFT convolution was deemed innefficient for modern CNN designs as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks that use small (usually 3x3) kernels~\cite{simonyan2014very}. The algorithm is also not, as of yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
   
-  The algorithm has since resurged in a range of applications better suited to apply it efficiently, such as spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating}, including the implementation of generic neural-net functions in the spectral domain~\cite{ayat2019spectral,watanabe2021image}. New techquines were found to optimize key parts of the algorithm, including convolution splitting~\cite{chitsaz2020acceleration} complemented by overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}. And, as is the topic of this article, it has found success in 3D CNN applications~\cite{nguyen2016energy}\todo{cite at least one more}
+  Since then, new techquines were found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}, as well as spectral CNNs~cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image}. It has also has found success in CNNs required the use of large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
 
-  There remains, however, the issue of Complex-domain multiplication in non-spectral CNNs. Recent hardware implementations in FPGA have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}, however, these methods do not increase the system's hardware-efficiency (measured in thoughput per component) as it they do not lower the number of operations required to complete Complex multiplications.
-  
-  We propose a polar-coordinate multiplication unit, designed along a pipelined FFT and IFFT chain, optimized with both input slicing and overlap-add. We synthesize the architecture using HDL and implement the it in a VC709 FPGA board. We demonstrate, via comparison with state-of-the-art benchmarks, the viability of Fourier convolution in Real-domain 3D CNNs.
+  There remains, however, the issue of Complex-domain multiplication. Recent FPGA implementations have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}. These methods, however, do not directly address the high operation count of Complex multiplication, instead deploying extra hardware resources to overcome it. As such, their hardware-efficiency (measured in throughput per component) remains the same.
 
-  \todo{ALSO MENTION: rotation invariance}~\cite{kim2020cycnn,mo2024ric} \todo{CORDIC activation function}~\cite{kokane2025retrospective} \todo{and those guys who stole from you}~\cite{reis2024phasor}. \todo{Gonna have to rewrite the proposal paragraph.}
-  
+  It is possible to reduce the operation count of Complex multiplication by representing its inputs as polar coordinates~\cite{lera2023hardware}. This was first implemented for CNNs in 2024 by Reis et. al~\cite{reis2024phasor} using high-level-synthesis (HLS), achieving promising results. However, HLS, while an important tool for quickly implementing designs, has been frequently critisized in CNN applications regarding resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative} and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where lower level optimizations are available, at the cost of longer development cycles.
+
   \ifCLASSOPTIONcompsoc\else % this needs to be at second column of first page
     \IEEEpubidadjcol
   \fi
-
-  % A consequence of large-scale image processing acceleration is a steep increase in power requirements, as seen in commercial 2D accelerators such as the TPU~\cite{jouppi2020domain} and Tensor Cores~\cite{choquette2021nvidia}. This is due to the parallelization techniques employed by these applications, such as systolic array, which incur extra arithmetic blocks. These techniques do not reduce the overall complexity of the algorithm (i.e., the total number of elemental operations required to complete the task) instead employing extra hardware proportional to the desired speed gain. % In order to reduce power consumption while maintaining performance, %% I'll mention this later
-
-  % A 2021 survey~\cite{mittal2021survey} of accelerator architectures for 3D CNNs across multiple platforms highlights the particular challenges of acceleration in 3D space, and how 2D accelerators cannot be naivelly applied to a higher dimensional space while maintaining efficiency. This further emphasises the need for acceleration techniques beyond parallelism, as the required hardware for this task grows in one extra dimension.
-
-  % FPGA and ASIC implementations generally display higher power-efficiency, with the former being more prevalent in the field due to its ease of implementation. While ASICs can be designed to be even more efficient, their design and implementation costs often outweight their benefits~\cite{mittal2021survey}. When employing these platforms, an additional metric is used to measure the efficiency of an accelerator: \textit{hardware-efficiency}, defined as the ratio between the performance gain and hardware cost. In FPGA, performance is generally measured in GOPS (giga-operations per second), and hardware cost is often used interchangeably with  DSP consumption, as these are the blocks capable of processing complex arithmetic tasks most efficiently. Additionaly, the metric is often divided by the clock frequency used, to better evaluate the architecture's design regardless of the frequency limitations of its platform \todo{cite}.
-
-  % We reviewed recent developments in the field concerning 3D convolution accelerators in FPGA. This body of work revealed a tendency to employ more optimal convolution algorithms, while addressing their particular needs. Of note, two classes of algorithms stand out among the surveyed projects: \textbf{lower-bound matrix multiplication} algorithms~\cite{shen2018towards,fan2021high} \todo{add at least 1 more reference} and \textbf{Fourier convolution} (FCONV) algorithms~\cite{chi2020fast,chitsaz2020acceleration,chen2024fast} \todo{fix multi-citation}.
-    
-  % Lower-bound matrix multiplication exploits the property of discrete convolution which allows it to be represented as a matrix multiplication between the input and the filter, often handled by the \texttt{im2col} algorithm~\todo{cite that one article which described it open-source}. This change in representation does \textit{not} lower the complexity of the operation by itself~\cite{lera2023hardware} but enables the use of matrix multiplication algorithms with lower complexity bounds such as Coppersmith-Winograd~\cite{shen2018towards}, or algorithms that reduce the complexity of the matrix multiplication step~\cite{fan2021high}.
   
-  % FCONV instead makes use of the Convolution Theorem~\todo~\cite{mcgillem1991continuous} which defines the convolution of two signals as the dot-product of their respective Fourier transforms. The FFT (Fast Fourier Transform) class of algorithms enables efficient conversion between the Real and Complex domains, and the resulting dot-product incurs quadratically less MAC operations compared to standard matrix-multiplication, albeit in the Complex domain~\todo{cite (maybe L\&G?)}.
+  We propose HECATE, an FFT-based 3D convolution accelerator using hardware-efficient polar-coordinate multiplication, pipelined FFT and IFFT chains, and optimized for large images using input slicing and overlap-add. We synthesize the architecture using HDL and implement it in a VC709 FPGA board. By validating our implementation using state-of-the-art benchmarks, we demonstrate the viability of FFT convolution in non-spectral 3D CNNs.
+  
+  This document is organized as follows: In Section~\ref{sec:arch}, we describe the design choices and optimizations of our proposed architecture; Section~\ref{sec:imp} details the procedures used to verify and test the architecture, and the results obtained from them; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
 
-  % \todo{I'll clarify the normenclature shennanigans (toom-3, coppersmith) later (section 2 maybe)}
-
-  % In our review, the highest hardware-efficiency is achieved by 
-
-  % Restricting our search to methods that directly affect the convolution operation, Shen et al.~\cite{shen2018towards} achieves the highest hardware-efficiency. Their Winograd-based accelerator processes C3D, a CNN with a total processing load of 144.3 GOP, in 183.8 ms using 1536 DSPs and a frequency of 200 MHz, giving it a hardware-efficiency of $ 3.4 [\frac{GOP/S}{DSP{\cdot}MHz}]$.
-
-  % \todo{Present state of the art.}
-
-  % \todo{Discuss here the possible limitations or extensions of the state-of-the-art mentioned on the last paragraph. With it, you will justify your choice of algorithm on the next paragraph.}
-
-  % \todo{Choice of algorithm. Mention at least im2col as the standard (if it still is), ``Winograd'' aka Toom-3, and of course Fourier Conv. To beat Toom-3, refer to your own paper (as well as its sources) which explain how OA is possible in fconv (due to inherent Full convolution) which isn't possible in Toom; and how Toom's transform has a much higher asymp. complexity than the FFT. Use the following commented paragraphs as a template.}
-
-  % There are two algorithms that displayed the most significant improvements in hardware-efficiency\todo{[fact-check]}: \textbf{Toom-Cook} %
-  %\footnote{~Lavin \& Grey originally referred to this algorithm as ``Winograd convolution'', a term which has since been contested~\cite{barabasz2020error,alam2022winograd}.}
-  % and \textbf{Fourier convolution}~\todo{[cite]}.
-
-  % Both algorithms reduce complexity by transforming the input to a different vector space\todo{[fact-check: ``vector space'' for Toom]} where convolution is equivalent to a Hadamard (pointwise) product. They differ in their respective transforms and vector spaces\todo{[!]}~\cite{lavin2016fast}\todo{[check citation]}.
-
-  % The Fourier transform bears a lower asymptotic complexity than Toom-Cook~\cite{lera2023hardware}\todo{[fact-check: is it only Toom-3?]}. However, Fourier convolution incurs $n$ Complex-domain multiplications, while Toom-Cook incurs $n$\todo{[fact-check, it's supposed to be a matrix mul]} Real-domain multiplications.
-
-  % Regarding kernel size, small kernels can provide the same receptive field as a larger kernel by increasing the number of layers, lowering the overall processing load~\cite{simonyan2014very}. As such, modern 2D CNN designs tend to rely on kernels no larger than 3x3, opting instead to increase network depth and number of kernels \todo{[cite MobileNet and such?]}. Similarly, most 3D CNNs rely on kernels of up to 3x3x3~\todo{[cite]}, with some relevant exceptions~\todo{[cite, also maybe add ``in the field of...'' and a brief description]}.
-
-  % \todo{The previous paragraph introduced the issue of kernel-size, and its tendency to be lower. Explain here how the state-of-the-art (which if I recall is toom-3) managed to beat MX despite this, at least in 3D. Then, leverage these arguments in favor of Fourier, thus completing the algorithm justification.}
-
-  % Both of the low-complexity algorithms presented become more efficient (in relation to matrix-multiplication) as the kernel size increases. \todo{answer the question: ``has it been demonstrated that Toom-Cook/Fourier can be more efficient than MX for 3x3 and 3x3x3 kernels, despite the transform time?''}
-  % Afterthought comment: If the state-of-the-art is Toom-Cook/Fourier then yes, it has to. Question is "how". Find that and try to apply the same reasoning to Fourier. That plus the previous comparison of asymp. complexity should be a good enough justification
-
-  % \todo{This paragraph directly states our objective. Something like ``As such, we propose a...'' or even ``Based on this literature review, we propose...'' but try not to be too verbose. After that (maybe in a new paragraph?) describe the contents of each section, which solves as a nice summary (other papers have done the same). This ends the Introduction.}
-
-  This document is organized as follows: In Section~\ref{sec:arch}, we present our proposed architecture, its design choices, and optimizations; Section~\ref{sec:test} details the procedures used to verify and test the architecture, and the results of these tests; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
+  % Unused paragraphs moved to notes, check there if you want to add extra information to the introduction
 
 \section{Architecture Design}\label{sec:arch}
 
-  \todo{Provide top-level diagram of the architecture (FFT - Hadamard - IFFT - OA)}
-
-  Fourier Convolution achieves lower complexity via the the Convolution Theorem. Let $a,b$ be two discrete signals in $\mathbb{R}^N$. The convolution of $a$ and $b$ can be represented as:
+  FFT convolution (FCONV) achieves lower complexity via the the Convolution Theorem. Let $a,b$ be two discrete signals in $\mathbb{R}^N$. The convolution of $a$ and $b$ can be represented as:
   %
   \begin{equation}\label{eq:theo}
     a * b = \mathcal{F}^{-1}[\mathcal{F}(a) \cdot \mathcal{F}(b)]\,,
@@ -200,9 +159,9 @@
   %
   where $\cdot$ represents the pointwise product and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse.
 
-  The pointwise product of two signals incurs $O(N)$ multiplications, whereas convolution in the space domain incurs $O(N^2)$. There are two main caveats to this method: the signals must be transformed to-and-from the Complex domain via a DFT; and the pointwise operation must be performed in the Complex domain. We address these issues in Sections \ref{ssec:fft} and \ref{ssec:cmul}, respectivelly.
+  The pointwise product of two signals incurs $O(N)$ multiplications, whereas convoltion-over-space and MMX incur $O(N^2)$. There are two main caveats to this method: the signals must be transformed to-and-from the Complex domain via a DFT; and the pointwise operation must be performed in the Complex domain. We address these issues in Sections \ref{ssec:fft} and \ref{ssec:cmul}, respectivelly.
 
-  We also make use of a decomposition algorithm to further decrease complexity, described in Section~\ref{ssec:alg}. The resulting system can be fully pipelined to increase its throughput, and the methods used for such as described in Section~\ref{ssec:pipe}.
+  We also make use of overlap-add, a decomposition algorithm used to further decrease complexity, and is described in Section~\ref{ssec:alg}. The resulting system can be fully pipelined to increase its throughput, and the methods used for such as described in Section~\ref{ssec:pipe}.
 
   %%% Unneeded / explained elsewhere
   % \subsection{Numeric Representation}\label{ssec:num}
@@ -222,7 +181,7 @@
       \caption{Visual representation of an 8-point radix-2 DIT FFT.}\label{fig:fft}
     \end{figure}
     
-    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications; as illustrated on Figure~\ref{fig:fft}. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
+    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications; as illustrated by Figure~\ref{fig:fft}. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
     %
     \begin{equation}
       \omega_{N}^{k} = e^{\frac{2{\pi}i}{N}k}\,,
@@ -249,8 +208,6 @@
     % \begin{equation}\label{eq:twiddle}
     %   e^{\frac{}{N}}
     % \end{equation}
-
-    \todo{maybe mention the other FFT algorithms? (ie split-radix, prime-factor, etc)}
 
   \subsection{Complex Multiplication}\label{ssec:cmul}
     Naively, Complex-domain multiplication implies 4 Real-domain multiplications. Let $a,b,c,d \in \mathbb{R}$ and $X,Y \in \mathbb{C} \mid X=a+bi,Y=c+di$. As such:
@@ -295,7 +252,7 @@
 
     The precision of the algorithm is equivalent to $2^{-j}$, or 1-bit of precision per iteration. Note that when using fixed-point notation, it is enough to iterate once for each bit after the point. The total number of bits of a variable is herefore denoted $S_t$, and the number of bits after the point is denoted $S_p$. Our implementation defaults to 24 and 16, respectivelly.
 
-    As such, a simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$.
+    A simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$. More efficient hardware implementations \todo{cite and recalc total hardware}.
     
     The outputs of $x_j$ and $y_j$ are scaled by $K_j$ on each iteration, where
     %
@@ -308,7 +265,7 @@
       \frac{1}{K} = \prod_{j=0}^{S_p-1}{\frac{1}{\sqrt{1+2^{-2j}}}} \stackrel{S_p=16}{\approx} 1.64676\,.
     \end{equation}
 
-    In our implementation, CORDIC is used 3 times. The first two convert the input image slice and kernel to polar coordinates, and the last converts the result back to rectangular coordinates. The scaling factor carries over across operations, including pointwise multiplication, and as such we can apply the correction at any point in the process (image, kernel or product). The combined scaling factor is:
+    In the pointwise multiplication step, CORDIC is used 3 times. The first two convert the input image slice and kernel to polar coordinates, and the last converts the result back to rectangular coordinates. The scaling factor carries over across operations, including pointwise multiplication, and as such we can apply the correction at any point in the process (image, kernel or product). The combined scaling factor is:
     %
     \begin{equation}\label{eq:cordic5}
       \frac{1}{K^3} \stackrel{S_p=16}{\approx} 0.22393\,.
@@ -322,17 +279,13 @@
     \end{figure}
     
     CORDIC's complexity does not increase with image- or kernel-size, depending instead on $S_p$, giving it a relative asymptotic complexity of $O(1)$ and enabling a trade-off between numerical precision and operation complexity.
-    
-    \todo{check for applications of CORDIC semi-rotation in FFT or FConv}
 
+    CORDIC can also been applied to FFTs to more efficiently calculate twiddle-factor multiplications~\cite{banerjee2001fpga,choudhary2011cordic}. Each CORDIC iteration rotates the input by elementary angles which coincide with the twiddle-factors used by the FFT. This, however, also requires scaling each point that wasn't multiplied by the twiddle-factor, to account for the gain induced by CORDIC, resuling in an increase of LUT components used. As later described in Section~\ref{sec:imp}, LUTs are the limiting factor in scaling this design, not DSPs. As such, we elected to implement the twiddle-factor rotations using DSP blocks.
+    
   \subsection{Algorithmic Decomposition}\label{ssec:alg}
-    In order to convolve two inputs using FCONV, the size of the input arrays must be equivalent. However, in the field of image recognition, the image is often much larger than the convolution kernels. In order to avoid padding the kernel to match the image, we employ a decomposition algorithm known as Overlap-Add~\cite{smith1997scientist,chen2024fast}. The image is broken down into kernel-sized slices which are individually convolved with each kernel. Each slice has overlapping points with its neighbors, which are added together to form the complete convolution.
+    In order to convolve two inputs using FCONV, the size of the input arrays must be equivalent. However, in the field of image recognition, the image is often much larger than the convolution kernels. In order to avoid padding the kernel to match the image, we employ a decomposition algorithm known as overlap-add~\cite{smith1997scientist,chen2024fast}. The image is broken down into kernel-sized slices which are individually convolved with each kernel. Each slice has overlapping points with its neighbors, which are added together to form the complete convolution.
     
     This process is only possible because of the type of padding used. There are three types of padding commonly used by CNNs. Let $I_d,K_d,O_d$ be the size of each dimension $d$ of the image, kernel, and output arrays. Using \textit{full} padding: $O=I+K-1$; using \textit{same} padding: $O=I=K$; and using \textit{valid} padding: $O=I-K+1$. Only \textit{full} padding preserves the complete information of the convolution of the overlapping points, enabling overlap-add.
-
-    \todo{maybe mention the other methods of convolution decomposition such as 3D=n2D}
-    
-    % Matrix multiplication methods most often use ``same'' or ``valid'' padding to reduce computation load. As a caveat, these methods cannot decompose the convolution using Overlap-Add, as some of the overlapping points are lost.
   
   \subsection{Pipelining}\label{ssec:pipe}
     Each step of the proposed algorithm can be pipelined to greatly increase its throughput. Figure~\ref{fig:pipeline} illustrates our fully-pipelined design, optimized for hardware-efficiency.
@@ -344,13 +297,15 @@
 
     \todo{describe each block of the design}
 
-\section{Implementation \& Testing Procedures}\label{sec:test}
-  Two versions of our architecture were conveived: parallel-core and pipeline-core. The parallel version disregards the pipelining optimizations discussed in Section~\ref{ssec:pipe}, instead opting to increase the number of parallel processing blocks. % For instance, the FFT in parallel mode completes 1 full transform in $\log_2{N}$ cycles, instead of $\frac{N}{2}$ in the pipelined version. It incurs, however, a much higher resource cost.
-  
-  In order to assess the hardware-usage of this design, we synthesized the parallel-core version on a VC709 FPGA board, the results of which are presented on Table~\ref{tab:parallel}.
+\section{Implementation \& Testing Procedures}\label{sec:imp}
+  Two versions of our architecture were conveived: parallel-core and pipelined-core, referring to the hardware utilization strategies used in their designs. To simplify nomenclature, this Section uses the monikers \textit{HEC-1} to address the parallel-core design, and \textit{HEC-2} for the pipelined-core design.
+
+  Due to the slow development cycle of pure HDL designs, only the parallel-core version of the architecture was fully synthesized. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case). All aforementioned calculations are described in Section~\ref{ssec:hec2}.
+
+  Table~\ref{tab:parallel} displays the resource usage metrics of HEC-1 implemented on a VC709 FPGA board, assuming kernel-size $3{\times}3{\times}3$.
 
   \begin{table}
-    \caption{Resource usage of parallel HECATE core in vc709 environment for $K=3{\times}3{\times}3$.}
+    \caption{Resource usage of HEC-1 in vc709 environment for $K=3{\times}3{\times}3$.}
     \centering
     \label{tab:parallel}
     \begin{tabular}{|c|c|c|c|}
@@ -366,9 +321,9 @@
     \end{tabular}
   \end{table}
 
-  \subsection{Throughput calculation}\label{ssec:tp}
-    By evaluating the resource utilization of the individual processing stages (FFT, CORDIC, polar multiplication), we estimated the hardware-utilization of the fully-pipelined design.
-    
+  Timing closure was achieved at 200MHz for HEC-1. Separate testing was made using pipelined designs that lower the critical path, successfuly closing timing at 150 MHz.
+
+  \subsection{HEC-2 Resource Usage}\label{ssec:hec2}
     \todo{This section is written in casual text so I could get the formulas down. Rewrite more formally later.}
 
     Standardized convolution complexity:
@@ -421,23 +376,19 @@
     Granted, beating a single CUDA core isn't much of a milestone (even tho it fast as fuk) but that depends entirely on how many HEC cores we can stuff into a vc709 until it starts screaming bitstreams. And that in turn depends on how big our core is. So let's calc that. Look at Table~\ref{tab:pipelined}.
 
     \begin{table}
-    \caption{Resource usage of pipelined HECATE core in vc709 environment for $K=3{\times}3{\times}3$.}
+    \caption{Resource usage of HEC-2 in vc709 environment for $K=3{\times}3{\times}3$.}
     \centering
     \label{tab:pipelined}
     \begin{tabular}{|c|c|c|c|}
       \hline
       Stage     & Blocks & DSP   & LUT   \\\hline
-      Bfly      & 7      & 3     & 112   \\\hline
-      CORDIC-V  & 32     & 0     & 151   \\\hline
+      FFT       & 14     & 3     & 112   \\\hline
       PMUL      & 1      & 1     & 414   \\\hline
-      CORDIC-R  & 32     & 0     & 167   \\\hline
       OaA       & 1      & 0     & 56    \\\hline
       Total     & ---    & 22    & 11430 \\\hline
       Usage     & ---    & 0.6\% & 2.6\% \\\hline
     \end{tabular}
     \end{table}
-
-    \todo{find them cordic optimizations to reduce number of blocks n' shit}
 
     With this incredibly non-generous estimation, and also non-generously assuming that we can only stuff the fpga up to 80\% before it starts imploding, we find that we can fit: $443200/11430 = 37.9$ HEC cores into the vc709, and fuck it I'm rounding to 38 because 80.1\% isn't actually gonna dematerialize the fpga.
 
@@ -506,7 +457,7 @@
 
     Ugh winograd... I hate you so much
 
-    OK imma gonna hafta write this shit down using our normenclature.
+    OK imma gonna hafta write this shit down using our nomenclature.
 
     So they attempt to parellalize the filters and channel/feature maps by using PUs and PEs respectivelly. Those are whatever, this kind of parallelism doesn't increase hardware-efficiency, as it's a linear gain in speed and a linear amount of hardware used.
 
@@ -567,7 +518,9 @@
     % \end{table}
 
   \subsection{Benchmarks}
-    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}~\todo{cite a bunch of others too}. This is due to differences in their choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether these publications accounted for differing hyperparameters in their calculations. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results as they were originally published, then transpose their results to the established standard.
+    \todo{[Rewrite this section]}
+
+    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}. This is due to their different choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether the relevant publications accounted for differing hyperparameters in their analyses. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results as they were originally published, then transpose their results to this standard.
     
     The baseline method of convolution is convolution-over-space \todo{cite?}, and will be used in our evaluation. The total number of MAC operations in a 3D convolution-over-space the product of all input dimensions, kernel dimensions, channels, and number of filters in the layer. Each MAC operation consists of two operations, thus totalling:
     %
@@ -577,7 +530,7 @@
     
     \todo{calc fourier complexity}
 
-    For 3D convolution, only the three input dimensions and the three kernel dimensions are topologically organized. In other words, the convolution only takes into account the correlations between three dimensions (height, width, frame) and \textit{does not} find correlations across color channels and filter \todo{name of the convolved filter layers}. This does not affect MM Convolution, as its complexity increases linearly with each of these metrics, but is relevant for Fourier Convolution.
+    For 3D convolution, only the three input dimensions and the three kernel dimensions are topologically organized. In other words, the convolution only takes into account the correlations between three dimensions (height, width, frame) and \textit{does not} find correlations across color channels and filter \todo{name of the convolved filter layers}. This does not affect MM Convolution, as its complexity increases linearly with each of these metrics, but is relevant for FCONV.
 
     C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
     
@@ -644,24 +597,25 @@
 
     Table~\ref{tab:res}...
 
-\section{Limitations and Future Work}\label{sec:lim}
-  In the interest of research integrity, this section discloses the limitations of this project, how they were addressed, and how this project can be expanded upon.
+\section{Related \& Future Work}\label{sec:rela}
+
+  \todo{[Rewrite paragraph]} Fan et al.~\cite{fan2021high} presents an accelerator which processes C3D in 93.95 ms using 1345 DSPs and a frequency of 220 MHz, giving it a hardware-efficiency of $5.19 [\frac{GOP}{s{\cdot}MHz{\cdot}DSP}]$. Their method involves quantization of weights and activations with static block floating point, while the convolution algorithm remains the standard matrix-multiplication method. This method, however, does not reduce the overall number of multiplication operations required by the convolution layer, which are still performed using fixed-point representation.
+
+  ~\\\todo{Also mention:
+    \begin{itemize}
+    \item rotation invariance~\cite{kim2020cycnn,mo2024ric};
+    \item CORDIC activation function~\cite{kokane2025retrospective};
+    \item CORDIC semi-rotation FFT (if not mentioned before);
+    spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image};
+    \item other FFT algorithms like split-radix, prime-factor, etc;
+    \item other methods of convolution decomposition such as 3D=n2D
+    \end{itemize}
+  } 
+
+  We intend to fully implement the pipelined-core version of our design, as the results presented in this paper indicate it will achieve higher hardware-efficiency.
+
+  Further optimizations of the synthesis process will likely enable higher operational frequencies.
   
-  Only the parallel-core version of the architecture was fully synthesized and tested on a live board, due to time- and resource-constraints. From it, we extracted the relevant resource utilization metrics -- DSP, LUT, and FF \todo{any others?} -- for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, the metrics provided in Section~\ref{sec:test} regarding the pipelined design were calculated assuming no further design optimization can be made (i.e., the worst case scenario). All the calculations performed regarding the evaluation of our architecture are described in Section~\ref{ssec:tp}, for transparency.
-
-  Timing closure proved difficult for the parallel-core synthesis, as its size \todo(provide percentiles) makes it more prone to congestion issues. Separate testing was made using smaller designs while maintaining the largest critical path, which is shared by both the parallel and pipelined versions of the architecture. Timing was successfuly closed at 200MHz in these designs, while the complete parallel design was timed at 150 MHz. Further optimizations of the synthesis process will likely enable higher operational frequencies.
-
-  Despite these limitations...
-  
-  Future work...
-
-  % calcs moved to notes
-    
-\section{Related Work}\label{sec:rela}
-  Fan et al.~\cite{fan2021high} presents an accelerator which processes C3D in 93.95 ms using 1345 DSPs and a frequency of 220 MHz, giving it a hardware-efficiency of $5.19 [\frac{GOP}{s{\cdot}MHz{\cdot}DSP}]$. Their method involves quantization of weights and activations with static block floating point, while the convolution algorithm remains the standard matrix-multiplication method. This method, however, does not reduce the overall number of multiplication operations required by the convolution layer, which are still performed using fixed-point representation.
-
-  \todo{chen2024fast also uses OaA, maybe reference them here too}
-
 \section{Conclusion}\label{sec:conc}
   \todo{Comment on the relevant comparisons made and the observed causation of their results. On another paragraph, wrap up by describing how these results achieve our objective.}
 
