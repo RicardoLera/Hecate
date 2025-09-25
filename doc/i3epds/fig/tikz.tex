@@ -61,14 +61,14 @@
       color=blue,
       draw opacity=0.5,
     ]{
-      (1/((128*171*16)*x^3))*1530000000
+      (1/(((128+x-1)*(171+x-1)*(16+x-1))*x^3))*1530000000
     };
     \addplot[
       samples=100,
       color=blue,
       draw opacity=0.5,
     ]{
-      (1/((128*171*16)*x^3))*1530000000
+      (1/(((128+x-1)*(171+x-1)*(16+x-1))*x^3))*1530000000
     };
     \addplot[
       scatter src=none,
@@ -160,6 +160,47 @@
     %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
     % };
   \legend{TITAN X PASCAL,,HEC-2 VC709,,HEC-2 VCU118}
+  \end{semilogyaxis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+  \begin{semilogyaxis}[
+    domain=3:13,
+    xtick={3,...,13},
+    % y domain=3:11, 
+    grid=major,
+    xlabel=$k$,
+    ylabel=$OP/(s.DSP)$,
+    legend style={font=\scriptsize},
+    legend cell align=left,
+    legend pos=north west,
+    % colormap={bw},
+  ]
+    % \addplot[
+    %   scatter src=none,
+    %   samples=11,
+    %   only marks,
+    %   color=blue,
+    %   draw opacity=0.5,
+    % ]{
+    %   (1/((128*171*16)*x^3))*1530000000
+    % };
+    \addplot[
+      samples=11,
+      draw opacity=1,
+      color=green,
+    ]{
+      (2*(x^3)*(2^3)*4*32*150000000*0.54)/(1536*8)
+    };
+    \addplot[
+      samples=11,
+      draw opacity=1,
+      color=red,
+    ]{
+      (4*1*(x^6)*200000000)/(43*((2*x-1)^3))
+    };
+
+  \legend{Wino VC709 Core,HEC-2 VC709 Core}
   \end{semilogyaxis}
 \end{tikzpicture}
 
