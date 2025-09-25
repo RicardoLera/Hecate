@@ -15,7 +15,7 @@
 % Template packages and settings
 \usepackage{amsmath,amsfonts}
 \interdisplaylinepenalty=2500
-\usepackage[nocompress]{cite}
+\usepackage{cite}
 \usepackage[pdftex]{graphicx}
 \graphicspath{{figs/}}
 \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
@@ -48,6 +48,7 @@
 \renewcommand{\arraystretch}{1.5}
 \usepackage{mathtools}
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\usepackage{multirow}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
 %\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
@@ -123,9 +124,9 @@
 \else
   \section{Introduction}
 \fi
-  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success of Convolutional Neural Networks (CNNs) in two-dimensional image recognition.everal accelerator architectures have been developed; a method that has seen wide success in 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} convolution.
+  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success of Convolutional Neural Networks (CNNs) in two-dimensional image recognition. Several accelerator architectures have been developed to attend to these demands; a method that has seen wide success in 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} CNNs.
 
-  A variety of optimization approaches have been applied to the task of accelerating CNNs, such as: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
+  A variety of optimization approaches have been developed for the task of accelerating CNNs, including: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
 
   One approach that has also garnered attention is the application of more efficient convolution algorithms. The standard algorithm known as convolution-over-space, as well as the more widely used matrix-multiplication (MMX), have a base assymptotic complexity of $O(N^2)$, scaling very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly outscale all other layers in the network~\cite{hegde2018morph}.
 
@@ -145,7 +146,7 @@
   
   We propose HECATE, an FFT-based 3D convolution accelerator using hardware-efficient polar-coordinate multiplication, pipelined FFT and IFFT chains, and optimized for large images using input slicing and overlap-add. We synthesize the architecture using HDL and implement it in a VC709 FPGA board. By validating our implementation using state-of-the-art benchmarks, we demonstrate the viability of FFT convolution in non-spectral 3D CNNs.
   
-  This document is organized as follows: In Section~\ref{sec:arch}, we describe the design choices and optimizations of our proposed architecture; Section~\ref{sec:imp} details the procedures used to verify and test the architecture, and the results obtained from them; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
+  This document is organized as follows: In Section~\ref{sec:arch}, we describe the design choices and optimizations of our proposed architecture; Section~\ref{sec:imp} details the procedures used to verify and test the architecture; Section~\ref{sec:res} lists the results obtained from them; Section~\ref{sec:rela} discusses related and future work; and Section~\ref{sec:conc} presents our conclusions.
 
   % Unused paragraphs moved to notes, check there if you want to add extra information to the introduction
 
@@ -252,7 +253,7 @@
 
     The precision of the algorithm is equivalent to $2^{-j}$, or 1-bit of precision per iteration. Note that when using fixed-point notation, it is enough to iterate once for each bit after the point. The total number of bits of a variable is herefore denoted $S_t$, and the number of bits after the point is denoted $S_p$. Our implementation defaults to 24 and 16, respectivelly.
 
-    A simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$. More efficient hardware implementations \todo{cite and recalc total hardware}.
+    A simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$. More efficient hardware implementations \todo{describe and cite}.
     
     The outputs of $x_j$ and $y_j$ are scaled by $K_j$ on each iteration, where
     %
@@ -292,315 +293,161 @@
 
     \begin{figure*}[htb]\centering
       \includegraphics[width=2\columnwidth]{fig/pipeline-0.pdf}
-      \caption{Fully-pipelined FCONV design.}\label{fig:pipeline}
+      \caption{Fully-pipelined FFT-conv design.}\label{fig:pipeline}
     \end{figure*}
 
     \todo{describe each block of the design}
 
-\section{Implementation \& Testing Procedures}\label{sec:imp}
+\section{Implementation \& Testing}\label{sec:imp}
   Two versions of our architecture were conveived: parallel-core and pipelined-core, referring to the hardware utilization strategies used in their designs. To simplify nomenclature, this Section uses the monikers \textit{HEC-1} to address the parallel-core design, and \textit{HEC-2} for the pipelined-core design.
 
-  Due to the slow development cycle of pure HDL designs, only the parallel-core version of the architecture was fully synthesized. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case). All aforementioned calculations are described in Section~\ref{ssec:hec2}.
+  Due to the slow development cycle of pure HDL designs, only the parallel-core version of the architecture was fully synthesized. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case).
 
-  Table~\ref{tab:parallel} displays the resource usage metrics of HEC-1 implemented on a VC709 FPGA board, assuming kernel-size $3{\times}3{\times}3$.
+  \todo{Explain HEC-1's design}
 
-  \todo{Redo table~\ref{tab:parallel} and add FF}
+  Timing closure was achieved at 200MHz for HEC-1. Separate testing was made using pipelined designs that lower the critical path, successfuly closing timing at 150 MHz for HEC-2.
 
-  \begin{table}
-    \caption{Resource usage of HEC-1 in vc709 environment for $K=3{\times}3{\times}3$.}
+  \todo{explain software/precision testing}
+
+  Table~\ref{tab:ru} displays the resource usage metrics of HEC-1 and HEC-2 implemented on a VC709 FPGA board, assuming kernel-size $3{\times}3{\times}3$.
+
+  \todo{justify 7x3x3 (MRI)}
+
+  \begin{table}[htb]
+    \caption{Resource usage of HEC-1 and HEC-2 in vc709 environment for $K=3{\times}3{\times}3$.}
     \centering
-    \label{tab:parallel}
-    \begin{tabular}{|c|c|c|c|}
+    \label{tab:ru}
+    \begin{tabular}{|c|c|c|c|c|c|c|}
       \hline
-      Stage    & Blocks & DSP  & LUT   \\\hline
-      FFT      & 1      & 192  & 18567 \\\hline
-      CORDIC-V & 17     & 0    & 151   \\\hline
-      PMUL     & 17     & 8    & 414   \\\hline
-      CORDIC-R & 17     & 0    & 167   \\\hline
-      OaA      & 1      & 0    & 3013  \\\hline
-      Other    & 1      & 0    & 5524  \\\hline
-      Total    & ---    & 328  & 39548 \\\hline
+      Stage  & Block    & DSP  & LUT   & FF    & HEC-1       & HEC-2     \\\hline
+      \multirow{2}{*}{FFT}
+        & bfly\_wmul    & 3    & 224   & 0     & $\times$16  & $\times$14 \\
+        & reg\_arr      & 0    & 0     & 260   & $\times$16  & $\times$2 \\\hline
+      \multirow{3}{*}{PMUL}
+        & cordic1       & 0    & 141   & 125   & $\times$17  & $\times$16 \\
+        & mul\_add      & 1    & 156   & 0     & $\times$17  & $\times$1 \\
+        & cordic2       & 0    & 150   & 125   & $\times$17  & $\times$16 \\\hline
+      OA     & ovl\_add & 0    & 21    & 28    & $\times$128 & $\times$1 \\\hline
+      \multicolumn{2}{|c|}{HEC-1 Total}
+                        & 65   & 13871 & 11994 & --- & --- \\\hline
+      \multicolumn{2}{|c|}{HEC-2 Total}
+                        & 43   & 7969  & 4548   & --- & --- \\\hline
     \end{tabular}
   \end{table}
 
-  Timing closure was achieved at 200MHz for HEC-1. Separate testing was made using pipelined designs that lower the critical path, successfuly closing timing at 150 MHz.
+  \subsection{Benchmarks}
+    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}. This is due to their different choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether the relevant publications accounted for differing hyperparameters in their analyses. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will then transpose the results from the state-of-the-art to this standard.
 
-  \subsection{HEC-2 Resource Usage}\label{ssec:hec2}
-    \todo{This section is written in casual text so I could get the formulas down. Rewrite more formally later.}
+    \todo{Rewrite this next part more formally}
 
     Standardized convolution complexity:
     \begin{equation}\label{eq:tp1}
       [I*K] = (I_xI_yI_z)(K_xK_yK_z)~\texttt{MAC-OP}
     \end{equation}
 
-    Ass. C3D technical report~\cite{tran2015learning}:
+    Assuming C3D technical report~\cite{tran2015learning}:
     \begin{equation}\label{eq:tp2}
       [I*K] = 2*128*171*16*k^3 = 700416*k^3~\texttt{OP}
     \end{equation}
-    That is 1 "conv". To complete a layer we gotta do $K_n.C_n$ of those (\# of kernels x channels) which is like a fuckton. So the question is: how many of those can our accelerator make per second? 
+    That is 1 "conv". To complete a layer HEC-2 has to do $K_n.C_n$ of those (\# of kernels x channels).
+    
+    Comparisons with other projects will be made considering the time needed to finish 1 "conv", expressed as $\frac{I*K}{s}$. Then, the standardized throughput ($\frac{GOP}{s}$) is calculated via Equation~\ref{eq:tp2}.
 
-    Let's start with a GPU. Say TITAN X PASCAL like~\cite{fan2021high} used. It's got 3584 CUDA cores and runs at 1.53 GHz. We'll compare 1 CUDA core against 1 HECATE core because lolno. We'll argue how many HECATEs you can fit in an FPGA later (spoilers it's like 13).
+    \todo{Mention the comparison with GPU as well}
 
-    1 CUDA core does 1 floating or fixed point MAC a cycle, at 1.53 GHz. Kinda insane. That's exactly:
-    \begin{equation}\label{eq:tp-cuda1}
-      \frac{f}{(I_xI_yI_z)(K_xK_yK_z)}
-    \end{equation}
-    convolutions per second. Or:
-    \begin{equation}\label{eq:tp-cuda2}
-      \frac{1.53\times10^9}{(128.171.16).(k^3)} = 4368.83{\cdot}k^{-3} \left[\frac{I*K}{s}\right]\,.
-    \end{equation}
+    %%% All of this is unneeded
+    % C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
+    
+    % Table~\ref{tab:c3d} presents the total number of operations required by the C3D convolutional layers. Respectivelly: Resolution (D1xD2); Depth (D3); Frames (D4); Filters (D5); Giga Multiply-Accumulate Operations (GMAC); Giga Operations (GOP).
 
-    1 HECATE pipeline-core does 2 points of a slice per cycle. Points per slice depends on full-padding and power-of-2 padding, and number of slices has to be integer, so:
-    \begin{equation}\label{eq:tp-hec1}
-      \frac{2f}{
-        \ceil{\frac{I_x}{k}}
-        \ceil{\frac{I_y}{k}}
-        \ceil{\frac{I_z}{k}}
-        2^{\ceil{\log_2{(2k-1)^3}}}
-      }
-    \end{equation}
-    convolutions per second---yeah I know that's a clusterfuck, maybe put the denominator on it's own equation later --- so that gives:
-    \begin{equation}\label{eq:tp-hec2}
-      \frac{2{\times}0.2{\times}10^9}{
-        \ceil{\frac{128}{k}}
-        \ceil{\frac{171}{k}}
-        \ceil{\frac{16}{k}}
-        2^{\ceil{\log_2{(2k-1)^3}}}
-      }
-    \end{equation}
-    and I'm not even gonna bother trying to simplify it further, just look at the pretty graph (figure~\ref{fig:cores1}).
+    % \begin{table}[htb]
+    %   \caption{C3D Convolutional Layer Operation Count}
+    %   \centering
+    %   \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    %     \hline
+    %     Layer  & D1  & D2  & D3 & D4  & D5  & GMAC  & GOP    \\\hline
+    %     Conv1  & 128 & 171 & 16 & 3   & 64  & 1.82  & 3.63   \\\hline
+    %     Conv2  & 64  & 86  & 16 & 64  & 128 & 19.48 & 38.96  \\\hline
+    %     Conv3a & 32  & 43  & 8  & 128 & 256 & 9.74  & 19.48  \\\hline
+    %     Conv3b & 32  & 43  & 8  & 256 & 256 & 19.48 & 38.96  \\\hline
+    %     Conv4a & 16  & 22  & 4  & 256 & 512 & 4.98  & 9.97   \\\hline
+    %     Conv4b & 16  & 22  & 4  & 512 & 512 & 9.97  & 19.93  \\\hline
+    %     Conv5a & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
+    %     Conv5b & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
+    %     Total  & -   & -   & -  & -   & -   & 58.21 & 116.42 \\\hline
+    %   \end{tabular}%
+    %   %   \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    %   %     \hline
+    %   %     Layer  & D1  & D2  & D3 & D4 & D5 & GMAC  & GOP   \\\hline
+    %   %     Conv1  & 128 & 171 & 16 & 3  & 8  & 0.227 & 0.454 \\\hline
+    %   %     Conv2  & 64  & 86  & 16 & 8  & 8  & 0.152 & 0.304 \\\hline
+    %   %     Conv3a & 32  & 43  & 8  & 8  & 8  & 0.019 & 0.038 \\\hline
+    %   %     Conv3b & 32  & 43  & 8  & 8  & 8  & 0.019 & 0.038 \\\hline
+    %   %     Conv4a & 16  & 22  & 4  & 8  & 8  & 0.002 & 0.005 \\\hline
+    %   %     Conv4b & 16  & 22  & 4  & 8  & 8  & 0.002 & 0.005 \\\hline
+    %   %     Conv5a & 8   & 11  & 2  & 8  & 8  & ~0    & ~0    \\\hline
+    %   %     Conv5b & 8   & 11  & 2  & 8  & 8  & ~0    & ~0    \\\hline
+    %   %     Total  & -   & -   & -  & -  & -  & 0.423 & 0.845 \\\hline
+    %   %   \end{tabular}%
+    %   \label{tab:c3d}
+    % \end{table}
 
-    \begin{figure}\centering
-      \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
-      \caption{it gud}\label{fig:cores1}
-    \end{figure}
+\section{Results}\label{sec:res}
+  Table~\ref{tab:he-cores} summarizes the hardware-efficiency calculations for our project. Table~\ref{tab:he-comp} compares it to other projects.
 
-    Granted, beating a single CUDA core isn't much of a milestone (even tho it fast as fuk) but that depends entirely on how many HEC cores we can stuff into a vc709 until it starts screaming bitstreams. And that in turn depends on how big our core is. So let's calc that. Look at Table~\ref{tab:pipelined}.
-
-    \begin{table}
-    \caption{Resource usage of HEC-2 in vc709 environment for $K=3{\times}3{\times}3$.}
+  \begin{table}[htb]
+    \caption{Throughput and Hardware-Efficiency of pipelined HECATE cores at various kernel sizes.}
     \centering
-    \label{tab:pipelined}
-    \begin{tabular}{|c|c|c|c|}
+    \label{tab:he-cores}
+    \begin{tabular}{|c|c|c|c|c|c|c|}
       \hline
-      Stage     & Blocks & DSP   & LUT   \\\hline
-      FFT       & 14     & 3     & 112   \\\hline
-      PMUL      & 1      & 1     & 414   \\\hline
-      OaA       & 1      & 0     & 56    \\\hline
-      Total     & ---    & 22    & 11430 \\\hline
-      Usage     & ---    & 0.6\% & 2.6\% \\\hline
+      Core    & \multicolumn{3}{|c|}{HEC-1} & \multicolumn{3}{|c|}{HEC-2} \\\hline
+      Kernel              & 3x3x3 & 4x4x4 & 7x3x3 & 3x3x3 & 4x4x4 & 7x3x3 \\\hline
+      $\frac{I*K}{s}$     & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
+      $\frac{GOP}{s}$     & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
+      DSPs                & ---   & ---   & ---   & ---   & ---   & ---   \\\hline      
+      LUTs                & ---   & ---   & ---   & ---   & ---   & ---   \\\hline 
+      FFs                 & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
+      $\frac{GOP}{s.DSP}$ & ---   & ---   & ---   & ---   & ---   & ---   \\\hline   
+      $\frac{GOP}{s.LUT}$ & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
+      $\frac{GOP}{s.FF}$  & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
     \end{tabular}
-    \end{table}
+  \end{table}
 
-    With this incredibly non-generous estimation, and also non-generously assuming that we can only stuff the fpga up to 80\% before it starts imploding, we find that we can fit: $443200/11430 = 37.9$ HEC cores into the vc709, and fuck it I'm rounding to 38 because 80.1\% isn't actually gonna dematerialize the fpga.
+  \begin{table*}
+    \caption{Comparison}
+    \centering
+    \label{tab:he-comp}
+    \begin{tabular}{|c|c|c|c|c|}
+      \hline
+      Project                  & \cite{shen2018towards} & \cite{shen2018towards} & [x] & Ours  \\\hline
+      Board                    & VC709                  & VUS440                 & --- & VC709 \\\hline
+      Technology (nm)          & 28                     & 20                     & --- & 28    \\\hline
+      Latency (us)             & (rec)                  & (rec)                  & --- & (rec) \\\hline
+      Frequency (MHz)          & 150                    & 200                    & --- & 100   \\\hline
+      DSP                      & 1536                   & 1536                   & --- & 529   \\\hline
+      BRAM                     & 1508                   & 1476                   & --- & -     \\\hline
+      LUT                      & 242K                   & 209K                   & --- & 37K   \\\hline
+      FF                       & 286K                   & 285K                   & --- & 12K   \\\hline
+      $GOP/s$                  & 474.3                  & 940.6                  & --- & 145.8 \\\hline
+        $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
+      $\frac{OP}{LUT*10^{-3}}$ & 13.1                   & 22.5                   & --- & (rec) \\\hline % ours is 39.4 ish
+    \end{tabular}
+  \end{table*}
 
-    Important to note, the only part of any of that that scales with anything is the number of bfly stages with $\log_2{N}$. So let's plot again but accounting for all that, versus the THE FULL POWER OF TITAN X PASCAAAAAL!! {\scriptsize fuck that name is so bad} And this ain't gonna look as pretty. It's Figure~\ref{fig:cores2}.
+  Figure~\ref{fig:cores1} is the comparison with 1 GPU CUDA core running at 1.35GHz (titan x pascal frequency).
 
-    \begin{figure}\centering
-      \includegraphics[width=0.9\columnwidth]{fig/plot-1.pdf}
-      \caption{yikes}\label{fig:cores2}
-    \end{figure}
+  \begin{figure}\centering
+    \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
+    \caption{}\label{fig:cores1}
+  \end{figure}
 
-    Yyyyeah we ain't beating a GPU in raw throughput, I'm afraid. At least not without some serious optimization. But this isn't why we're here, we're all about dat hardware-efficiency. And I don't think it makes much sense trying to calc that outside the context of fpgas. But before we move on to the benchmarks and comparisons, let's calc the raw throughput so we can compare with the other fpga implementations.
-
-    Imma assume 4x4x4 because that's better for us and \cite{fan2021high} did it so I can do it too. This is for 1 pipelined-core:
-    \begin{equation}\label{eq:tp-hec3}
-      \frac{OP}{s} = \frac{I*K}{s} (I_xI_yI_z)(K_xK_yK_z)
-    \end{equation}
-    btw find out how to make multiline equations
-    \begin{equation}\label{eq:tp-hec3lol}
-      \frac{2{\times}0.2{\times}10^9}{
-        \ceil{\frac{128}{k}}
-        \ceil{\frac{171}{k}}
-        \ceil{\frac{16}{k}}
-        2^{\ceil{\log_2{(2k-1)^3}}}
-      }(I_xI_yI_z)(K_xK_yK_z)
-    \end{equation}
-    yyyyep. should get on that sometime.
-    \begin{equation}\label{eq:tp-hec3lmao}
-      \begin{cases}
-        1.00~GOP/s;~for~K=3{\times}3{\times}3 \\
-        3.11~GOP/s;~for~K=4{\times}4{\times}4 \\
-        6.05~GOP/s;~for~K=7{\times}3{\times}3
-      \end{cases}
-    \end{equation}
-    ...blazing fast, I know.
-
-    Well this time we can compare DSPs, motherfucker. Here's non-frequency-normalized hardware-efficiency using DSP:
-    \begin{equation}\label{eq:he-hec1}
-      HE = \frac{throughput}{DSP} = \frac{3.11}{28} = 0.11
-    \end{equation}
-    Fan has... 1.14. OK it's fine, DSPs aren't the limiting factor anyways! Compare LUTs:
-        \begin{equation}\label{eq:he-hec2}
-      HE = \frac{throughput}{LUT} = \frac{3.11}{11.430 kLUT} = 0.27
-    \end{equation}
-    Fan has... 3.60 WHAT THE FUCK. That throughput it WAY too high, it beat the GPU in 2D.
-
-    Something's weird with these numbers. We got close to the titan gpu but nowhere close to Fan. Yet he lost by a wide margin to the same GPU. We need to recalc his values and apply them to our conv/s standard so the comparison is valid.
-
-    Oh, and yeah, part of this needs to be in the Comparison section instead.
-
-    Oh, and Equation~\ref{eq:tp-hec3} and onward are missing the 2x from the MAC operation. Doesn't change that much, but it helps.
-
-    Wait, wtf? Fan scaled their latency by 16/20 to match the 16nm transistor size of the GPU? Are they high?? A smaller transistor size doesn't change jack shit for an FPGA implementation, it just makes it easier to close timing. I'm seriously doubting the validy of this paper. Where was this even published?
-    
-    IEEE Transactions on Neural Networks and Learning Systems
-    Impact Factor 14.255
-
-    Fun. Gonna be easy trying to tear down THAT paper...
-
-    ...wait
-
-    They... they don't change the algorithm at all. It's still convolution-over-space. Which means... all the optimizations made were with regards to CNNs not the convolution operation itself. Which in turn means our applications could be used in tandem, with some slight modifications. Meaning we shouldn't even be comparing against it.
-
-    Well fine then, back to plan A: we mention them in the Related Works. Does that mean shen2018's winograd is the state-of-the-art? Fucking 7 years ago? Damn.
-
-    Well, according to Fan, we didn't beat Shen either. But I'm gonna go check his implementation and see if the comparison is valid.
-
-    Ugh winograd... I hate you so much
-
-    OK imma gonna hafta write this shit down using our nomenclature.
-
-    So they attempt to parellalize the filters and channel/feature maps by using PUs and PEs respectivelly. Those are whatever, this kind of parallelism doesn't increase hardware-efficiency, as it's a linear gain in speed and a linear amount of hardware used.
-
-    Inside of the innermost unit (PE) they calculate... The transform, multiplication, and reverse transform.
-
-    btw these people love to do everything in HLS. I should really mention we don't use that. Honestly, it was holding hls4ml back
-
-    ``Considering that the Winograd algorithm is essentially the fast algorithm for the convolution''
-    Fourier's gonna make you eat those words
-
-    Anyway they calculate something very similar to ours, they call it ``computational roof''. It's OP/cycles, using convolution-over-space as a baseline. It goes:
-    \begin{equation}\label{eq:wino-cr}
-      CR = \frac{OPs}{EC_w}=\frac{2{\times}M{\times}N{\times}K_{size}{\times}m^{dim}}{\ceil{\frac{M}{T_o}}{\times}\ceil{\frac{N}{T_i}}{\times}I}
-    \end{equation}
-    where... here we go... Z (depth), R (row) and C (column) are the image , which is confusing because r are the dimensions of the kernel (yes all of them) and m represents... each input dimension. Not to be confused with M, one of the three winograd transform matrices. Yeah, if it wasn't clear, this paper was also written by idiots.
-
-    Also I is the ``iteration interval of the pipeline'' whatever the fuck that means. Maybe that's similar to our N/2.
-
-    I can't for the life of me understand what M and N are (that's YET ANOTHER M) and I hate that I have to waste time on this. But we have to. This paper is a perfect metric of comparison with our algorithm, and I couldn't find any other, newer ones.
-
-    I'll go rest and tackle this tomorrow with a fresh head.
-
-
-    % \begin{table}
-    %   \caption{Throughput and Hardware-Efficiency of pipelined HECATE cores at various kernel sizes.}
-    %   \centering
-    %   \label{tab:tp}
-    %   \begin{tabular}{|c|c|c|}
-    %     \hline
-    %     Kernel size         & 3{\times}3{\times}3 & 4{\times}4{\times}4 & 7{\times}3{\times}3~\todo{cite} \\\hline
-    %     $\frac{I*K}{s}$     & ---                 & ---                 & ---                             \\\hline
-    %     DSPs                & ---                 & ---                 & ---                             \\\hline      
-    %     LUTs                & ---                 & ---                 & ---                             \\\hline 
-    %     FFs                 & ---                 & ---                 & ---                             \\\hline
-    %     $\frac{I*K}{s.DSP}$ & ---                 & ---                 & ---                             \\\hline   
-    %     $\frac{I*K}{s.LUT}$ & ---                 & ---                 & ---                             \\\hline
-    %     $\frac{I*K}{s.FF}$  & ---                 & ---                 & ---                             \\\hline
-    %   \end{tabular}
-    % \end{table}
-
-
-    % \begin{table}
-    %   \caption{Throughput and Hardware-Efficiency of parallel and pipelined HECATE cores.}
-    %   \centering
-    %   \label{tab:tp}
-    %   \begin{tabular}{|c|c|c|}
-    %     \hline
-    %     Design              & Parallel & Pipelined \\\hline
-    %     Frequency           & ---      & ---       \\\hline
-    %     $\frac{I*K}{s}$     & ---      & ---       \\\hline
-    %     DSPs                & ---      & ---       \\\hline      
-    %     LUTs                & ---      & ---       \\\hline 
-    %     FFs                 & ---      & ---       \\\hline
-    %     $\frac{I*K}{s.DSP}$ & ---      & ---       \\\hline   
-    %     $\frac{I*K}{s.LUT}$ & ---      & ---       \\\hline
-    %     $\frac{I*K}{s.FF}$  & ---      & ---       \\\hline
-    %   \end{tabular}
-    % \end{table}
-
-  \subsection{Benchmarks}
-    \todo{[Rewrite this section]}
-
-    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}. This is due to their different choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether the relevant publications accounted for differing hyperparameters in their analyses. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will present the state-of-the-art results as they were originally published, then transpose their results to this standard.
-    
-    The baseline method of convolution is convolution-over-space \todo{cite?}, and will be used in our evaluation. The total number of MAC operations in a 3D convolution-over-space the product of all input dimensions, kernel dimensions, channels, and number of filters in the layer. Each MAC operation consists of two operations, thus totalling:
-    %
-    \todo{equation}.
-
-    Convolution via Matrix-Multiplication retains the total number of operations of convolution-over-space~\cite{lera2023hardware}. Additional complexity is added \todo{by the im2col thing, explain that}
-    
-    \todo{calc fourier complexity}
-
-    For 3D convolution, only the three input dimensions and the three kernel dimensions are topologically organized. In other words, the convolution only takes into account the correlations between three dimensions (height, width, frame) and \textit{does not} find correlations across color channels and filter \todo{name of the convolved filter layers}. This does not affect MM Convolution, as its complexity increases linearly with each of these metrics, but is relevant for FCONV.
-
-    C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
-    
-    Table~\ref{tab:c3d} presents the total number of operations required by the C3D convolutional layers. Respectivelly: Resolution (D1xD2); Depth (D3); Frames (D4); Filters (D5); Giga Multiply-Accumulate Operations (GMAC); Giga Operations (GOP).
-
-    \begin{table*}[!t]
-      \caption{C3D Convolutional Layer Operation Count (std vs $F(2^3,3^3)$)}
-      \centering
-      \subfloat[]{%
-        \begin{tabular}{|c|c|c|c|c|c|c|c|}
-          \hline
-          Layer  & D1  & D2  & D3 & D4  & D5  & GMAC  & GOP    \\\hline
-          Conv1  & 128 & 171 & 16 & 3   & 64  & 1.82  & 3.63   \\\hline
-          Conv2  & 64  & 86  & 16 & 64  & 128 & 19.48 & 38.96  \\\hline
-          Conv3a & 32  & 43  & 8  & 128 & 256 & 9.74  & 19.48  \\\hline
-          Conv3b & 32  & 43  & 8  & 256 & 256 & 19.48 & 38.96  \\\hline
-          Conv4a & 16  & 22  & 4  & 256 & 512 & 4.98  & 9.97   \\\hline
-          Conv4b & 16  & 22  & 4  & 512 & 512 & 9.97  & 19.93  \\\hline
-          Conv5a & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
-          Conv5b & 8   & 11  & 2  & 512 & 512 & 1.25  & 2.49   \\\hline
-          Total  & -   & -   & -  & -   & -   & 58.21 & 116.42 \\\hline
-        \end{tabular}%
-        \label{tab:c3d_a}}
-      \hfil
-        \subfloat[]{%
-          \begin{tabular}{|c|c|c|c|c|c|c|c|}
-            \hline
-            Layer  & D1  & D2  & D3 & D4 & D5 & GMAC  & GOP   \\\hline
-            Conv1  & 128 & 171 & 16 & 3  & 8  & 0.227 & 0.454 \\\hline
-            Conv2  & 64  & 86  & 16 & 8  & 8  & 0.152 & 0.304 \\\hline
-            Conv3a & 32  & 43  & 8  & 8  & 8  & 0.019 & 0.038 \\\hline
-            Conv3b & 32  & 43  & 8  & 8  & 8  & 0.019 & 0.038 \\\hline
-            Conv4a & 16  & 22  & 4  & 8  & 8  & 0.002 & 0.005 \\\hline
-            Conv4b & 16  & 22  & 4  & 8  & 8  & 0.002 & 0.005 \\\hline
-            Conv5a & 8   & 11  & 2  & 8  & 8  & ~0    & ~0    \\\hline
-            Conv5b & 8   & 11  & 2  & 8  & 8  & ~0    & ~0    \\\hline
-            Total  & -   & -   & -  & -  & -  & 0.423 & 0.845 \\\hline
-          \end{tabular}%
-        \label{tab:c3d_b}}
-      \label{tab:c3d}
-    \end{table*}
-
-  \subsection{Comparison}
-    \begin{table*}
-      \caption{Comparison}
-      \centering
-      \label{tab:res}
-      \begin{tabular}{|c|c|c|c|c|}
-        \hline
-        Project                  & \cite{shen2018towards} & \cite{shen2018towards} & [x] & Ours  \\\hline
-        Board                    & VC709                  & VUS440                 & --- & VC709 \\\hline
-        Technology (nm)          & 28                     & 20                     & --- & 28    \\\hline
-        Latency (us)             & (rec)                  & (rec)                  & --- & (rec) \\\hline
-        Frequency (MHz)          & 150                    & 200                    & --- & 100   \\\hline
-        DSP                      & 1536                   & 1536                   & --- & 529   \\\hline
-        BRAM                     & 1508                   & 1476                   & --- & -     \\\hline
-        LUT                      & 242K                   & 209K                   & --- & 37K   \\\hline
-        FF                       & 286K                   & 285K                   & --- & 12K   \\\hline
-        $GOP/s$                  & 474.3                  & 940.6                  & --- & 145.8 \\\hline
-         $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
-        $\frac{OP}{LUT*10^{-3}}$ & 13.1                   & 22.5                   & --- & (rec) \\\hline % ours is 39.4 ish
-      \end{tabular}
-    \end{table*}
-
-    Table~\ref{tab:res}...
+  % \begin{figure}\centering
+  %   \includegraphics[width=0.9\columnwidth]{fig/plot-1.pdf}
+  %   \caption{}\label{fig:cores2}
+  % \end{figure}
 
 \section{Related \& Future Work}\label{sec:rela}
-
   \todo{[Rewrite paragraph]} Fan et al.~\cite{fan2021high} presents an accelerator which processes C3D in 93.95 ms using 1345 DSPs and a frequency of 220 MHz, giving it a hardware-efficiency of $5.19 [\frac{GOP}{s{\cdot}MHz{\cdot}DSP}]$. Their method involves quantization of weights and activations with static block floating point, while the convolution algorithm remains the standard matrix-multiplication method. This method, however, does not reduce the overall number of multiplication operations required by the convolution layer, which are still performed using fixed-point representation.
 
   ~\\\todo{Also mention:
@@ -608,7 +455,7 @@
     \item rotation invariance~\cite{kim2020cycnn,mo2024ric};
     \item CORDIC activation function~\cite{kokane2025retrospective};
     \item CORDIC semi-rotation FFT (if not mentioned before);
-    spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image};
+    \item spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image};
     \item other FFT algorithms like split-radix, prime-factor, etc;
     \item other methods of convolution decomposition such as 3D=n2D
     \end{itemize}
@@ -624,8 +471,6 @@
 \ifCLASSOPTIONjournal
   \section*{Acknowledgments} % limit of one paragraph
     Research was funded by Itaú Unibanco S.A., no limitations apply. \todo{[also thank the other institution you forgot the name of]}
-
-    ~\\\todo{pretty sure I gotta put the git repo somewhere; I have no idea where}
 \fi
 
 % References

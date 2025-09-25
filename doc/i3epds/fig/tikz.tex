@@ -11,7 +11,7 @@
   arrows,
   intersections,
   math,
-  circuits.ee.IEC,
+  % circuits.ee.IEC,
   external}
 \usepackage{pgfplots}
   \usepgfplotslibrary{external}
@@ -137,7 +137,7 @@
       color=red,
       only marks
     ]{
-      ((ceil(433200/(10646+(112*ceil(log2((2*x-1)^3)))))*2)/(
+      ((floor((433200*0.9)/(4833+(224*ceil(log2((2*x-1)^3)))))*2)/(
         (ceil(128/x) * ceil(171/x) * ceil(16/x))
         *(pow(2,ceil(log2((2*x-1)^3))))
       ))*200000000
@@ -147,7 +147,7 @@
       draw opacity=0.5,
       color=red,
     ]{
-      ((ceil(433200/(10646+(112*ceil(log2((2*x-1)^3)))))*2)/(
+      ((floor((433200*0.9)/(4833+(224*ceil(log2((2*x-1)^3)))))*2)/(
         (ceil(128/x) * ceil(171/x) * ceil(16/x))
         *(pow(2,ceil(log2((2*x-1)^3))))
       ))*200000000
@@ -159,7 +159,7 @@
     % ]{
     %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
     % };
-  \legend{TITAN X PASCAL,,HECATE vc709}
+  \legend{TITAN X PASCAL,,HEC-2 VC709,,HEC-2 VCU118}
   \end{semilogyaxis}
 \end{tikzpicture}
 
