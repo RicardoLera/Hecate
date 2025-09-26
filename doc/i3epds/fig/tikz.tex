@@ -30,6 +30,7 @@
 \apptocmd{\sa@document}{\setmyname}{\typeout{Append to document: OK!}}{\typeout{Append to document: Oh, no!}}
 \makeatother
 
+%%% PLOTS %%%
 \begin{filecontents*}[overwrite]{plot.tex}
 \documentclass[tikz]{standalone}
 \usepackage{pgfplots}
@@ -41,6 +42,7 @@
   }
 \begin{document}
 
+%% SINGLE CORE %%
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:13,
@@ -102,6 +104,7 @@
   \end{semilogyaxis}
 \end{tikzpicture}
 
+%% MULTICORE %%
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:13,
@@ -163,6 +166,7 @@
   \end{semilogyaxis}
 \end{tikzpicture}
 
+%% HEC VS WINO %%
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:13,
@@ -176,15 +180,6 @@
     legend pos=north west,
     % colormap={bw},
   ]
-    % \addplot[
-    %   scatter src=none,
-    %   samples=11,
-    %   only marks,
-    %   color=blue,
-    %   draw opacity=0.5,
-    % ]{
-    %   (1/((128*171*16)*x^3))*1530000000
-    % };
     \addplot[
       samples=11,
       draw opacity=1,
@@ -199,11 +194,65 @@
     ]{
       (4*1*(x^6)*200000000)/(43*((2*x-1)^3))
     };
-
   \legend{Wino VC709 Core,HEC-2 VC709 Core}
   \end{semilogyaxis}
 \end{tikzpicture}
 
+%% WINO vs FCONV
+\begin{tikzpicture}
+  \tikzmath{
+    \b = 24; % bit-size
+  }
+  \begin{semilogyaxis}[
+    domain=2:128,
+    % xtick={3,...,13},
+    % y domain=3:11, 
+    grid=major,
+    xlabel=$n$,
+    ylabel=$O()$,
+    legend style={font=\scriptsize},
+    legend cell align=left,
+    legend pos=south east,
+  ]% ass. Nb=24 both
+    \addplot[
+      % samples=11,
+      draw opacity=1,
+      color=red,
+    ]{% 2FFT + 1 mult w/ cordic
+      2*(x)*log2(x) + x^2
+    };
+    \addplot[
+      % samples=11,
+      draw opacity=0.5,
+      color=green,
+    ]{% strassen1969gaussian
+      7*x^(log2(7))
+      - 6*(x^2)
+    };
+    \addplot[
+      % samples=11,
+      draw opacity=1,
+      color=green,
+    ]{% schwartz2023pebbling
+      5*x^(log2(7))
+      - 4*(x^2)
+      + 1.5*(x^2)*log2(x)
+    };
+    % \addplot[
+    %   % samples=11,
+    %   draw opacity=1,
+    %   color=green,
+    % ]{% schwartz2023pebbling
+    %   (4*(sqrt(3*x)/sqrt(\b))^(log2(7)))*\b
+    %   - 12*x^2
+    %   + 1.5*x^2 * log2(sqrt(2*x)/sqrt(\b))
+    %   + 5*\b
+    % };
+  \legend{Fconv,Wino}
+  \end{semilogyaxis}
+\end{tikzpicture}
+
+%% 3D CORES %%
 \begin{tikzpicture}
   \begin{axis}[
     domain=3:6,
@@ -228,10 +277,10 @@
     };
   \end{axis}
 \end{tikzpicture}
-
 \end{document}
 \end{filecontents*}
 
+%%% MATRIX %%%
 \begin{filecontents*}[overwrite]{matrix.tex}
 \documentclass[tikz]{standalone}
 \begin{document}
@@ -321,6 +370,7 @@
 \end{document}
 \end{filecontents*}
 
+%%% UNIT CIRCLE %%%
 \begin{filecontents*}[overwrite]{unit_circle.tex}
 \documentclass[tikz]{standalone}
 \begin{document}
@@ -406,6 +456,7 @@
 \end{document}
 \end{filecontents*}
 
+%%% FFT %%%
 \begin{filecontents*}[overwrite]{fft.tex}
 \documentclass[tikz]{standalone}
 \begin{document}
@@ -483,6 +534,7 @@
 \end{document}
 \end{filecontents*}
 
+%%% PIPELINE %%%
 \begin{filecontents*}[overwrite]{pipeline.tex}
 \documentclass[tikz]{standalone}
 \begin{document}

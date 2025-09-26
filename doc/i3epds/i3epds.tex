@@ -42,13 +42,13 @@
 \usepackage{xcolor}
 \usepackage{datetime}
 \usepackage{steinmetz} % Polar coordinate representation
+\usepackage{multirow}
+\usepackage{mathtools}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 \hypersetup{colorlinks = true, allcolors = {blue}}
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
 \renewcommand{\citeright}{\textcolor{blue}{]}}
 \renewcommand{\arraystretch}{1.5}
-\usepackage{mathtools}
-\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
-\usepackage{multirow}
 
 % -- Editing settings [REMOVE BEFORE SUBMISSION] --
 %\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
@@ -58,7 +58,7 @@
 \begin{document} % Page limit: 12 (including references)
 
 % Title
-\title{Hardware-Efficient 3D Convolution Acceleration using }
+\title{Hardware-Efficient 3D Convolution Acceleration\todo{...}}
 
 %% HECATE - Hardware-Efficient Convolution Accelerator using Trigonometric Equality
 %% "Expansion" is good too
@@ -134,7 +134,7 @@
 
   FFT convolution was deemed innefficient for modern CNN designs as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks that use small (usually 3x3) kernels~\cite{simonyan2014very}. The algorithm is also not, as of yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
   
-  Since then, new techquines were found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}, as well as spectral CNNs~cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image}. It has also has found success in CNNs required the use of large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
+  Since then, new techquines were found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}, as well as spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image}. It has also has found success in CNNs required the use of large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
 
   There remains, however, the issue of Complex-domain multiplication. Recent FPGA implementations have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}. These methods, however, do not directly address the high operation count of Complex multiplication, instead deploying extra hardware resources to overcome it. As such, their hardware-efficiency (measured in throughput per component) remains the same.
 
@@ -430,7 +430,7 @@
       LUT                      & 242K                   & 209K                   & --- & 37K   \\\hline
       FF                       & 286K                   & 285K                   & --- & 12K   \\\hline
       $GOP/s$                  & 474.3                  & 940.6                  & --- & 145.8 \\\hline
-        $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
+      $\frac{OP}{DSP}$         & 2.06                   & 3.06                   & --- & 2.76  \\\hline
       $\frac{OP}{LUT*10^{-3}}$ & 13.1                   & 22.5                   & --- & (rec) \\\hline % ours is 39.4 ish
     \end{tabular}
   \end{table*}
