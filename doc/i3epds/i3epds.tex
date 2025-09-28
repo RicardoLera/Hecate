@@ -327,11 +327,14 @@
     Similarly to the FFT method, it is possible to calculate multiple $F(m^3,r^3)$ convolutions and add the overlapping points to form a complete output~\cite{lan2017high}. For an image $I$, the total number of multiplications is:
     %
     \begin{equation}\label{eq:wino-mul}
-      (I_x-r)(I_y-r)(I_z-r)(r+1)^3\,.
+      \left\lceil\frac{I_x-r}{m}\right\rceil
+      \left\lceil\frac{I_y-r}{m}\right\rceil
+      \left\lceil\frac{I_z-r}{m}\right\rceil
+      (m+r-1)^3\,.
     \end{equation}
 
   \subsection{Comparison}
-    Figures \ref{fig:alg1} and \ref{fig:alg2} are plots of Equations \ref{eq:MM-mul} (baseline), \ref{eq:wino-mul} (Winograd), \ref{eq:fconv-mul1} (FFT convolution) and \ref{eq:fconv-mul2} (FFT convolution using polar multiplication); for different kernel sizes, assuming $K$ is equilateral and has size $k$. Figure~\ref{fig:alg1} assumes $I=4{\times}4{\times}4$, or one semi-convolution. Figure~\ref{fig:alg2} assumes $I=128{\times}171{\times}16$, the input size used by C3D~\cite{tran2015learning}.
+    Figures \ref{fig:alg1} and \ref{fig:alg2} are plots of Equations \ref{eq:MM-mul} (baseline), \ref{eq:wino-mul} (Winograd), \ref{eq:fconv-mul1} (FFT convolution) and \ref{eq:fconv-mul2} (FFT convolution using polar multiplication); for different kernel sizes, assuming $K$ is equilateral and has size $k$. Figure~\ref{fig:alg1} assumes $I=(k+1)^3$, or one semi-convolution. Figure~\ref{fig:alg2} assumes $I=128{\times}171{\times}16$, the input size used by C3D~\cite{tran2015learning}.
 
     \begin{figure}\centering
       \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
@@ -467,7 +470,7 @@
     This version of the architecture was dubbed \textit{parallel-core}, abbreviated \textbf{HEC-para}. The pipelined design described in Section~\ref{ssec:pipe} is similarly named \textit{pipelined-core}, abbreviated \textbf{HEC-pipe}.
     
 \section{Implementation \& Testing}\label{sec:imp}
-  As a proof of concept, we synthesized and implemented the parallel-core architecture on a VC709 FPGA board. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case).
+  We synthesized and implemented the parallel-core architecture on a VC709 FPGA board. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case).
 
   Software testing was carried out to ascertain correctness and measure precision. A randomized \todo{[finish section]}
 
@@ -508,7 +511,42 @@
       [I*K] = 2{\times}128{\times}171{\times}3{\times}16{\times}k^3~\texttt{OP}
     \end{equation}
 
-    This value, denoted $[I*K]$, is used to standardize our analysis across different projects. Throughput is expressed as $[I*K]/s$ (convolutions per second), from which $OP/s$ can be extracted using Equation~\ref{eq:tp}. For projects implemented in FPGA technology, we will also compare the usage of hardware resources --- DSP, LUT and FF --- and use them to calculate the relative hardware-efficiencies $\frac{I*K}{s{\times}DSP}$, $\frac{I*K}{s{\times}LUT}$, and $\frac{I*K}{s{\times}FF}$.
+    This value, denoted $[I*K]$, is used to standardize our analysis across different projects. Throughput is expressed as $[I*K]/s$ (convolutions per second), from which $OP/s$ can be extracted using Equation~\ref{eq:tp}. For projects implemented in FPGA technology, we also compare the usage of hardware resources --- DSP, LUT and FF --- and use them to calculate the relative hardware-efficiencies $\frac{GOP}{s{\times}DSP}$, $\frac{GOP}{s{\times}LUT}$, and $\frac{GOP}{s{\times}FF}$.
+
+    HEC-pipe, when fully pipelined, calculates 2 points out of $N$ required to finish one slice, every cycle. There are $I_cK_fS_xS_yS_z$ slices total. Assuming $K$ is equilateral and with size $k$, and the system runs at frequency $f$, throughput of HEC-pipe is:
+    %
+    \begin{equation}\label{eq:tp-H2-C}
+      \frac{2f}{
+        \left\lceil\frac{I_x}{k}\right\rceil
+        \left\lceil\frac{I_y}{k}\right\rceil
+        \left\lceil\frac{I_z}{k}\right\rceil
+        2^{\ceil{\log_2((2k-1)^3)}}
+      }\left[\frac{I*K}{s}\right]\,,
+    \end{equation}
+    or
+    \begin{equation}\label{eq:tp-H2-O}
+      \frac{4fI_xI_yI_zk^3}{
+      \left\lceil\frac{I_x}{k}\right\rceil
+      \left\lceil\frac{I_y}{k}\right\rceil
+      \left\lceil\frac{I_z}{k}\right\rceil
+      2^{\ceil{\log_2((2k-1)^3)}}
+      }\left[\frac{OP}{s}\right]\,.
+    \end{equation}
+
+    We can simplify assuming all sizes of $I$ are divisible by $k$ and that $\log_2((2k-1)^3)$ is a power of two, giving us:
+    \begin{equation}\label{eq:tp-H2-simp}
+      \frac{4fk^6}{(2k-1)^3}\left[\frac{OP}{s}\right]\,.
+    \end{equation}
+
+    From Equation~\ref{eq:tp-H2-simp} we can confirm that the throughput of HEC-pipe grows assymptotically with $O(k^3)$. Equations \ref{eq:tp-H2-C} and \ref{eq:tp-H2-O} are used to calculate the values on Table~\ref{tab:he-cores}.
+
+    HEC-para \todo{finish this equation}
+
+    Shen et al.~\cite{shen2018towards} implements a Winograd accelerator capable of computing one $F(2^3,3^3)$ convolution every 8 cycles at 150 MHz. Therefore its throughput is:
+
+      % \left\lceil\frac{I_x-r}{m}\right\rceil
+      % \left\lceil\frac{I_y-r}{m}\right\rceil
+      % \left\lceil\frac{I_z-r}{m}\right\rceil
 
     %%% All of this is unneeded
     % C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
@@ -549,7 +587,7 @@
 
 \section{Results}\label{sec:res}
   \todo{Comment on software testing}
-  
+
   Table~\ref{tab:he-cores} summarizes the throughput and hardware-efficiency calculations for our project. Table~\ref{tab:he-comp} compares it to other projects.
 
   \begin{table}[htb]
@@ -558,16 +596,19 @@
     \label{tab:he-cores}
     \begin{tabular}{|c|c|c|c|c|c|c|}
       \hline
-      Core    & \multicolumn{3}{|c|}{HEC-para} & \multicolumn{3}{|c|}{HEC-pipe} \\\hline
+      Core       & \multicolumn{3}{|c|}{HEC-para} & \multicolumn{3}{|c|}{HEC-pipe}\\\hline
       Kernel              & 3x3x3 & 4x4x4 & 7x3x3 & 3x3x3 & 4x4x4 & 7x3x3 \\\hline
-      $\frac{I*K}{s}$     & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
-      $\frac{GOP}{s}$     & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
-      DSPs                & ---   & ---   & ---   & ---   & ---   & ---   \\\hline      
-      LUTs                & ---   & ---   & ---   & ---   & ---   & ---   \\\hline 
-      FFs                 & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
-      $\frac{GOP}{s.DSP}$ & ---   & ---   & ---   & ---   & ---   & ---   \\\hline   
-      $\frac{GOP}{s.LUT}$ & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
-      $\frac{GOP}{s.FF}$  & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
+      $\frac{I*K}{s}$     & ---   & ---   & ---   & 212.5 & 141.9 & ---   \\\hline
+      $\frac{GOP}{s}$     & ---   & ---   & ---   & 4.02  & 6.36  & ---   \\\hline
+      DSPs                & ---   & ---   & ---   & 43    & ---   & ---   \\\hline      
+      LUTs                & ---   & ---   & ---   & 7969  & ---   & ---   \\\hline 
+      FFs                 & ---   & ---   & ---   & 4548  & ---   & ---   \\\hline
+      $\frac{GOP}
+        {s{\times}DSP}$   & ---   & ---   & ---   & ---   & ---   & ---   \\\hline   
+      $\frac{GOP}
+        {s{\times}LUT}$   & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
+      $\frac{GOP}
+        {s{\times}FF}$    & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
     \end{tabular}
   \end{table}
 
@@ -595,7 +636,7 @@
   Figure~\ref{fig:cores1} is the comparison with 1 GPU CUDA core running at 1.35GHz (titan x pascal frequency).
 
   \begin{figure}\centering
-    \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
+    \includegraphics[width=0.9\columnwidth]{fig/plot-2.pdf}
     \caption{}\label{fig:cores1}
   \end{figure}
 

@@ -55,49 +55,94 @@
     legend cell align=left,
     legend pos=north west,
   ]
+    % MMX
     \addplot[
       samples=9,
-      draw opacity=1,
+      draw opacity=0.5,
       color=black,
     ]{
       ((2+x-1)^3)*(x^3)
     };
     \addplot[
+      scatter src=none,
       samples=9,
+      only marks,
+      color=black,
       draw opacity=1,
+    ]{
+      ((2+x-1)^3)*(x^3)
+    };
+
+    % WINOGRAD
+    \addplot[
+      samples=9,
+      draw opacity=0.5,
       color=red,
     ]{
       ((2+x-1)^3)
     };
     \addplot[
+      scatter src=none,
       samples=9,
+      only marks,
+      color=red,
       draw opacity=1,
+    ]{
+      ((2+x-1)^3)
+    };
+
+    % FFT (rec)
+    \addplot[
+      samples=9,
+      draw opacity=0.5,
       color=green,
     ]{
-      %% 3*Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
       4*(
-        ((
-          pow(2,ceil(log2((2*x-1)^3)))
-        )/2)+1
-        + (pow(2,ceil(log2((2*x-1)^3)))
-          - ceil(log2((2*x-1)^3)) -1 )
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
       )
     };
     \addplot[
+      scatter src=none,
       samples=9,
+      only marks,
+      color=green,
       draw opacity=1,
-      color=blue,
     ]{
-      %% 3*Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
-      (
-        ((
-          pow(2,ceil(log2((2*x-1)^3)))
-        )/2)+1
-        + (pow(2,ceil(log2((2*x-1)^3)))
-          - ceil(log2((2*x-1)^3)) -1 )
+      4*(
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
       )
     };
-  \legend{MMX,Winograd,FFT,FFT (polar)}
+
+    % FFT (polar)
+    \addplot[
+      samples=9,
+      draw opacity=0.5,
+      color=blue,
+    ]{
+      (
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
+      )
+    };
+    \addplot[
+      scatter src=none,
+      samples=9,
+      only marks,
+      color=blue,
+      draw opacity=1,
+    ]{
+      (
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
+      )
+    };
+  \legend{,MMX,,Winograd,,FFT,,FFT (polar)}
   \end{semilogyaxis}
 \end{tikzpicture}
 
@@ -114,49 +159,100 @@
     legend cell align=left,
     legend pos=north west,
   ]
+    % MMX
     \addplot[
       samples=9,
-      draw opacity=1,
+      draw opacity=0.5,
       color=black,
     ]{
-      (2310)*(2310)*(2310)*(x^3)
+      (128)*(171)*(16)*(x^3)
     };
     \addplot[
+      scatter src=none,
       samples=9,
+      only marks,
+      color=black,
       draw opacity=1,
+    ]{
+      (128)*(171)*(16)*(x^3)
+    };
+
+    % WINOGRAD
+    \addplot[
+      samples=9,
+      draw opacity=0.5,
       color=red,
     ]{
-      ceil((2310-x)/2)*ceil((2310-x)/2)*ceil((2310-x)/2)*((2+x-1)^3)
+      ceil((128-x)/2)*
+      ceil((171-x)/2)*
+      ceil((16-x)/2)*
+      ((2+x-1)^3)
     };
     \addplot[
+      scatter src=none,
       samples=9,
+      only marks,
+      color=red,
       draw opacity=1,
+    ]{
+      ceil((128-x)/2)*
+      ceil((171-x)/2)*
+      ceil((16-x)/2)*
+      ((2+x-1)^3)
+    };
+
+    % FFT (rec)
+    \addplot[
+      samples=9,
+      draw opacity=0.5,
       color=green,
     ]{
-      %% 3*Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
-      4*ceil(2310/x)*ceil(2310/x)*ceil(2310/x)*(
-        ((
-          pow(2,ceil(log2((2*x-1)^3)))
-        )/2)+1
-        + (pow(2,ceil(log2((2*x-1)^3)))
-          - ceil(log2((2*x-1)^3)) -1 )
+      4*ceil(128/x)*ceil(171/x)*ceil(16/x)*(
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
       )
     };
     \addplot[
+      scatter src=none,
       samples=9,
+      only marks,
+      color=green,
       draw opacity=1,
-      color=blue,
     ]{
-      %% Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
-      ceil(2310/x)*ceil(2310/x)*ceil(2310/x)*(
-        ((
-          pow(2,ceil(log2((2*x-1)^3)))
-        )/2)+1
-        + (pow(2,ceil(log2((2*x-1)^3)))
-          - ceil(log2((2*x-1)^3)) -1 )
+      4*ceil(128/x)*ceil(171/x)*ceil(16/x)*(
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
       )
     };
-  \legend{MMX,Winograd,FFT,FFT (polar)}
+
+    % FFT (polar)
+    \addplot[
+      samples=9,
+      draw opacity=0.5,
+      color=blue,
+    ]{
+      ceil(128/x)*ceil(171/x)*ceil(16/x)*(
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
+      )
+    };
+    \addplot[
+      scatter src=none,
+      samples=9,
+      only marks,
+      color=blue,
+      draw opacity=1,
+    ]{
+      ceil(128/x)*ceil(171/x)*ceil(16/x)*(
+        (5*pow(2,ceil(log2((2*x-1)^3)))/2)
+        - 2*pow(2,ceil(log2((2*x-1)^3)))
+        - 1
+      )
+    };
+  \legend{,MMX,,Winograd,,FFT,,FFT (polar)}
   \end{semilogyaxis}
 \end{tikzpicture}
 
