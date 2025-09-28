@@ -42,241 +42,359 @@
   }
 \begin{document}
 
-%% SINGLE CORE %%
+%% HEC VS WINO - MULS no OA%%
 \begin{tikzpicture}
   \begin{semilogyaxis}[
-    domain=3:13,
-    xtick={3,...,13},
+    domain=3:11,
+    xtick={3,...,11},
     % y domain=3:11, 
     grid=major,
     xlabel=$k$,
-    ylabel=$(I*K)/s$,
-    legend style={font=\scriptsize},
-    legend cell align=left,
-    legend pos=south west,
-    % colormap={bw},
-  ]
-    \addplot[
-      scatter src=none,
-      samples=11,
-      only marks,
-      color=blue,
-      draw opacity=0.5,
-    ]{
-      (1/(((128+x-1)*(171+x-1)*(16+x-1))*x^3))*1530000000
-    };
-    \addplot[
-      samples=100,
-      color=blue,
-      draw opacity=0.5,
-    ]{
-      (1/(((128+x-1)*(171+x-1)*(16+x-1))*x^3))*1530000000
-    };
-    \addplot[
-      scatter src=none,
-      samples=11,
-      color=red,
-      only marks
-    ]{
-      (2/(
-        (ceil(128/x) * ceil(171/x) * ceil(16/x))
-        *(pow(2,ceil(log2((2*x-1)^3))))
-      ))*200000000
-    };
-    \addplot[
-      samples=11,
-      draw opacity=0.5,
-      color=red,
-    ]{
-      (2/(
-        (ceil(128/x) * ceil(171/x) * ceil(16/x))
-        *(pow(2,ceil(log2((2*x-1)^3))))
-      ))*200000000
-    };
-    % \addplot[
-    %   samples=100,
-    %   draw opacity=0.5,
-    %   color=green,
-    % ]{
-    %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
-    % };
-  \legend{CUDA core (1.53 GHz),,HECATE core (0.2 GHz)}
-  \end{semilogyaxis}
-\end{tikzpicture}
-
-%% MULTICORE %%
-\begin{tikzpicture}
-  \begin{semilogyaxis}[
-    domain=3:13,
-    xtick={3,...,13},
-    % y domain=3:11, 
-    grid=major,
-    xlabel=$k$,
-    ylabel=$(I*K)/s$,
-    legend style={font=\scriptsize},
-    legend cell align=left,
-    legend pos=north east,
-    % colormap={bw},
-  ]
-    \addplot[
-      scatter src=none,
-      samples=11,
-      only marks,
-      color=blue,
-      draw opacity=0.5,
-    ]{
-      (3584/((128*171*16)*x^3))*1530000000
-    };
-    \addplot[
-      samples=100,
-      color=blue,
-      draw opacity=0.5,
-    ]{
-      (3584/((128*171*16)*x^3))*1530000000
-    };
-    \addplot[
-      scatter src=none,
-      samples=11,
-      color=red,
-      only marks
-    ]{
-      ((floor((433200*0.9)/(4833+(224*ceil(log2((2*x-1)^3)))))*2)/(
-        (ceil(128/x) * ceil(171/x) * ceil(16/x))
-        *(pow(2,ceil(log2((2*x-1)^3))))
-      ))*200000000
-    };
-    \addplot[
-      samples=11,
-      draw opacity=0.5,
-      color=red,
-    ]{
-      ((floor((433200*0.9)/(4833+(224*ceil(log2((2*x-1)^3)))))*2)/(
-        (ceil(128/x) * ceil(171/x) * ceil(16/x))
-        *(pow(2,ceil(log2((2*x-1)^3))))
-      ))*200000000
-    };
-    % \addplot[
-    %   samples=100,
-    %   draw opacity=0.5,
-    %   color=green,
-    % ]{
-    %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
-    % };
-  \legend{TITAN X PASCAL,,HEC-2 VC709,,HEC-2 VCU118}
-  \end{semilogyaxis}
-\end{tikzpicture}
-
-%% HEC VS WINO %%
-\begin{tikzpicture}
-  \begin{semilogyaxis}[
-    domain=3:13,
-    xtick={3,...,13},
-    % y domain=3:11, 
-    grid=major,
-    xlabel=$k$,
-    ylabel=$OP/(s.DSP)$,
+    ylabel=\# MUL,
     legend style={font=\scriptsize},
     legend cell align=left,
     legend pos=north west,
-    % colormap={bw},
   ]
     \addplot[
-      samples=11,
+      samples=9,
       draw opacity=1,
-      color=green,
+      color=black,
     ]{
-      (2*(x^3)*(2^3)*4*32*150000000*0.54)/(1536*8)
+      ((2+x-1)^3)*(x^3)
     };
     \addplot[
-      samples=11,
+      samples=9,
       draw opacity=1,
       color=red,
     ]{
-      (4*1*(x^6)*200000000)/(43*((2*x-1)^3))
+      ((2+x-1)^3)
     };
-  \legend{Wino VC709 Core,HEC-2 VC709 Core}
+    \addplot[
+      samples=9,
+      draw opacity=1,
+      color=green,
+    ]{
+      %% 3*Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
+      4*(
+        ((
+          pow(2,ceil(log2((2*x-1)^3)))
+        )/2)+1
+        + (pow(2,ceil(log2((2*x-1)^3)))
+          - ceil(log2((2*x-1)^3)) -1 )
+      )
+    };
+    \addplot[
+      samples=9,
+      draw opacity=1,
+      color=blue,
+    ]{
+      %% 3*Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
+      (
+        ((
+          pow(2,ceil(log2((2*x-1)^3)))
+        )/2)+1
+        + (pow(2,ceil(log2((2*x-1)^3)))
+          - ceil(log2((2*x-1)^3)) -1 )
+      )
+    };
+  \legend{MMX,Winograd,FFT,FFT (polar)}
   \end{semilogyaxis}
 \end{tikzpicture}
 
-%% WINO vs FCONV
+%% HEC VS WINO - MULS%% 
 \begin{tikzpicture}
-  \tikzmath{
-    \b = 24; % bit-size
-  }
   \begin{semilogyaxis}[
-    domain=2:128,
-    % xtick={3,...,13},
+    domain=3:11,
+    xtick={3,...,11},
     % y domain=3:11, 
     grid=major,
-    xlabel=$n$,
-    ylabel=$O()$,
+    xlabel=$k$,
+    ylabel=\# MUL,
     legend style={font=\scriptsize},
     legend cell align=left,
-    legend pos=south east,
-  ]% ass. Nb=24 both
+    legend pos=north west,
+  ]
     \addplot[
-      % samples=11,
+      samples=9,
+      draw opacity=1,
+      color=black,
+    ]{
+      (2310)*(2310)*(2310)*(x^3)
+    };
+    \addplot[
+      samples=9,
       draw opacity=1,
       color=red,
-    ]{% 2FFT + 1 mult w/ cordic
-      2*(x)*log2(x) + x^2
+    ]{
+      ceil((2310-x)/2)*ceil((2310-x)/2)*ceil((2310-x)/2)*((2+x-1)^3)
     };
     \addplot[
-      % samples=11,
-      draw opacity=0.5,
-      color=green,
-    ]{% strassen1969gaussian
-      7*x^(log2(7))
-      - 6*(x^2)
-    };
-    \addplot[
-      % samples=11,
+      samples=9,
       draw opacity=1,
       color=green,
-    ]{% schwartz2023pebbling
-      5*x^(log2(7))
-      - 4*(x^2)
-      + 1.5*(x^2)*log2(x)
+    ]{
+      %% 3*Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
+      4*ceil(2310/x)*ceil(2310/x)*ceil(2310/x)*(
+        ((
+          pow(2,ceil(log2((2*x-1)^3)))
+        )/2)+1
+        + (pow(2,ceil(log2((2*x-1)^3)))
+          - ceil(log2((2*x-1)^3)) -1 )
+      )
     };
-    % \addplot[
-    %   % samples=11,
-    %   draw opacity=1,
-    %   color=green,
-    % ]{% schwartz2023pebbling
-    %   (4*(sqrt(3*x)/sqrt(\b))^(log2(7)))*\b
-    %   - 12*x^2
-    %   + 1.5*x^2 * log2(sqrt(2*x)/sqrt(\b))
-    %   + 5*\b
-    % };
-  \legend{Fconv,Wino}
+    \addplot[
+      samples=9,
+      draw opacity=1,
+      color=blue,
+    ]{
+      %% Ns*(N/2+1 + sum(N/2^j-2,1<j<log2N))
+      ceil(2310/x)*ceil(2310/x)*ceil(2310/x)*(
+        ((
+          pow(2,ceil(log2((2*x-1)^3)))
+        )/2)+1
+        + (pow(2,ceil(log2((2*x-1)^3)))
+          - ceil(log2((2*x-1)^3)) -1 )
+      )
+    };
+  \legend{MMX,Winograd,FFT,FFT (polar)}
   \end{semilogyaxis}
 \end{tikzpicture}
 
+%% SINGLE CORE %%
+% \begin{tikzpicture}
+%   \begin{semilogyaxis}[
+%     domain=3:13,
+%     xtick={3,...,13},
+%     % y domain=3:11, 
+%     grid=major,
+%     xlabel=$k$,
+%     ylabel=$(I*K)/s$,
+%     legend style={font=\scriptsize},
+%     legend cell align=left,
+%     legend pos=south west,
+%     % colormap={bw},
+%   ]
+%     \addplot[
+%       scatter src=none,
+%       samples=11,
+%       only marks,
+%       color=blue,
+%       draw opacity=0.5,
+%     ]{
+%       (1/(((128+x-1)*(171+x-1)*(16+x-1))*x^3))*1530000000
+%     };
+%     \addplot[
+%       samples=100,
+%       color=blue,
+%       draw opacity=0.5,
+%     ]{
+%       (1/(((128+x-1)*(171+x-1)*(16+x-1))*x^3))*1530000000
+%     };
+%     \addplot[
+%       scatter src=none,
+%       samples=11,
+%       color=red,
+%       only marks
+%     ]{
+%       (2/(
+%         (ceil(128/x) * ceil(171/x) * ceil(16/x))
+%         *(pow(2,ceil(log2((2*x-1)^3))))
+%       ))*200000000
+%     };
+%     \addplot[
+%       samples=11,
+%       draw opacity=0.5,
+%       color=red,
+%     ]{
+%       (2/(
+%         (ceil(128/x) * ceil(171/x) * ceil(16/x))
+%         *(pow(2,ceil(log2((2*x-1)^3))))
+%       ))*200000000
+%     };
+%     % \addplot[
+%     %   samples=100,
+%     %   draw opacity=0.5,
+%     %   color=green,
+%     % ]{
+%     %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
+%     % };
+%   \legend{CUDA core (1.53 GHz),,HECATE core (0.2 GHz)}
+%   \end{semilogyaxis}
+% \end{tikzpicture}
+
+%% MULTICORE %%
+% \begin{tikzpicture}
+%   \begin{semilogyaxis}[
+%     domain=3:13,
+%     xtick={3,...,13},
+%     % y domain=3:11, 
+%     grid=major,
+%     xlabel=$k$,
+%     ylabel=$(I*K)/s$,
+%     legend style={font=\scriptsize},
+%     legend cell align=left,
+%     legend pos=north east,
+%     % colormap={bw},
+%   ]
+%     \addplot[
+%       scatter src=none,
+%       samples=11,
+%       only marks,
+%       color=blue,
+%       draw opacity=0.5,
+%     ]{
+%       (3584/((128*171*16)*x^3))*1530000000
+%     };
+%     \addplot[
+%       samples=100,
+%       color=blue,
+%       draw opacity=0.5,
+%     ]{
+%       (3584/((128*171*16)*x^3))*1530000000
+%     };
+%     \addplot[
+%       scatter src=none,
+%       samples=11,
+%       color=red,
+%       only marks
+%     ]{
+%       ((floor((433200*0.9)/(4833+(224*ceil(log2((2*x-1)^3)))))*2)/(
+%         (ceil(128/x) * ceil(171/x) * ceil(16/x))
+%         *(pow(2,ceil(log2((2*x-1)^3))))
+%       ))*200000000
+%     };
+%     \addplot[
+%       samples=11,
+%       draw opacity=0.5,
+%       color=red,
+%     ]{
+%       ((floor((433200*0.9)/(4833+(224*ceil(log2((2*x-1)^3)))))*2)/(
+%         (ceil(128/x) * ceil(171/x) * ceil(16/x))
+%         *(pow(2,ceil(log2((2*x-1)^3))))
+%       ))*200000000
+%     };
+%     % \addplot[
+%     %   samples=100,
+%     %   draw opacity=0.5,
+%     %   color=green,
+%     % ]{
+%     %   (2/(((128*171*16)/(x^3))*((2*x-1)^3)))*200000000
+%     % };
+%   \legend{TITAN X PASCAL,,HEC-2 VC709,,HEC-2 VCU118}
+%   \end{semilogyaxis}
+% \end{tikzpicture}
+
+%% HEC VS WINO - Throughput%%
+% \begin{tikzpicture}
+%   \begin{semilogyaxis}[
+%     domain=3:13,
+%     xtick={3,...,13},
+%     % y domain=3:11, 
+%     grid=major,
+%     xlabel=$k$,
+%     ylabel=$OP/(s.DSP)$,
+%     legend style={font=\scriptsize},
+%     legend cell align=left,
+%     legend pos=north west,
+%     % colormap={bw},
+%   ]
+%     \addplot[
+%       samples=11,
+%       draw opacity=1,
+%       color=green,
+%     ]{
+%       (2*(x^3)*(2^3)*4*32*150000000*0.54)/(1536*8)
+%     };
+%     \addplot[
+%       samples=11,
+%       draw opacity=1,
+%       color=red,
+%     ]{
+%       (4*1*(x^6)*200000000)/(43*((2*x-1)^3))
+%     };
+%   \legend{Wino VC709 Core,HEC-2 VC709 Core}
+%   \end{semilogyaxis}
+% \end{tikzpicture}
+
+%% WINO vs FCONV
+% \begin{tikzpicture}
+%   \tikzmath{
+%     \b = 24; % bit-size
+%   }
+%   \begin{semilogyaxis}[
+%     domain=2:128,
+%     % xtick={3,...,13},
+%     % y domain=3:11, 
+%     grid=major,
+%     xlabel=$n$,
+%     ylabel=$O()$,
+%     legend style={font=\scriptsize},
+%     legend cell align=left,
+%     legend pos=south east,
+%   ]% ass. Nb=24 both
+%     \addplot[
+%       % samples=11,
+%       draw opacity=1,
+%       color=red,
+%     ]{% 2FFT + 1 mult w/ cordic
+%       2*(x)*log2(x) + x^2
+%     };
+%     \addplot[
+%       % samples=11,
+%       draw opacity=0.5,
+%       color=green,
+%     ]{% strassen1969gaussian
+%       7*x^(log2(7))
+%       - 6*(x^2)
+%     };
+%     \addplot[
+%       % samples=11,
+%       draw opacity=1,
+%       color=green,
+%     ]{% schwartz2023pebbling
+%       5*x^(log2(7))
+%       - 4*(x^2)
+%       + 1.5*(x^2)*log2(x)
+%     };
+%     % \addplot[
+%     %   % samples=11,
+%     %   draw opacity=1,
+%     %   color=green,
+%     % ]{% schwartz2023pebbling
+%     %   (4*(sqrt(3*x)/sqrt(\b))^(log2(7)))*\b
+%     %   - 12*x^2
+%     %   + 1.5*x^2 * log2(sqrt(2*x)/sqrt(\b))
+%     %   + 5*\b
+%     % };
+%   \legend{Fconv,Wino}
+%   \end{semilogyaxis}
+% \end{tikzpicture}
+
 %% 3D CORES %%
-\begin{tikzpicture}
-  \begin{axis}[
-    domain=3:6,
-    y domain=3:11, 
-    % samples=100,
-    % grid=major,
-    restrict z to domain=0:10^9,
-    xlabel=$i$,
-    ylabel=$k$,
-    zlabel=$GCONV/s$,
-    legend pos=north west
-  ]
-    \addplot3[
-      surf
-    ]{
-      (1/(x^3*y^3))*1530000000
-    };
-    \addplot3[
-      surf
-    ]{
-      (2/(((x^3)/(y^3))*((2*y-1)^3)))*200000000
-    };
-  \end{axis}
-\end{tikzpicture}
+% \begin{tikzpicture}
+%   \begin{axis}[
+%     domain=3:6,
+%     y domain=3:11, 
+%     % samples=100,
+%     % grid=major,
+%     restrict z to domain=0:10^9,
+%     xlabel=$i$,
+%     ylabel=$k$,
+%     zlabel=$GCONV/s$,
+%     legend pos=north west
+%   ]
+%     \addplot3[
+%       surf
+%     ]{
+%       (1/(x^3*y^3))*1530000000
+%     };
+%     \addplot3[
+%       surf
+%     ]{
+%       (2/(((x^3)/(y^3))*((2*y-1)^3)))*200000000
+%     };
+%   \end{axis}
+% \end{tikzpicture}
 \end{document}
 \end{filecontents*}
 
@@ -292,14 +410,14 @@
 ]%
   \matrix (mA) [draw,matrix of math nodes]
   {
-    M_{0,0,1} \& M_{1,0,1} \\
-    M_{0,1,1} \& M_{1,1,1} \\
+    K_{0,0,1} \& K_{1,0,1} \\
+    K_{0,1,1} \& K_{1,1,1} \\
   };
 
   \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(0.8,0.2)$)
   {
-    M_{0,0,0} \& M_{1,0,0} \\
-    M_{0,1,0} \& M_{1,1,0} \\
+    K_{0,0,0} \& K_{1,0,0} \\
+    K_{0,1,0} \& K_{1,1,0} \\
   };
 
   \draw[dashed](mA.north east)--(mB.north east);
@@ -531,6 +649,76 @@
   % \draw (\bx*\s cm + \bx cm,          \byp cm - \by*\bg cm) to [resistor]
   %       (\bx*\s cm + \bx cm + \sx cm, \byp cm - \by*\bg cm);
 \end{tikzpicture}
+\begin{tikzpicture}[
+  % circuit ee IEC,
+  >=stealth,
+  line width=0.75pt
+]%
+  \tikzmath{
+    \bx = 1.4;      % butterfly width
+    \by = -1.1;     % butterfly height
+    \sx = 0.9;      % space between stages
+    \N  = 8;        % number of points
+    \bn = \N/2-1;   % number of butterflies -1
+    \sn = ceil{log2(\N)}-1; % number of stages -1 
+  }
+
+  \foreach \s in {0,...,\sn} {
+    \foreach \b in {0,...,\bn} {
+      \tikzmath{
+        \gs  = 2^(\sn-\s);      % group size
+        \bg  = mod(\b,\gs);     % butterfly group pos
+        \bxp = \sx*\s + \bx*\s; % butterfly x pos
+        \byp = 2*\by*\b;        % butterfly y pos
+        \w   = int(mod(\b,pow(2,\sn-\s)) * pow(2,\s)); % twiddle factor
+        \i1  = int(2*\b);       % input index top
+        \i2  = int(2*\b+1);     % input index bot
+      }
+      % Inputs/Outputs
+      \ifthenelse{\s=0}{
+        \node[left] at (\bxp cm, \byp cm) {$I_{\i1}$};
+        \node[left] at (\bxp cm, \byp cm + \by cm) {$I_{\i2}$};
+      }{}
+      \ifthenelse{\s=\sn}{
+        \node[right] at (\bxp cm + \bx cm, \byp cm) {$O_{\i1}$};
+        \node[right] at (\bxp cm + \bx cm, \byp cm + \by cm) {$O_{\i2}$};
+      }{}
+
+      % Bfly top and bottom
+      \draw  (\bxp cm,          \byp cm)
+          -- (\bxp cm + \bx cm, \byp cm) 
+             (\bxp cm,          \byp cm + \by cm)
+          -- (\bxp cm + \bx cm, \byp cm + \by cm)  ;
+
+      % Bfly diagonals
+      \draw  (\bxp cm,          \byp cm - \by*\bg cm)
+          -- (\bxp cm + \bx cm, \byp cm - \by*\bg cm + \by*\gs cm)
+              node[text=blue, below, xshift=-0.1cm, yshift=0.05cm] {\scriptsize$-$}
+             (\bxp cm,          \byp cm - \by*\bg cm + \by*\gs cm)
+          -- (\bxp cm + \bx cm, \byp cm - \by*\bg cm)
+              node[text=red, above, xshift=-0.1cm, yshift=-0.05cm] {\scriptsize$+$};
+
+      \ifthenelse{\not{\s=\sn}}{
+      % Connection grid
+      \draw [dashed]
+           (\bxp cm + \bx cm,          \byp cm)
+        -- (\bxp cm + \bx cm + \sx cm, \byp cm)
+           (\bxp cm + \bx cm,          \byp cm + \by cm)
+        -- (\bxp cm + \bx cm + \sx cm, \byp cm + \by cm);
+
+      % Twiddle-factor mult
+      \path (\bxp cm + \bx cm,          \byp cm - \by*\bg cm + \by*\gs cm)
+        --    node[above, yshift=-1]
+                {\textcolor{violet}{\scriptsize{$\times\omega^{\w}_{\N}$}}}
+            (\bxp cm + \bx cm + \sx cm, \byp cm - \by*\bg cm + \by*\gs cm);
+      }{}
+    }
+  }
+  % \pgfmathparse{equal(mod(\bg,2), 0)}
+  % \ifthenelse{\pgfmathresult = 1}{
+  % \draw (\bx*\s cm + \bx cm,          \byp cm - \by*\bg cm) to [resistor]
+  %       (\bx*\s cm + \bx cm + \sx cm, \byp cm - \by*\bg cm);
+\end{tikzpicture}
 \end{document}
 \end{filecontents*}
 
@@ -603,22 +791,22 @@
   \path
     (recursion1) --++ (0:0.6) coordinate (cordic1in1)
     (recursion2) --++ (0:0.6) coordinate (cordic1in2);
-  \node[text=blue] at ($(recursion1)!0.5!(cordic1in1)$) {\dots};
-  \node[text=blue] at ($(recursion2)!0.5!(cordic1in2)$) {\dots};
+  \node[text=red] at ($(recursion1)!0.5!(cordic1in1)$) {\dots};
+  \node[text=red] at ($(recursion2)!0.5!(cordic1in2)$) {\dots};
 
   % FFT delimeter
   \path (bout1) -- coordinate (bout0) (bout2);
   \node[
     rectangle,
-    draw=blue,
+    draw=red,
     dashed,
     minimum width=7cm,
     minimum height=5cm,
     xshift=1.6cm,
     yshift=-0.2cm]
     at ($(bin)!0.5!(bout0)$) {};
-  \node[text=blue,above,xshift=2.5cm,yshift=2.3cm] at (bin) {DIT-FFT};
-  \node[text=blue,above,xshift=0.8cm,yshift=2.3cm] at (bout0) {$\times \log_{2}N$};
+  \node[text=red,above,xshift=2.5cm,yshift=2.3cm] at (bin) {DIT-FFT};
+  \node[text=red,above,xshift=0.8cm,yshift=2.3cm] at (bout0) {$\times \log_{2}N$};
 
   % CORDIC-1 points
   \path
@@ -636,10 +824,10 @@
   \draw
     (cordic1in1) --++ (0:0.5) coordinate (cordic1in1b) --
       (cordic1in1b |- cordic1xin) coordinate (csplit1) -- (cordic1xin)
-    (cordic1zin) --++ (180:0.25) node[text=green,xshift=-0.25cm]{\dots}
-    (cordic1xout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion3)
-    (cordic1yout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots}
-    (cordic1zout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion4);
+    (cordic1zin) --++ (180:0.25) node[text=blue,xshift=-0.25cm]{\dots}
+    (cordic1xout) --++ (0:0.25) node[text=blue,xshift=0.32cm]{\dots} coordinate (recursion3)
+    (cordic1yout) --++ (0:0.25) node[text=blue,xshift=0.32cm]{\dots}
+    (cordic1zout) --++ (0:0.25) node[text=blue,xshift=0.32cm]{\dots} coordinate (recursion4);
   \filldraw (csplit1) circle (2pt);
 
   % CORDIC-1 MUX
@@ -669,15 +857,15 @@
   % CORDIC-1 delimeter
     \node[
     rectangle,
-    draw=green,
+    draw=blue,
     dashed,
     minimum width=4.75cm,
     minimum height=5cm,
     xshift=0cm,
     yshift=-0.2cm]
     at (cordic1) {};
-  \node[text=green,above,xshift=-0.35cm,yshift=2.3cm] at (cordic1yin) {VEC};
-  \node[text=green,above,xshift=0.35cm,yshift=2.3cm] at (cordic1yout) {$\times N_b$};
+  \node[text=blue,above,xshift=-0.35cm,yshift=2.3cm] at (cordic1yin) {VEC};
+  \node[text=blue,above,xshift=0.35cm,yshift=2.3cm] at (cordic1yout) {$\times S_p$};
 
   % MUL/ADD
   \path
@@ -711,10 +899,10 @@
   \draw
     (cordic2in1) -- (cordic2xin)
     (cordic2in2) -- (cordic2zin)
-    (cordic2yin) --++ (180:0.25) node[text=green,xshift=-0.25cm]{\dots}
-    (cordic2xout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion5)
-    (cordic2yout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots} coordinate (recursion6)
-    (cordic2zout) --++ (0:0.25) node[text=green,xshift=0.32cm]{\dots};
+    (cordic2yin) --++ (180:0.25) node[text=blue,xshift=-0.25cm]{\dots}
+    (cordic2xout) --++ (0:0.25) node[text=blue,xshift=0.32cm]{\dots} coordinate (recursion5)
+    (cordic2yout) --++ (0:0.25) node[text=blue,xshift=0.32cm]{\dots} coordinate (recursion6)
+    (cordic2zout) --++ (0:0.25) node[text=blue,xshift=0.32cm]{\dots};
 
   % CORDIC-2 block
   \node[rectangle,draw,fill=white,minimum width=3cm,minimum height=2cm] at (cordic2) {CORDIC};
@@ -728,36 +916,39 @@
   % CORDIC-2 delimeter
   \node[
     rectangle,
-    draw=green,
+    draw=blue,
     dashed,
     minimum width=4.75cm,
     minimum height=5cm,
     xshift=0cm,
     yshift=-0.2cm]
     at (cordic2) {};
-  \node[text=green,above,xshift=-0.35cm,yshift=2.3cm] at (cordic2yin) {ROT};
-  \node[text=green,above,xshift=0.35cm,yshift=2.3cm] at (cordic2yout) {$\times N_b$};
+  \node[text=blue,above,xshift=-0.35cm,yshift=2.3cm] at (cordic2yin) {ROT};
+  \node[text=blue,above,xshift=0.35cm,yshift=2.3cm] at (cordic2yout) {$\times S_p$};
   \path
     (recursion5) --++ (0:0.6) coordinate (fft2in1)
     (recursion6) --++ (0:0.6) coordinate (fft2in2);
   \draw
-    (fft2in1) --++ (0:0.8) coordinate (csplit2)
-    (fft2in2) --++ (0:0.4) coordinate (csplit3);
+    (fft2in1) --++ (0:0.4) coordinate (csplit2)
+    (fft2in2) --++ (0:0.4) coordinate (csplit3)
+    (csplit2) -- (csplit3);
+  \filldraw
+    (csplit3) circle (2pt);
 
   % IFFT MUX
-  \path (csplit3) --++ (90:0.5) coordinate (ifmux);
-  \draw 
-    (ifmux) --++
-    (-90:1.5) coordinate (IFMUXA)--++
-    (30:0.5)  coordinate (IFMUXB)--++
-    (90:1)    coordinate (IFMUXC)--
-    cycle;
-  \path (csplit3) --++ (90:0.5) coordinate (ifmuxin1) --++ (90:0.5) coordinate (ifmuxin2);
+  % \path (csplit3) --++ (-90:1) coordinate (ifmux);
+  % \draw 
+  %   (ifmux) --++
+  %   (-90:1.5) coordinate (IFMUXA)--++
+  %   (30:0.5)  coordinate (IFMUXB)--++
+  %   (90:1)    coordinate (IFMUXC)--
+  %   cycle;
+  % \path (csplit3) --++ (90:0.5) coordinate (ifmuxin1) --++ (90:0.5) coordinate (ifmuxin2);
 
   % IFFT Butterfly
   \draw
-    (csplit2) --++ (0:0.3) coordinate (ifmuxcomp) --++ (90:0.5) --++ (0:1) coordinate (bflyi0)
-    ($(IFMUXB)!0.5!(IFMUXC)$) coordinate (ifmuxout) -- (ifmuxout -| ifmuxcomp) --++ (-90:1) --++ (0:1) coordinate (bflyi1)
+    (csplit3) --++ (0:0.3) coordinate (ifcomp) -- (ifcomp |- bfly0) --++ (0:1) coordinate (bflyi0)
+    (ifcomp) -- (ifcomp |- bfly1) node[circle,draw,fill=white]{$\bar{z}$} --++ (0:1) coordinate (bflyi1)
     (bflyi0) --++ (0:3) coordinate (bflyi2) 
     (bflyi1) --++ (0:3) coordinate (bflyi3)
     (bflyi0) -- (bflyi3)
@@ -769,7 +960,7 @@
     (bflyi2) --++ (0:2) coordinate (biout1)
     (bflyi3) --++ (0:2) coordinate (biout2);
   \node[text=red,circle,draw,fill=white] at (bflyi2) {\scriptsize$+$};
-  \node[text=blue,circle,draw,fill=white] at (bflyi3) {\scriptsize$-$};
+  \node[text=red,circle,draw,fill=white] at (bflyi3) {\scriptsize$-$};
 
   % IFFT Wmul
   \draw ($(bflyi3)!0.5!(biout2)$) --++ (-90:2)
@@ -786,23 +977,23 @@
   \path
     (recursion7) --++ (0:0.5) coordinate (oa1)
     (recursion8) --++ (0:0.5) coordinate (oa2);
-  \node[text=blue] at ($(recursion7)!0.5!(oa1)$) {\dots};
-  \node[text=blue] at ($(recursion8)!0.5!(oa2)$) {\dots};
+  \node[text=red] at ($(recursion7)!0.5!(oa1)$) {\dots};
+  \node[text=red] at ($(recursion8)!0.5!(oa2)$) {\dots};
 
   % IFFT delimeter
   \path (bflyi0) -- coordinate (biin) (bflyi1);
   \path (biout1) -- coordinate (biout0) (biout2);
   \node[
     rectangle,
-    draw=blue,
+    draw=red,
     dashed,
     minimum width=6.8cm,
     minimum height=5cm,
     xshift=0.4cm,
     yshift=-0.2cm]
     at ($(biin)!0.5!(biout0)$) {};
-  \node[text=blue,above,xshift=0.2cm,yshift=2.3cm] at (biin) {DIF-FFT};
-  \node[text=blue,above,xshift=0.7cm,yshift=2.3cm] at (biout0) {$\times \log_{2}N$};
+  \node[text=red,above,xshift=0.2cm,yshift=2.3cm] at (biin) {DIF-FFT};
+  \node[text=red,above,xshift=0.7cm,yshift=2.3cm] at (biout0) {$\times \log_{2}N$};
 
   % Overlap-Add
   \draw

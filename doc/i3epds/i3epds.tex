@@ -128,7 +128,7 @@
 
   A variety of optimization approaches have been developed for the task of accelerating CNNs, including: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
 
-  One approach that has also garnered attention is the application of more efficient convolution algorithms. The standard algorithm known as convolution-over-space, as well as the more widely used matrix-multiplication (MMX), have a base assymptotic complexity of $O(N^2)$, scaling very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly outscale all other layers in the network~\cite{hegde2018morph}.
+  One approach that has also garnered attention is the application of more efficient convolution algorithms. The standard discrete convolution algorithm, as well as the more widely used matrix-multiplication (MMX), have a base assymptotic complexity of $O(N^2)$, scaling very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly outscale all other layers in the network~\cite{hegde2018morph}.
 
   In 2016, Lavin \& Gray~\cite{lavin2016fast} reviewed the relevant convolution algorithms --- which were, at the time, MMX and FFT convolution --- and proposed a new class of algorithms based on the Coppersmith–Winograd series of matrix multiplication methods~\cite{coppersmith1982asymptotic}. MMX Algorithms with lower assymptotic bounds have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which severely hinders their applicability. As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
 
@@ -146,53 +146,79 @@
   
   We propose HECATE, an FFT-based 3D convolution accelerator using hardware-efficient polar-coordinate multiplication, pipelined FFT and IFFT chains, and optimized for large images using input slicing and overlap-add. We synthesize the architecture using HDL and implement it in a VC709 FPGA board. By validating our implementation using state-of-the-art benchmarks, we demonstrate the viability of FFT convolution in non-spectral 3D CNNs.
   
-  This document is organized as follows: In Section~\ref{sec:arch}, we describe the design choices and optimizations of our proposed architecture; Section~\ref{sec:imp} details the procedures used to verify and test the architecture; Section~\ref{sec:res} lists the results obtained from them; Section~\ref{sec:rela} discusses related and future work; and Section~\ref{sec:conc} presents our conclusions.
+  \todo{[rewrite]} This document is organized as follows: In Section~\ref{sec:alg} we discuss the state-of-the art convolution algorithms and their computational complexity; In Section~\ref{sec:arch}, we describe the design choices and optimizations of our proposed architecture; Section~\ref{sec:imp} details the procedures used to verify and test the architecture; Section~\ref{sec:res} lists the results obtained from them; Section~\ref{sec:rela} discusses related and future work; and Section~\ref{sec:conc} presents our conclusions.
 
   % Unused paragraphs moved to notes, check there if you want to add extra information to the introduction
 
-\section{Architecture Design}\label{sec:arch}
+\section{Convolution Algorithms}\label{sec:alg}
+  Comparative algorithmic analyses of Matrix Multiplication (MMX), Winograd, and FFT convolution have been performed previously by Lavin \& Gray~\cite{lavin2016fast} as well as many later publications~\cite{shen2018towards}\todo{couple more}. Our focus in this Section is on an often overlooked property of these algorithms: their scalability; and how it affects the total complexity of the system.
 
-  FFT convolution (FCONV) achieves lower complexity via the the Convolution Theorem. Let $a,b$ be two discrete signals in $\mathbb{R}^N$. The convolution of $a$ and $b$ can be represented as:
+  Let us first define a standard nomenclature:
+  \begin{itemize}
+    \item $I$ is a 3D input channel with dimensions $\{I_x,I_y,I_z\}$. There are $I_c$ channels. Each of its elements are defined $I[ix, iy, iz, c]$.
+    \item $K$ is a 3D convolution kernel with dimensions $\{K_x,K_y,K_z\}$. There are $K_f$ kernels. Each of its elements are defined $K[kx, ky, kz, f]$.
+    \item $Out$ is a 3D convolution output with dimensions $\{O_x,O_y,O_z\}$. There are $I_c$ output channels and $K_c$ filter maps. Each of its elements are defined $Out[ox, oy, oz, c, f]$
+    \item $I[c]*K[f]$ is the convolution of one channel $I$ and one kernel $K$.
+    \item $I*K$ is the convolution of each channel $I$ by each kernel $K$.
+  \end{itemize}
+
+  The dimension sizes $\{O_x,O_y,O_z\}$ are a function of the respective sizes of $I$ and $K$ and depends on the \textit{mode} of convolution:
+  \begin{itemize}
+    \item \textit{Full:} $O_d = I_d + K_d - 1$;
+    \item \textit{Same:} $O_d = I_d$;
+    \item \textit{Valid:} $O_d = I_d - K_d$;
+  \end{itemize}
+  
+  The baseline method of convolution used by CNNs is called discrete convolution. It uses \textit{Same} mode, and can be defined as:
   %
-  \begin{equation}\label{eq:theo}
-    a * b = \mathcal{F}^{-1}[\mathcal{F}(a) \cdot \mathcal{F}(b)]\,,
+  \begin{equation}
+    \begin{gathered}
+      Out[ox,oy,oz,c,f] = \\\sum_{z=0}^{K_z}\sum_{y=0}^{K_y}\sum_{x=0}^{K_x}I[ox+kx,oy+ky,oz+kz,c]K[x,y,z,f]\,.
+    \end{gathered}
   \end{equation}
+
+  This method shares its complexity with the more commonly used matrix-multiplication algorithm~\cite{lera2023hardware}. To simplify calculations, we will consider the total number of multiplications required by each algorithm, here labeled $M$. For discrete and matrix-multiplication convolutions, this number is equal to the product of each dimension processed, i.e.:
   %
-  where $\cdot$ represents the pointwise product and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse.
+  \begin{equation}\label{eq:MM-mul}
+    \begin{gathered}
+      M = I_xI_yI_zI_cK_xK_yK_zK_f\,.
+    \end{gathered}
+  \end{equation}
 
-  The pointwise product of two signals incurs $O(N)$ multiplications, whereas convoltion-over-space and MMX incur $O(N^2)$. There are two main caveats to this method: the signals must be transformed to-and-from the Complex domain via a DFT; and the pointwise operation must be performed in the Complex domain. We address these issues in Sections \ref{ssec:fft} and \ref{ssec:cmul}, respectivelly.
+  \subsection{FFT convolution}
+    Lower complexity can be achieved via the Convolution Theorem:
+    %
+    \begin{equation}
+      I[c] * K[f] = \mathcal{F}^{-1}(\mathcal{F}(I[c]) \cdot \mathcal{F}(K[f]))\,,
+    \end{equation}
+    %
+    where $\cdot$ represents the pointwise product (also known as \textit{Hadamard} product) and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse. Note that this method calculates \textit{Full} convolution.
 
-  We also make use of overlap-add, a decomposition algorithm used to further decrease complexity, and is described in Section~\ref{ssec:alg}. The resulting system can be fully pipelined to increase its throughput, and the methods used for such as described in Section~\ref{ssec:pipe}.
+    \begin{figure*}[htb]\centering
+      \subfloat[]{%
+        \makebox[0.9\columnwidth]{
+          \includegraphics{fig/fft-0.pdf}
+        \label{fig:fft1}}}\qquad
+      \subfloat[]{%
+        \makebox[0.9\columnwidth]{
+          \includegraphics{fig/fft-1.pdf}
+        \label{fig:fft2}}}%
+      \caption{Visual representation of an 8-point radix-2 FFT using Decimation in Time (a) and Decimation in Frequency (b).}\label{fig:fft}
+    \end{figure*}
 
-  %%% Unneeded / explained elsewhere
-  % \subsection{Numeric Representation}\label{ssec:num}
-  %   Our design uses fixed-point representation. The bit size and point location are arbitrary and chosen during synthesis to enable a trade-off between performance and precision.
-
-  %   The choice between fixed-point and floating-point was not trivial. Fixed-point can represent values in the range $2^{{\pm}n}$, where $n$ is the number of bits; while floating-point representations disperse their values in a wider exponential range, increasing precision for values closer to zero. Recent FPGA designs have also included floating-point arithmetic cells, bringing performance closer to that of a fixed-point application.
-    
-  %   However, \todo{mention here the reference about CNNs being surprisingly resilient to precision loss (I think it was Lavin \& Grey?) although some recent papers have argued the opposite... I think it was Fan or Shen?}
-
-  %   Furthermore, the values represented in fixed-point notation are explicitly decomposed in powers of two, enabling some of the optimizations described in Section~\ref{ssec:cmul}. Fixed-point also enables the CORDIC algorithm, described in the same section.
-
-  \subsection{FFT \& IFFT}\label{ssec:fft}
-    FFT is a class of algorithms capable of computing an $N$-point DFT in $O(N.{\log}_{2}N)$. The radix-2 FFT~\cite{gauss1866nachlass,cooley1965algorithm} was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
-
-    \begin{figure}[htb]\centering
-      \includegraphics[width=0.9\columnwidth]{fig/fft-0.pdf}
-      \caption{Visual representation of an 8-point radix-2 DIT FFT.}\label{fig:fft}
-    \end{figure}
-    
-    An $N$-point radix-2 FFT breaks down the DFT into ${\log}_{2}N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications; as illustrated by Figure~\ref{fig:fft}. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each result is then multiplied by a corresponding root-of-unity --- known as \textit{twiddle-factor} --- with the form:
+    The class of algorithms known as \textit{Fast Fourier Transforms} (FFT) are used to compute the DFTs. By definition, an FFT computes an $N-point$ DFT in $O(N\log_2N)$. The standard radix-2 FFT~\cite{gauss1866nachlass,cooley1965algorithm} breaks down the DFT into $\log_2N$ steps, each consisting of $\frac{N}{2}$ ``butterfly operations'' followed by $N$ twiddle-factor multiplications. The order of operations depend on the recursion method used: Decimation in Time (DIT) or Decimation in Frequency (DIF), as illustrated by Figures~\ref{fig:fft1} and \ref{fig:fft2} respectivelly. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each twiddle-factor multiplier calculates the product by a root-of-unity $\omega$ with the form:
     %
     \begin{equation}
       \omega_{N}^{k} = e^{\frac{2{\pi}i}{N}k}\,,
     \end{equation}
     %
     where $k \in \mathbb{Z} \cap [0,N-1]$.
+  
+    % was chosen for this project due to being easily pipelined with few arithmetic components (see Section~\ref{ssec:pipe}).
+    
+    While the input signal of the FFT is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Figure~\ref{fig:Ma} represents a signal $K$ given its dimensions all have size 2. To convolve this array with another signal of the same shape, we must first pad each dimension $d$ by $2d-1$, thus conveying its dimensionality and avoiding cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the green line displays the order of rasterization.
 
-    While the input signal is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Let $M$ be a three-dimensional signal of size $M_x,M_y,M_z$. Figure~\ref{fig:Ma} represents $M$ given its dimensions all have size 2. To convolve this array with another signal of the same shape, we must first pad each dimension by $2.dim-1$, in order to convey its dimensionaliry and avoid cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the green line representing the order of rasterization.
-
-    \begin{figure*}[!t]\centering
+    \begin{figure*}[htb]\centering
       \subfloat[]{%
         \makebox[0.7\columnwidth]{
           \includegraphics{fig/matrix-0.pdf}
@@ -203,90 +229,197 @@
         \label{fig:Mb}}}%
       \caption{A three-dimensional signal (a) and the required zero-padding to avoid cyclic convolution (b).}\label{fig:M}
     \end{figure*}
-    
-    %%% Unnecessary and a pain in the ass to describe
-    % Equation~\label{eq:twiddle} defines the twiddle-factor as a function of the number of points $N$, the stage $s$, and the index $i$ of the corresponding value.
-    % \begin{equation}\label{eq:twiddle}
-    %   e^{\frac{}{N}}
-    % \end{equation}
 
-  \subsection{Complex Multiplication}\label{ssec:cmul}
-    Naively, Complex-domain multiplication implies 4 Real-domain multiplications. Let $a,b,c,d \in \mathbb{R}$ and $X,Y \in \mathbb{C} \mid X=a+bi,Y=c+di$. As such:
+    The rasterized signal is further padded to its next power of two, such that radix-2 FFT can be applied across $\log_2N$ stages. The size of the resulting array, denoted $N$, as a function of the sizes of K is:
+    %
+    \begin{equation}\label{eq:N}
+      N = 2^{\ceil{\log_2(2K_x-1)*\log_2(2K_y-1)*\log_2(2K_z-1)}}\,,
+    \end{equation}
+    %
+    where $\lceil~\rceil$ indicates the \textit{ceiling} function (i.e., rounding up to the nearest integer).
+
+    The total number of twiddle-factor multiplications in an $N$-point FFT is:
+    \begin{equation}
+      \sum^{\log_2N}_{i=1}\left(\frac{N}{2^i}-2\right) = N - \log_2N - 1\,.
+    \end{equation}
+
+    The transformed array exiting the FFT chain is subject to \textit{hermitian symmetry}. Assume an $N$-point array of Complex numbers of the form $(a+bi)$. If the array has hermitian symmetry, each point with index $(N/2)+1$ to $N-1$ is equivalent to the Complex conjugate(i.e., $(a-bi)$) of the points with index $(N/2)-1$ to $1$, respectivelly. This means that almost half of the array is redundant, and can be inferred by switching the sign bit of its y-component. This property is preserved after the pointwise multiplication, as as such only $\frac{N}{2}+1$ pointwise multiplications need to be calculated. As such, the total number of Complex multiplications required by FFT convolution is:
+    \begin{equation}
+      2(N - \log_2N - 1) + \frac{N}{2}+1 = \frac{5N}{2} - 2\log_2N - 1\,.
+    \end{equation}
+
+    In order to convolve $I$ and $K$ using FFT, the sizes of each transformed array must be equal. This can be achieved by zero-padding the smaller signal to match the larger one, however, this is inneficient in CNN applications where $I$ is much larger than $K$. Instead, we can ``slice'' the input into kernel-sized pieces and convolve each slice with the kernel. The overlapping points of each convolution are added together, forming the complete output. This is known as \textit{overlap-add}~\cite{smith1997scientist,chen2024fast} and is an example of algorithmic scaling.
+
+    Let $S$ be a 3D slice of $I$ over $K$, with dimensions $\{K_x,K_y,K_z\}$. The number of slices on each dimension is $\{S_x,S_y,S_z\}$, such that:
+    \begin{equation}
+      S_{x} = \left\lceil\frac{I_x}{K_x}\right\rceil;
+      S_{y} = \left\lceil\frac{I_y}{K_y}\right\rceil;
+      S_{z} = \left\lceil\frac{I_z}{K_z}\right\rceil\,.
+    \end{equation}
+
+    Complex-domain multiplication can be performed with 4 Real-domain multiplications. Let $X$ and $Y$ be Complex numbers such that $X=a+bi$ and $Y=c+di$. The product of the two signals is:
     %
     \begin{equation}\label{eq:cmul-rect}
       XY = (a+bi)(c+di) = (ac-bd) + (ad+bc)i\,.
     \end{equation}
 
-    However, X and Y can also be represented in polar coordinates, or more formally $X,Y \in \mathbb{C} \mid X=A\phase{\alpha_1},Y=B\phase{\alpha_2}$, where $A,B$ are the radial distances and $\alpha_1,\alpha_2$ are the respective angular coordinates. As such:
+    As such, the total number of multiplications required by FFT convolution is:
+    \begin{equation}\label{eq:fconv-mul1}
+      4{\times}
+      \left\lceil\frac{I_x}{K_x}\right\rceil
+      \left\lceil\frac{I_y}{K_y}\right\rceil
+      \left\lceil\frac{I_z}{K_z}\right\rceil
+      {\times} \left(\frac{5N}{2} - 2\log_2N - 1\right)\,.
+    \end{equation}
+
+    However, $X$ and $Y$ can also be represented in polar coordinates such that $X=A\phase{\alpha_1}$ and $Y=B\phase{\alpha_2}$, where $A,B$ are radial distances and $\alpha_1,\alpha_2$ are angular coordinates. As such:
     %  
     \begin{equation}\label{eq:cmul-pol}
       XY = A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}\,.
     \end{equation}
 
-    This representation reduces the total operation count to 1 Real multiplication and 1 Real addition, which are mutually independent and can thus be parallelized.
-    
-    In order to convert to-and-from these representations, we implement the trigonometric algorithm CORDIC ({\bf{CO}}ordinate {\bf{R}}otation {\bf{DI}}gital {\bf{C}}omputer)~\cite{volder1959cordic}. This algorithm iterativelly calculates the rotation of a given vector by decreasingly large angles. It has two modes of operation: rotation and vectorization; as well as three inputs, here labeled $(x,y,z)$. In vectorization mode, the rectangular coordinates of a Complex number are inputed as $(x_0,y_0)$, and after $j$ iterations, $(x_j,z_j)$ are the radial distance and angular coordinate, respectively. Similarly, in rotation mode, the polar coordinates of a Complex number are inputed at $(x_0,z_0)$ and after $j$ iterations, $(x_j,y_j)$ are the respective rectangular coordinates. This is generally expressed as:
+    This representation reduces the total operation count to 1 Real multiplication and 1 Real addition. Section~\ref{sec:imp} describes the algorithm used to implement the conversions between these representations. Notably, they do not incur any multiplications, bringing the total down to:
     %
-    \begin{equation}\label{eq:cordic1}
-      \begin{bmatrix}
-        x_{j+1} \\
-        y_{j+1} \\
-        z_{j+1}
-      \end{bmatrix}
-      =
-      \begin{bmatrix}
-        x_{j} - \sigma_{j}2^{-j}y_{j} \\
-        y_{j} + \sigma_{j}2^{-j}x_{j} \\
-        z_{j} + \sigma_{j}\arctan(2^{-j})
-      \end{bmatrix}\,,
-    \end{equation}
-    %
-    where
-    %
-    \begin{equation}\label{eq:cordic2}
-      \sigma_j = 
-      \begin{cases}
-        sign(y_j);~in~\textbf{vectorization}~mode \\
-        -sign(z_j);~in~\textbf{rotation}~mode
-      \end{cases}\,.
+    \begin{equation}\label{eq:fconv-mul2}
+      \left\lceil\frac{I_x}{K_x}\right\rceil
+      \left\lceil\frac{I_y}{K_y}\right\rceil
+      \left\lceil\frac{I_z}{K_z}\right\rceil
+      {\times} \left(\frac{5N}{2} - 2\log_2N - 1\right)\,.
     \end{equation}
 
-    The precision of the algorithm is equivalent to $2^{-j}$, or 1-bit of precision per iteration. Note that when using fixed-point notation, it is enough to iterate once for each bit after the point. The total number of bits of a variable is herefore denoted $S_t$, and the number of bits after the point is denoted $S_p$. Our implementation defaults to 24 and 16, respectivelly.
-
-    A simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$. More efficient hardware implementations \todo{describe and cite}.
-    
-    The outputs of $x_j$ and $y_j$ are scaled by $K_j$ on each iteration, where
+  \subsection{Winograd}
+    Similarly to FFT convolution, the Winograd method transforms the input and kernel into a domain (more strictly, a \textit{field}) where convolution is equivalent to pointwise multiplication~\cite{lavin2016fast}. The algorithm defines convolution as $F(m^3,r^3)$, where $m$ and $r$ are integers. Let $A$ and $B$ be matrices such that their total size is equal to $(m+r-1)^3$ and $r^3$ respectivelly. Their convolution is:
     %
-    \begin{equation}\label{eq:cordic3}
-      K_j = \cos(\arctan(2^{-j}))\,,
-    \end{equation}
-    and must be corrected to obtain the desired result. The correction can be made after the process completes, by diving each output by the scaling factor:
+    \begin{equation*}
+      A*B = (Z( (XAX^T)^RX^T \cdot (YAY^T)^RY^T )Z^T)^RZ^T\,,
+    \end{equation*}
     %
-    \begin{equation}\label{eq:cordic4}
-      \frac{1}{K} = \prod_{j=0}^{S_p-1}{\frac{1}{\sqrt{1+2^{-2j}}}} \stackrel{S_p=16}{\approx} 1.64676\,.
-    \end{equation}
+    where the superscript $R$ denotes clockwise rotation, while $T$ denotes transposing. The result of this operation has size $m^3$ and constitutes a \textit{valid}-type convolution.
 
-    In the pointwise multiplication step, CORDIC is used 3 times. The first two convert the input image slice and kernel to polar coordinates, and the last converts the result back to rectangular coordinates. The scaling factor carries over across operations, including pointwise multiplication, and as such we can apply the correction at any point in the process (image, kernel or product). The combined scaling factor is:
+    The transform matrices depend on $m$ and $r$. CNN applications generally use $F(2^3,3^3)$, where:
     %
-    \begin{equation}\label{eq:cordic5}
-      \frac{1}{K^3} \stackrel{S_p=16}{\approx} 0.22393\,.
+    \begin{equation*}
+      \begin{gathered}
+        X = 
+        \begin{bmatrix}
+          1 &  0 & -1 &  0\\
+          0 &  1 &  1 &  0\\
+          0 & -1 &  1 &  0\\
+          0 &  1 &  0 & -1
+        \end{bmatrix};
+        Y = 
+        \begin{bmatrix}
+          1 & 0 & 0\\
+          \frac{1}{2} & \frac{1}{2} & \frac{1}{2}\\
+          \frac{1}{2} & -\frac{1}{2} & \frac{1}{2}\\
+          0 & 0 & 1
+        \end{bmatrix};\\
+        Z = 
+        \begin{bmatrix}
+          1 &  1 &  1 &  0\\
+          0 &  1 & -1 & -1
+        \end{bmatrix}\,.
+      \end{gathered}
+    \end{equation*}
+
+    This is useful because these transform matrices do not incur any multiplications, as multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
+
+    Similarly to the FFT method, it is possible to calculate multiple $F(m^3,r^3)$ convolutions and add the overlapping points to form a complete output~\cite{lan2017high}. For an image $I$, the total number of multiplications is:
+    %
+    \begin{equation}\label{eq:wino-mul}
+      (I_x-r)(I_y-r)(I_z-r)(r+1)^3\,.
     \end{equation}
 
-    The values of $\arctan(2^{-j})$ are also constant and can be pre-calculated and stored in a lookup table. However, the convolution operation requires adding two angular coordinates before the transformation back into rectangular coordinates. The resulting angle can exceed $\pi$ radians, causing issues with the algorithm. To circumvent this, we store the \textit{quadrant} of each angular coordinate in the unit circle, normalize them to the first quadrant, perform the add operation, and convert the result into the respective quadrant. To simplify this computation, we divide each $\arctan(2^{-j})$ by $2\pi$. The resulting binary, encoded in 16-bits, represents fractions of $\pi$, with its two most-significant bits representing the quadrant of the vector in the unit circle, as shown in Figure~\ref{fig:pfb}. This allows quick access to the quadrant of the angle, as well as enabling normalization to any quadrant by simply setting its first two bits.
+  \subsection{Comparison}
+    Figures \ref{fig:alg1} and \ref{fig:alg2} are plots of Equations \ref{eq:MM-mul} (baseline), \ref{eq:wino-mul} (Winograd), \ref{eq:fconv-mul1} (FFT convolution) and \ref{eq:fconv-mul2} (FFT convolution using polar multiplication); for different kernel sizes, assuming $K$ is equilateral and has size $k$. Figure~\ref{fig:alg1} assumes $I=4{\times}4{\times}4$, or one semi-convolution. Figure~\ref{fig:alg2} assumes $I=128{\times}171{\times}16$, the input size used by C3D~\cite{tran2015learning}.
 
-    \begin{figure}[htb]\centering
-      \includegraphics[width=0.9\columnwidth]{fig/unit_circle-0.pdf}
-      \caption{Four symmetric angles encoded as $\pi$-fractions.}\label{fig:pfb}
+    \begin{figure}\centering
+      \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
+      \caption{Multiplications (log) vs kernel-size for $I=4{\times}4{\times}4$}\label{fig:alg1}
     \end{figure}
     
-    CORDIC's complexity does not increase with image- or kernel-size, depending instead on $S_p$, giving it a relative asymptotic complexity of $O(1)$ and enabling a trade-off between numerical precision and operation complexity.
+    \begin{figure}\centering
+      \includegraphics[width=0.9\columnwidth]{fig/plot-1.pdf}
+      \caption{Multiplications (log) vs kernel-size for $I=128{\times}171{\times}16$}\label{fig:alg2}
+    \end{figure}
 
-    CORDIC can also been applied to FFTs to more efficiently calculate twiddle-factor multiplications~\cite{banerjee2001fpga,choudhary2011cordic}. Each CORDIC iteration rotates the input by elementary angles which coincide with the twiddle-factors used by the FFT. This, however, also requires scaling each point that wasn't multiplied by the twiddle-factor, to account for the gain induced by CORDIC, resuling in an increase of LUT components used. As later described in Section~\ref{sec:imp}, LUTs are the limiting factor in scaling this design, not DSPs. As such, we elected to implement the twiddle-factor rotations using DSP blocks.
-    
-  \subsection{Algorithmic Decomposition}\label{ssec:alg}
-    In order to convolve two inputs using FCONV, the size of the input arrays must be equivalent. However, in the field of image recognition, the image is often much larger than the convolution kernels. In order to avoid padding the kernel to match the image, we employ a decomposition algorithm known as overlap-add~\cite{smith1997scientist,chen2024fast}. The image is broken down into kernel-sized slices which are individually convolved with each kernel. Each slice has overlapping points with its neighbors, which are added together to form the complete convolution.
-    
-    This process is only possible because of the type of padding used. There are three types of padding commonly used by CNNs. Let $I_d,K_d,O_d$ be the size of each dimension $d$ of the image, kernel, and output arrays. Using \textit{full} padding: $O=I+K-1$; using \textit{same} padding: $O=I=K$; and using \textit{valid} padding: $O=I-K+1$. Only \textit{full} padding preserves the complete information of the convolution of the overlapping points, enabling overlap-add.
+    These graphs do not account for the multiplications stemming from Winograd's transform at higher kernel-sizes. Despite this, FFT convolution achieves a lower number of multiplications at higher values of $k$, and using polar multiplication achieves a lower number of multiplications for all kernels listed.
+
+\section{Architecture Design}\label{sec:arch}
+  In order to convert the image and kernel to-and-from polar coordinates, we implement CORDIC ({\bf{CO}}ordinate {\bf{R}}otation {\bf{DI}}gital {\bf{C}}omputer)~\cite{volder1959cordic}, a trigonometric algorithm that iterativelly calculates the rotation of a given vector by decreasingly large angles. It has two modes of operation: rotation and vectorization; as well as three inputs, here labeled $(x,y,z)$. In vectorization mode, the rectangular coordinates of a Complex number are inputed as $(x_0,y_0)$, and after $j$ iterations, the radial distance and angular coordinate are outputed as $(x_j,z_j)$, respectivelly. Similarly, in rotation mode, the polar coordinates of a Complex number are inputed at $(x_0,z_0)$ and after $j$ iterations, the respective rectangular coordinates are outputed as $(x_j,y_j)$. This is generally expressed as:
+  %
+  \begin{equation}\label{eq:cordic1}
+    \begin{bmatrix}
+      x_{j+1} \\
+      y_{j+1} \\
+      z_{j+1}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+      x_{j} - \sigma_{j}2^{-j}y_{j} \\
+      y_{j} + \sigma_{j}2^{-j}x_{j} \\
+      z_{j} + \sigma_{j}\arctan(2^{-j})
+    \end{bmatrix}\,,
+  \end{equation}
+  %
+  where
+  %
+  \begin{equation}\label{eq:cordic2}
+    \sigma_j = 
+    \begin{cases}
+      sign(y_j);~in~\textbf{vectorization}~mode \\
+      -sign(z_j);~in~\textbf{rotation}~mode
+    \end{cases}\,.
+  \end{equation}
+
+  The precision of the algorithm is equivalent to $2^{-j}$, or 1-bit of precision per iteration. Note that when using fixed-point notation, it is enough to iterate once for each bit after the point. The total number of bits of a variable is herefore denoted $S_t$, and the number of bits after the point is denoted $S_p$. Our implementation defaults to 24 and 16, respectivelly.
+
+  A simple hardware implementation of CORDIC consists of two $S_t$-bit adders, one $S_p$-bit adder, two variable bit-shifters, three registers, and a lookup table for storing $\arctan(2^{-j})$.
+  
+  The outputs of $x_j$ and $y_j$ are scaled by $K_j$ on each iteration, where
+  %
+  \begin{equation}\label{eq:cordic3}
+    K_j = \cos(\arctan(2^{-j}))\,,
+  \end{equation}
+  and must be corrected to obtain the desired result. The correction can be made after the process completes, by diving each output by the scaling factor:
+  %
+  \begin{equation}\label{eq:cordic4}
+    \frac{1}{K} = \prod_{j=0}^{S_p-1}{\frac{1}{\sqrt{1+2^{-2j}}}} \stackrel{S_p=16}{\approx} 1.64676\,.
+  \end{equation}
+
+  In the pointwise multiplication step, CORDIC is used 3 times. The first two convert the input image slice and kernel to polar coordinates, and the last converts the result back to rectangular coordinates. The scaling factor carries over across operations, including pointwise multiplication, and as such we can apply the correction at any point in the process (image, kernel or product). The combined scaling factor is:
+  %
+  \begin{equation}\label{eq:cordic5}
+    \frac{1}{K^3} \stackrel{S_p=16}{\approx} 0.22393\,.
+  \end{equation}
+
+  The values of $\arctan(2^{-j})$ are also constant and can be pre-calculated and stored in a lookup table. However, the convolution operation requires adding two angular coordinates before the transformation back into rectangular coordinates. The resulting angle can exceed $\pi$ radians, causing issues with the algorithm. To circumvent this, we store the \textit{quadrant} of each angular coordinate in the unit circle, normalize them to the first quadrant, perform the add operation, and convert the result into the respective quadrant. To simplify this computation, we divide each $\arctan(2^{-j})$ by $2\pi$. The resulting binary, encoded in 16-bits, represents fractions of $\pi$, with its two most-significant bits representing the quadrant of the vector in the unit circle, as shown in Figure~\ref{fig:pfb}. This allows quick access to the quadrant of the angle, as well as enabling normalization to any quadrant by simply setting its first two bits.
+
+  \begin{figure}[htb]\centering
+    \includegraphics[width=0.9\columnwidth]{fig/unit_circle-0.pdf}
+    \caption{Four symmetric angles encoded as $\pi$-fractions.}\label{fig:pfb}
+  \end{figure}
+  
+  CORDIC's complexity does not increase with image- or kernel-size, depending instead on $S_p$, giving it a relative asymptotic complexity of $O(1)$ and enabling a trade-off between numerical precision and operation complexity.
+
+  CORDIC can also been applied to FFTs to more efficiently calculate twiddle-factor multiplications~\cite{banerjee2001fpga,choudhary2011cordic}. Each CORDIC iteration rotates the input by elementary angles which coincide with the twiddle-factors used by the FFT. This, however, requires scaling each point that wasn't multiplied by the twiddle-factor, to account for the gain induced by CORDIC, resuling in an increase of LUT components used. As later described in Section~\ref{sec:imp}, LUTs are the limiting factor in scaling this design, not DSPs. As such, we elected to implement the twiddle-factor rotations using DSP blocks.
+
+  Our twiddle-factor multiplication design using DSPs is a variant of the Karatsuba multiplication algorithm~\cite{karatsuba1962multiplication}. Using the previously established nomenclature for Complex numbers, Karatsuba defines three intermediate variables:
+  %
+  \begin{equation}\label{eq:kara1}
+    \begin{cases}
+      k1 = c {\times} (a+b) \\
+      k2 = b {\times} (c+d) \\
+      k3 = a {\times} (d-c)
+    \end{cases}\,,
+  \end{equation}
+  %
+  such that:
+  \begin{equation}\label{eq:kara2}
+    XY = (k1 - k2) + (k1 + k3)i\,.
+  \end{equation}
+
+  As such, the algorithm normally incurs 5 additions and 3 multiplications. However, in the case of twiddle-factor multiplication, $c$ and $d$ are constant. By extension, $(c+d)$ and $(d-c)$ are also constant, and can be stored in LUT for use in the algorithm. This lowers the operation count to 3 adds and 3 muls, a substantial improvement over the standard 2 adds and 4 muls of Equation~\ref{eq:cmul-rect}.
   
   \subsection{Pipelining}\label{ssec:pipe}
     Each step of the proposed algorithm can be pipelined to greatly increase its throughput. Figure~\ref{fig:pipeline} illustrates our fully-pipelined design, optimized for hardware-efficiency.
@@ -296,30 +429,61 @@
       \caption{Fully-pipelined FFT-conv design.}\label{fig:pipeline}
     \end{figure*}
 
-    \todo{describe each block of the design}
+    In accordance to the overlap-add method, 3D inputs into the convolutional layer are broken into kernel-sized slices; for this example we will assume a 3x3x3 kernel. We rasterize the image along one dimension and pad it to avoid cyclic convolution (see Figure~\ref{fig:M}) and multiplex it into the first FFT stage.
+    
+    The FFT is divided into $\log_2N$ stages, where $N$ is defined by Equation~\ref{eq:N}. Each stage constitudes of one butterfly, one twiddle-factor multiplication block, and a set of registers. The add and subtract blocks within the butterflies are (on every layer except the first) Complex operation blocks, and as such each constitute two operations. The twiddle-factor multiplication blocks were implemented using Karatsuba, resulting in 3 adders and 3 multipliers each, along with a lookup table.
 
+    Each FFT node processes two points of the input per machine cycle, storing the result into the register bank. On the next cycle, the node will process two more points, while the proceeding stage will read the result and repeat the process along the chain. Once the pipeline is full, the chain is capable of processing two points of input per cycle.
+
+    Hermitian symmetry carries over through CORDIC and polar multiplication. As such these points can be inferred much later, before second FFT chain. The edge case for $N/2$ still needs to be calculated, as it is not the Complex conjugate of index $0$. Its insertion into the next block is done via a multiplexer.
+
+    The first CORDIC chain is set to vectorization mode to perform the conversion to polar coordinates. Similarly to the FFT chain, there are $S_p$ blocks which, when fully pipelined, process two points (one symmetrical) of the original array.
+
+    The polar multiplication step consists of a one multiplier and one adder, in accordance to Equation~\ref{eq:cmul-pol}. The kernels are processed pre-inference (at synthesis time) and their Complex polar coordinates are stored in their respective lookup tables. Before being stored, each kernel's radial distance is multiplied by the CORDIC correction factor (see Equation~\ref{eq:cordic5}), thus applying the correction to each point of the array without the need for additional runtime multipliers.
+
+    The second CORDIC chain is set to rotation mode to perform the conversion back to rectangular coordinates. Its output is joined at the final stage, forming one point of the $N$-sized array. The respective Complex conjugate (denoted $\bar{z}$) is inferred and sent into the second FFT chain. The $N/2$ exception is still processed and similarly inserted into the FFT.
+    
+    The second FFT chain executes the inverse transform. It is arranged in Decimation-in-Frequency, opposite to the first FFT (note the placement of the twiddle-factor multipliers). As illustrated by Figure~\ref{fig:fft}, the last stage of DIT-FFT is equivalent to the first stage of DIF-FFT, allowing data to flow seemingly along the pipeline.
+
+    Finally, the overlap-add module (OA) receives the two points (now in Real domain) and adds them to the respective indexes in the feature map.
+
+    A cursory analysis of the components required by this architecture, considering no further design optimizations, totals:
+    \begin{itemize}
+      \item $[10\log_2(N) + 4S_p + 3]$ $S_t$-sized adders;
+      \item $[2S_p]$ $S_p$-sized adders;
+      \item $[6\log_2(N) + 1]$ $S_t$-sized multipliers;
+    \end{itemize}
+    along with a register bank, routing components, and the aforementioned lookup tables.
+
+  \subsection{Parallelism}
+    An alternative avenue for optimizing this design is to implement a single FFT and CORDIC blocks, increasing hardware-reuse at the cost of throughput.
+    
+    For this approach, we opted to parallelize the FFT stages over $N/2$ blocks, completing a transform in $\log_2N$ cycles. Twiddle-factor multiplication is not required by every butterfly of every stage (see Figure~\ref{fig:fft}) and can be optimized accordingly.
+
+    We can also parellalize the CORDIC chain along $N/2+1$, instead of along the length of $j$, using the standard recursive algorithm and variable bit-shifters.
+
+    Overlap-add is similarly parallelized, executing $N$ additions to the filter map per cycle.
+
+    This version of the architecture was dubbed \textit{parallel-core}, abbreviated \textbf{HEC-para}. The pipelined design described in Section~\ref{ssec:pipe} is similarly named \textit{pipelined-core}, abbreviated \textbf{HEC-pipe}.
+    
 \section{Implementation \& Testing}\label{sec:imp}
-  Two versions of our architecture were conveived: parallel-core and pipelined-core, referring to the hardware utilization strategies used in their designs. To simplify nomenclature, this Section uses the monikers \textit{HEC-1} to address the parallel-core design, and \textit{HEC-2} for the pipelined-core design.
+  As a proof of concept, we synthesized and implemented the parallel-core architecture on a VC709 FPGA board. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case).
 
-  Due to the slow development cycle of pure HDL designs, only the parallel-core version of the architecture was fully synthesized. From it, we extracted the relevant resource utilization metrics for each of the processing stages: FFT, CORDIC, and polar multiplication. These values were used to estimate the resource utilization of the fully-pipelined design. Due to the many optimization routines performed by the synthesis algorithm, our calculations undoubtly incur a margin of error. To account for this, these metrics were calculated assuming no further design optimization can be made (worst case).
+  Software testing was carried out to ascertain correctness and measure precision. A randomized \todo{[finish section]}
 
-  \todo{Explain HEC-1's design}
+  Timing closure was achieved at 150 MHz for HEC-para. Separate testing was made using pipelined designs that lower the critical path, successfuly closing timing at 200 MHz for HEC-pipe.
 
-  Timing closure was achieved at 200MHz for HEC-1. Separate testing was made using pipelined designs that lower the critical path, successfuly closing timing at 150 MHz for HEC-2.
-
-  \todo{explain software/precision testing}
-
-  Table~\ref{tab:ru} displays the resource usage metrics of HEC-1 and HEC-2 implemented on a VC709 FPGA board, assuming kernel-size $3{\times}3{\times}3$.
+  Table~\ref{tab:ru} displays the resource usage metrics of HEC-para and HEC-pipe implemented on a VC709 FPGA board, assuming kernel-size $3{\times}3{\times}3$.
 
   \todo{justify 7x3x3 (MRI)}
 
   \begin{table}[htb]
-    \caption{Resource usage of HEC-1 and HEC-2 in vc709 environment for $K=3{\times}3{\times}3$.}
+    \caption{Resource usage of HEC-para and HEC-pipe in vc709 environment for $K=3{\times}3{\times}3$.}
     \centering
     \label{tab:ru}
     \begin{tabular}{|c|c|c|c|c|c|c|}
       \hline
-      Stage  & Block    & DSP  & LUT   & FF    & HEC-1       & HEC-2     \\\hline
+      Stage  & Block    & DSP  & LUT   & FF    & HEC-para       & HEC-pipe     \\\hline
       \multirow{2}{*}{FFT}
         & bfly\_wmul    & 3    & 224   & 0     & $\times$16  & $\times$14 \\
         & reg\_arr      & 0    & 0     & 260   & $\times$16  & $\times$2 \\\hline
@@ -328,32 +492,23 @@
         & mul\_add      & 1    & 156   & 0     & $\times$17  & $\times$1 \\
         & cordic2       & 0    & 150   & 125   & $\times$17  & $\times$16 \\\hline
       OA     & ovl\_add & 0    & 21    & 28    & $\times$128 & $\times$1 \\\hline
-      \multicolumn{2}{|c|}{HEC-1 Total}
+      \multicolumn{2}{|c|}{HEC-para Total}
                         & 65   & 13871 & 11994 & --- & --- \\\hline
-      \multicolumn{2}{|c|}{HEC-2 Total}
+      \multicolumn{2}{|c|}{HEC-pipe Total}
                         & 43   & 7969  & 4548   & --- & --- \\\hline
     \end{tabular}
   \end{table}
 
   \subsection{Benchmarks}
-    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}. This is due to their different choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether the relevant publications accounted for differing hyperparameters in their analyses. In the interest of fair comparison, we will standardize these parameters, sourcing the original technical reports for C3D and UCF101. We will then transpose the results from the state-of-the-art to this standard.
+    The convolutional neural network C3D~\cite{tran2015learning} is often used in the field as a benchmark for testing accelerator architectures, usually paired with a video-database such as UCF101~\cite{soomro2012ucf101}. However, relevant sources disagree on the total number of arithmetic operations required to process C3D using UCF101~\cite{shen2018towards,mittal2021survey,fan2021high}. This is due to their different choices of hyperparameters such as input size, kernel size, and number of kernels. Importantly, these parameters affect the throughput of these applications, making direct comparison between them misleading. We were unable to verify whether the relevant publications accounted for differing hyperparameters in their analyses. In the interest of fair comparison, we standardize these parameters, sourcing the original technical reports for C3D and UCF101. We then transpose the results from the state-of-the-art to this standard.
 
-    \todo{Rewrite this next part more formally}
-
-    Standardized convolution complexity:
-    \begin{equation}\label{eq:tp1}
-      [I*K] = (I_xI_yI_z)(K_xK_yK_z)~\texttt{MAC-OP}
+    From Equation~\ref{eq:MM-mul}, assuming the input sizes listed by C3D~\cite{tran2015learning} and that one MAC operation is equivalent to 2 arithmetic operations, we can define the complexity of the first CONV layer as:
+    %
+    \begin{equation}\label{eq:tp}
+      [I*K] = 2{\times}128{\times}171{\times}3{\times}16{\times}k^3~\texttt{OP}
     \end{equation}
 
-    Assuming C3D technical report~\cite{tran2015learning}:
-    \begin{equation}\label{eq:tp2}
-      [I*K] = 2*128*171*16*k^3 = 700416*k^3~\texttt{OP}
-    \end{equation}
-    That is 1 "conv". To complete a layer HEC-2 has to do $K_n.C_n$ of those (\# of kernels x channels).
-    
-    Comparisons with other projects will be made considering the time needed to finish 1 "conv", expressed as $\frac{I*K}{s}$. Then, the standardized throughput ($\frac{GOP}{s}$) is calculated via Equation~\ref{eq:tp2}.
-
-    \todo{Mention the comparison with GPU as well}
+    This value, denoted $[I*K]$, is used to standardize our analysis across different projects. Throughput is expressed as $[I*K]/s$ (convolutions per second), from which $OP/s$ can be extracted using Equation~\ref{eq:tp}. For projects implemented in FPGA technology, we will also compare the usage of hardware resources --- DSP, LUT and FF --- and use them to calculate the relative hardware-efficiencies $\frac{I*K}{s{\times}DSP}$, $\frac{I*K}{s{\times}LUT}$, and $\frac{I*K}{s{\times}FF}$.
 
     %%% All of this is unneeded
     % C3D consists of eight convolutional layers, three pairs and two independent, intertwined with five pooling layers, and ending in three fully-connected layers. Input size using UCF101 is different for training and inference, as jittering is used to crop inputs. For inference, as is the case for our analysis, 128x171 3-channel 16-frame resized inputs are used, roughly half the resolution of UCF101. Kernel-size is assumed 3x3x3, as recommended by the technical report.
@@ -393,7 +548,9 @@
     % \end{table}
 
 \section{Results}\label{sec:res}
-  Table~\ref{tab:he-cores} summarizes the hardware-efficiency calculations for our project. Table~\ref{tab:he-comp} compares it to other projects.
+  \todo{Comment on software testing}
+  
+  Table~\ref{tab:he-cores} summarizes the throughput and hardware-efficiency calculations for our project. Table~\ref{tab:he-comp} compares it to other projects.
 
   \begin{table}[htb]
     \caption{Throughput and Hardware-Efficiency of pipelined HECATE cores at various kernel sizes.}
@@ -401,7 +558,7 @@
     \label{tab:he-cores}
     \begin{tabular}{|c|c|c|c|c|c|c|}
       \hline
-      Core    & \multicolumn{3}{|c|}{HEC-1} & \multicolumn{3}{|c|}{HEC-2} \\\hline
+      Core    & \multicolumn{3}{|c|}{HEC-para} & \multicolumn{3}{|c|}{HEC-pipe} \\\hline
       Kernel              & 3x3x3 & 4x4x4 & 7x3x3 & 3x3x3 & 4x4x4 & 7x3x3 \\\hline
       $\frac{I*K}{s}$     & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
       $\frac{GOP}{s}$     & ---   & ---   & ---   & ---   & ---   & ---   \\\hline
@@ -450,14 +607,16 @@
 \section{Related \& Future Work}\label{sec:rela}
   \todo{[Rewrite paragraph]} Fan et al.~\cite{fan2021high} presents an accelerator which processes C3D in 93.95 ms using 1345 DSPs and a frequency of 220 MHz, giving it a hardware-efficiency of $5.19 [\frac{GOP}{s{\cdot}MHz{\cdot}DSP}]$. Their method involves quantization of weights and activations with static block floating point, while the convolution algorithm remains the standard matrix-multiplication method. This method, however, does not reduce the overall number of multiplication operations required by the convolution layer, which are still performed using fixed-point representation.
 
+  Also~\cite{xing2019dnnvm} is the same deal
+
   ~\\\todo{Also mention:
     \begin{itemize}
     \item rotation invariance~\cite{kim2020cycnn,mo2024ric};
     \item CORDIC activation function~\cite{kokane2025retrospective};
-    \item CORDIC semi-rotation FFT (if not mentioned before);
+    \item CORDIC more efficient hardware archs~\cite{};
     \item spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image};
-    \item other FFT algorithms like split-radix, prime-factor, etc;
-    \item other methods of convolution decomposition such as 3D=n2D
+    \item other FFT algorithms like split-radix, prime-factor, etc~\cite{};
+    \item other methods of convolution decomposition such as 3D=~\cite{}
     \end{itemize}
   } 
 
