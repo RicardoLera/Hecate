@@ -1,4 +1,4 @@
-\part{Theme \& Context}\label{ch:int}
+\chapter{Theme \& Context}\label{ch:int}
   % Context - The Convolution operation
   Convolution is a mathematical operation that relates two signals into a third, representing how one is modified by the other. The operation forms the basis of impulse decomposition, and \citeonline{dsp_basic} described it as the most fundamental technique in Digital Signal Processing. More recently, the rapid growth of Convolutional Neural Networks (CNN) revolutionized the field of computer vision due to its high accuracy and ability to train over large sets of data~\cite{alzubaidi2021review}, further increasing the need to process convolution in modern computer systems.
 
@@ -20,12 +20,12 @@
   % Segue and mention objective
   Next, in Chapter~\ref{ch:rev}, a literature review will be performed to explore the domain of this theme and reveal problems that are yet unsolved or partially unsolved and whose solution may contribute significantly to the field. These problems will form the foundation to state the objective of the project in Chapter~\ref{ch:obj}.
 
-\part{Literature Review}\label{ch:rev}
+\chapter{Literature Review}\label{ch:rev}
   With regards to the optimization of convolution processing, several surveys have been performed concerning significant technological developments in this field. These include efficient algorithms~\cite{mittal2021survey}, hardware~\cite{feng2019computer}, platforms such as FPGAs~\cite{abdelouahab2018accelerating}, ASICs~\cite{moolchandani2021accelerating}, and overall optimizations~\cite{zhang2019recent}.
   
   Based on this body of work, Sections~\ref{sec:conv_alg}, \ref{sec:hard_acc}, and \ref{sec:plat} cover the relevant technological developments of convolution algorithms, hardware acceleration, and computer platforms, with an emphasis on viability in constrained environments.
 
-  \chapter{Convolution Algorithms}\label{sec:conv_alg}
+  \section{Convolution Algorithms}\label{sec:conv_alg}
     Concerning hardware applications, three parameters can be used to describe the applicability of an algorithm:
 
     \begin{itemize}
@@ -38,7 +38,7 @@
       \item \textbf{Memory Footprint}: Some computational processes require more buffer memory to store variables currently in use. If the memory used by the algorithm is larger than the available cache, the processor has to store and load from outside the chip, leading to slowdown. Domain-specific architectures usually contain just enough memory for their core processes.
     \end{itemize}
 
-    \section{Convolution-over-space \& Matrix Multiplication}
+    \subsection{Convolution-over-space \& Matrix Multiplication}
       Signal convolution over sets of Euclidean-organized data (e.g., arrays, images) can be represented by the ``sliding product'' of two inputs. The filter (or \textit{kernel}) ``slides'' across the input, multiplying each pair of coincident points and adding the products together. Each of these results represents a convolution centered on a different input point. All of them are organized jointly as the output of the convolution. In image processing, we refer to this operation as ``convolution-over-space''.
   
       The output can have varying sizes depending on how we handle the sliding of the kernel out-of-bounds~\cite{alzubaidi2021review}:
@@ -59,7 +59,7 @@
       
       The mathematical convenience of matrix multiplication and lack of transformations makes this method simple to process on conventional hardware, making it the standard for CNN convolution processing~\cite{zhou2021characterizing}.
 
-    \section{Coppersmith-Winograd}
+    \subsection{Coppersmith-Winograd}
       An open problem in modern mathematics is finding the smallest $\omega$ such that the number of operations required by an $N \times N$ matrix multiplication equals $N^{\omega + O(1)}$~\cite{gao2020systematic}. The naive line-by-column multiplication method has $\omega = 3$, and the current lowest known value for $\omega$ is 2.37188~\cite{duan2022faster} using a method based on the Coppersmith-Winograd algorithm, which is currently the state-of-the-art in terms of speed~\cite{lavin2016fast}.
         
       The Coppersmith-Winograd algorithm samples the input and kernel at a given set of points using transform matrices so that their Hadamard product (element-wise multiplication), followed by the respective inverse transform, equates the convolution of the original signals. This method becomes inefficient for larger kernels, so smaller kernels (e.g., 3x3 or 5x5) are most often used~\cite{alam2022winograd}.
@@ -70,7 +70,7 @@
       
       Additionally, increasing input block size increases the floating-point error exponentially~\cite{alam2022winograd}. Hence the method incurs an inherent trade-off between speed and precision that must be accounted for.
 
-    \section{FFT Convolution}
+    \subsection{FFT Convolution}
       The Theorem of Convolution defines the operation as follows:
     
       \begin{equation}
@@ -103,24 +103,24 @@
   
       This method incurs the downside of requiring trigonometric operations, but there exist algorithms that can efficiently process these operations, as described in Section~\ref{sec:cordic}.
 
-    \section{Comparison}
+    \subsection{Comparison}
       On a purely mathematical complexity analysis, the Coppersmith-Winograd algorithm has the potential to reach $s$ multiplications in the Hadamard operation. However, its transform still scales exponentially with $s$. In contrast, the Fast Fourier Transform and its inverse have complexity $O(s\log_2s)$, and the Hadamard operation also has $s$ multiplications, albeit in the Complex realm. In addition, the FFT method can benefit from overlap-add, effectively lowering its complexity to $O(s\log_2k)$.
   
       The standard matrix multiplication algorithm with $ks$ multiplications has the highest potential for parallelization, as every multiplication is independent. It is usually processed as an $n \times n$ matrix multiplication resulting in $n^3$ multiplications. Accelerators such as Google's Tensor Processing Unit (TPU)~\cite{jouppi2020domain} leverage this potential in a systolic array architecture, lowering the system's overall latency, but become subject to hardware and power limitations as described in Section~\ref{sec:systolic}. Coppersmith-Winograd and the FFT methods share the ability to parallelize their Hadamard multiplications and parts of their transforms.
   
       Finally, regarding memory footprint, the FFT method has a higher memory requirement than Coppersmith-Winograd, due in part to its Complex operations~\cite{lavin2016fast}.
 
-  \chapter{Hardware Acceleration}\label{sec:hard_acc}
+  \section{Hardware Acceleration}\label{sec:hard_acc}
     A large and accrescent amount of hardware acceleration technologies has been developed for applications in modern processors. Here, we will narrow our focus to technologies that have recently succeeded in accelerating convolution algorithms.
 
-    \section{Systolic Array}\label{sec:systolic}
+    \subsection{Systolic Array}\label{sec:systolic}
       First described in 1979 as a specific-purpose VLSI system~\cite{kung1979systolic}, systolic arrays have re-appeared as a core feature of some modern low-latency implementations such as Google's TPU. A systolic array is a topological assortment of processing units commonly referred to as \textit{nodes}. Each node is designed to process fractions of the desired operation and send information to each neighbor, forming a \textit{stream} that eventually leads to a complete operation. In particular, the input of the systolic array can be shared between nodes, removing the need to re-read the input value from a register. As such, computationally complex operations can be subdivided and performed within fewer machine cycles.
           
       However, to maintain its low latency, the size of a systolic array has to grow at the same rate as the complexity of the target operation. For example, consider the convolution of a 256x256 black-and-white image with a 4x4 kernel. Using the TPU's matrix multiplication systolic array, which contains 65536 multiply-and-add nodes, the operation can be completed within exactly 16 cycles. In order to process a 512x512 image in the same number of cycles, the systolic array would now require four times as many nodes, totaling 262144.
       
       This exponential increase in hardware requirements reduces the application's viability in constrained environments. Likewise, if the complexity of the target operation scales at a slower rate, so do the hardware requirements of the systolic array.
 
-    \section{CORDIC}\label{sec:cordic}
+    \subsection{CORDIC}\label{sec:cordic}
       Coordinate Rotation Digital Computer (CORDIC) is an algorithm initially conceptualized in 1956 and later developed into an iterative algorithm capable of fast, low-cost computation of various mathematical functions~\cite{meher200950}.
       
       \begin{figure}[htb]
@@ -140,7 +140,7 @@
       
       Modern CORDIC implementations build upon the design of Unified CORDIC in various ways, such as processing multiple CORDIC blocks in parallel (known as ``Radix-$X$ CORDIC'', where $X$ is the number of parallel blocks), pre-processing input data, and pre-calculating trigonometric operations of chosen angles~\cite{sharmareview}. These optimizations are often application-specific or incur considerable downsides. Higher-radix CORDIC, for instance, reduces latency by increasing hardware usage at the same rate. For our project, a modified single-Radix Unified CORDIC implementation is used. This is due to a method of calculating Complex multiplication concurrently using the Karatsuba algorithm, detailed in Section~\ref{sec:flux}.
     
-    \section{Efficient Multiplication}
+    \subsection{Efficient Multiplication}
       Multiplication is the most demanding operation in all convolution algorithms described in this review. Hence why the algorithms presented often focus on reducing the total number of multiplication necessary for convolution. A complementary approach is to reduce the complexity of the multiplication operation itself.
   
       We will focus on fixed-point multiplication, as neural network implementations have been shown not to require the extra precision of floating-point numbers~\cite{courbariaux2014training}.
@@ -151,30 +151,30 @@
       
       Also of note, a convolution algorithm for CNNs without multiplications has been develop using CORDIC exclusivelly~\cite{parmar2019resource}. However, their implementation relies on a quirk of the Max Pooling layer that allows re-scaling of the input variables. This approach, therefore, limits the algorithm to specific CNN topologies that include a Max Pooling layer preceding a convolution layer. Moreover, while the implementation is hardware-efficient, its latency falls short of other state-of-the-art implementations that rely on multiplication.
   
-  \chapter{Platforms}\label{sec:plat}
-    \section{General \& Specific Purpose}
+  \section{Platforms}\label{sec:plat}
+    \subsection{General \& Specific Purpose}
       General purpose architectures (commonly CPUs) are sometimes used for specialized processing, depending on the application, but are overall less efficient than GPUs and other specific-purpose architectures~\cite{chen2019deep}. CPUs are generally not optimal for CNN processing~\cite{hu2022survey}.
   
       In contrast, Application Specific Integrated Circuits (ASIC) can, in theory, better utilize efficient algorithms and parallelization techniques, depending on how specialized the design is for that application. The Graphic Processing Unit (GPU), one of the most widespread co-processors, is often used for machine learning applications due in part to its availability. More specialized ASICs can achieve higher performance and energy efficiency at the cost of versatility~\cite{hu2022survey}.
 
-    \section{FPGA}
+    \subsection{FPGA}
       Field-Programmable Gate Array (FPGA) is a versatile platform capable of describing efficient re-programmable computer architectures. It is valued for its high energy efficiency, scalability, parallelization potential, and versatility in implementation. These advantages can facilitate the quick deployment of low-latency processors, which is advantageous in constrained environments requiring periodic hardware updates, such as ~\citeonline{garvey2003use}.
       
       FPGAs also had substantial disadvantages which have been addressed over time as the technology gained popularity. \citeonline{maclean2005evaluation} described the three major disadvantages of FPGA implementation as: inefficient floating-point arithmetic, high overhead leading to large device sizes, and a challenging design process. Since then, FPGAs have shown state-of-the-art efficiency in floating point arithmetic~\cite{lian2019high}~\cite{de2022fast}; low overhead implementations~\cite{zhou2019fpga}, including FFT implementations~\cite{wang2020low}; and more streamlined design processes~\cite{haris2021secda}.
   
       Due to an ongoing research and development process for FPGA technologies, it has steadily developed into an efficient platform for time-critical and energy-efficient systems~\cite{ullah2020energy}, including edge applications~\cite{biookaghazadeh2018fpgas}.
 
-\part{Objective}\label{ch:obj}
+\chapter{Objective}\label{ch:obj}
   Based on the literature review performed, we can now choose a target problem. We can then hypothesize a solution to the problem and justify it, thus composing a verisimilar conjecture. Only then can we determine our objective and expect to contribute significantly to our field by accomplishing it.
 
-  \chapter{Target Problems}\label{src:prob}
+  \section{Target Problems}\label{ssec:prob}
     When choosing an algorithm, its complexity is the most closely related metric to hardware efficiency. While parallelization can vastly improve latency, it does not affect the raw number of operations required to complete the algorithm. This exposes a problem in systolic array matrix multiplication implementations, such as Google's TPU. While the inherent parallelism of the application can lead to extremely low latencies, the number of components scales quadratically with the input size. In other words, the speed gain provided by a single component, i.e., its \textit{hardware efficiency}, also decreases quadratically.
 
     Furthermore, edge applications, which can amortize the processing load on constrained systems, benefit from scalability and adaptability to changes in demand~\cite{ferrer2019towards}. Scalability, in turn, becomes more viable when the impact of each component is higher.
 
     state-of-the-art accelerators are commonly implemented in ASIC technology to benefit from modularity. However, in specific-purpose-constrained implementations, the unchangeable nature of ASICs can become an expensive rigidity in the design. Programmable devices and FPGAs are more capable of versatility, scalability, and adaptability.
   
-  \chapter{Hypothesis \& Justification}\label{src:hyp}
+  \section{Hypothesis \& Justification}\label{ssec:hyp}
     Our review shows that the FFT convolution algorithm can be employed with almost linear complexity, while the standard matrix multiplication algorithm has quadratic complexity. Both methods are highly parallelizable and do not incur a significantly high memory footprint. The main disadvantage of the FFT method is the required use of Complex multiplication, which usually requires over three times more operations than Real multiplication and is not optimized by most processors. This disadvantage, however, can be amortized by employing the CORDIC algorithm in FPGA technology.
 
     % Hypothesis
@@ -193,13 +193,13 @@
     %demonstrate, through this implementation, 
     % This demonstration will be carried out by implementing and testing an especially-designed architecture under these paradigms.
   
-\part{Method}\label{ch:met}
+\chapter{Method}\label{ch:met}
   Our method consists of designing the conjectured architecture, implementing it, and testing it against recognized benchmarks.
 
-  \chapter{Benchmarks}\label{sec:bench}
+  \section{Benchmarks}\label{sec:bench}
     \todo{[...]}
 
-  \chapter{Architecture Design}\label{sec:design}
+  \section{Architecture Design}\label{sec:design}
     The central idea of the design is to augment an FFT convolution algorithm using rectangular-polar and polar-rectangular conversions to simplify Complex multiplication, as shown in Figure~\ref{fig:dataflow}. The rectangular-polar conversion can be efficiently processed with CORDIC in \textit{Vectorization} mode, and the polar-rectangular conversion in \textit{Rotation} mode.
     
     \begin{figure}[htb]
@@ -214,7 +214,7 @@
 
     This simple design will be enhanced and optimized in the following sections, leading to the parallelism and hardware efficiency required by the objective.
 
-    \section{General Specifications}
+    \subsection{General Specifications}
       Internally, the architecture uses 16-bit \textit{unsigned integers}. There are two reasons for this choice. First, the binary representation of these numbers is equal to the value they represent, allowing the use of some useful binary properties, most prominently the equivalence between bit-shifting and multiplication by powers of 2. Second, while the use of double-precision floating-point variables in convolution is common, particularly in CNNs, due in part to the ability of modern CPUs and GPUs to process floating-point numbers \textit{en masse}, CNNs are not significantly affected by low precision operations~\cite{courbariaux2014training}.
 
       %When signed integers are necessary, the sign-bit will be kept independent from the unsigned integer to preserve the binary properties.
@@ -223,7 +223,7 @@
 
       The input and kernel arrays must also be padded with zeroes to $2N$ to prevent cyclic convolution. However, in the Complex Domain, \textit{hermitian symmetry} guarantees that $N-1$ out of the $2N$ elements of the array are the Complex conjugates of other elements, making them redundant. In practice, the hardware will be designed to calculate only the non-redundant values and then abstract the redundant values by simply fetching the equivalent element and changing its Complex sign-bit.
         
-    \section{The Flux Multiplier}\label{sec:flux}
+    \subsection{The Flux Multiplier}\label{sec:flux}
       \todo{Consider removing this entirely}
 
       The major contributor to parallelization in our design is the \textit{Flux Multiplier}, which allows the computation of the multiplication step concurrently with both rectangular-to-polar CORDIC transforms.
@@ -247,10 +247,10 @@
       \end{equation}
       which is composed solely of logical AND operations, non-variable shifts, and additions. In hardware, these operations can be executed in extremely fast and efficient instructions compared to multiplication.
 
-    \section{Design Integration}
+    \subsection{Design Integration}
       \todo{[...]}
       
-  \chapter{Synthesis \& Testing}\label{sec:synth_test}
+  \section{Synthesis \& Testing}\label{sec:synth_test}
     \todo{Update. Maybe split into two chapters}
 
       Each part of the design will be described in Verilog and integrated with System Verilog. The final design will be synthesized and simulated using open-source software for the sake of speed during initial debugging. For on-board testing, the respective proprietary software will be used to re-synthesize the project into the chosen technology.
@@ -267,7 +267,7 @@
 
       Finally, the algorithm's precision does not depend on the technology used; unless the technology has some inherent precision loss or architectural choices that forfeit correctness for speed. It can be measured during software simulation and used as a debugging tool. The algorithm's precision will not be complete due to type conversions and other minor inaccuracies. However, we do not expect these inaccuracies to distort the result significantly.
 
-      \section{Testing Procedures}
+      \subsection{Testing Procedures}
         \begin{itemize}
           \item \textbf{Random Arrays}: The system will process random input and kernel arrays, and their convolution will also be calculated externally with full precision. The result from the system should be coherent with the external calculation, ensuring the operation's correctness. The system's precision can be measured based on the results' differences. The number of cycles and component utilization can also be extracted from this test, as it is done in software.
           
@@ -278,10 +278,10 @@
           \item \textbf{Power Measurement}: The board's power cable will be connected to a finely-controlled source, and different routines will be run to measure the energy consumption differential.
         \end{itemize}
 
-\part{Results}\label{ch:res}
+\chapter{Results}\label{ch:res}
   \todo{[...]}
 
-\part{Conclusions}\label{ch:con}
+\chapter{Conclusions}\label{ch:con}
   \todo{[...]}
 
 
