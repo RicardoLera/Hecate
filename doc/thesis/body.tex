@@ -1,24 +1,20 @@
 \chapter{Theme \& Context}\label{ch:int}
-  % Context - The Convolution operation
-  Convolution is a mathematical operation that relates two signals into a third, representing how one is modified by the other. The operation forms the basis of impulse decomposition, and \citeonline{dsp_basic} described it as the most fundamental technique in Digital Signal Processing. More recently, the rapid growth of Convolutional Neural Networks (CNN) revolutionized the field of computer vision due to its high accuracy and ability to train over large sets of data~\cite{alzubaidi2021review}, further increasing the need to process convolution in modern computer systems.
+  % Context
+  Image processing demands have increased substantially in the last decade, due in part to the success of Convolutional Neural Networks (CNNs) in two-dimensional image recognition. Several accelerator architectures have been developed to attend to these demands; a method that has seen wide success in 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} CNNs.
 
-  % Context - Constrained environments
-  \textit{Resource- or Implementation-Constrained Environments} (referred to simply as ``constrained environments'' from this point on) are characterized by various limitations inherent to their hardware, software, or application. Examples include embedded, mobile or real-time applications, each with different designs and limitations. For instance, an embedded system is usually constrained regarding processing power and physical space, while a real-time application might have more processing power but is constrained regarding latency and throughput.
-  
-  % Context - Cloud computing
-  Large-scale convolution, such as in most CNNs, is resource-intensive in terms of processing, memory, and power consumption~\cite{ujiie2016approximated}. Applications in constrained environments traditionally offload their processing load to external servers connected to the internet, in what is known as the \textit{Cloud Computing Paradigm}~\cite{rashid2019cloud}. However, this approach relies on how much data can be  \textit{communicated} over a period of time (bandwidth) rather than how much data can be \textit{processed} over a period of time (processing speed). Bandwidth does not scale as easily as processing speed, and can often present an issue in constrained environments.
+  Many of optimization approaches have been employed for the task of accelerating CNNs, including: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
 
-  % Context - Cloud computing
-  Another approach is installing intermediary systems closer to the application, which can process high workloads in real-time with low communication latency, storing large sets of sensitive data and mediating communication with the cloud. These systems became known as ``edge applications'' and form the core of the \textit{Edge Computing Paradigm}~\cite{cao2020overview}.
+  One approach that has also garnered attention is the application of more efficient convolution algorithms. The standard discrete convolution algorithm, as well as the more widely used matrix-multiplication (MMX), have a base asymptotic complexity of $O(N^2)$ and as such scale very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs, due to its larger inputs, and the resulting processing load can quickly outscale all other layers in the network~\cite{hegde2018morph}.
+
+  In 2016, Lavin \& Gray~\cite{lavin2016fast} reviewed the relevant convolution algorithms --- which were, at the time, MMX and FFT convolution --- and proposed a new class of algorithms based on the Coppersmith–Winograd series of matrix multiplication methods~\cite{coppersmith1982asymptotic}. MMX Algorithms with lower asymptotic bounds have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which severely hinders their applicability. As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
+
+  FFT convolution was deemed inefficient for modern CNN designs as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks that use small (usually 3x3) kernels~\cite{simonyan2014very}. The algorithm is also not, as yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
   
-  % Examples
-  The convolution process, individually or as part of a CNN, has seen many recent applications in constrained environments using tools such as edge computing. Examples include facial~\cite{khan2019deep} and emotional~\cite{zhang2019face} recognition, access authentication~\cite{xie2019convolution}, image processing~\cite{colbert2021energy} and cybersecurity~\cite{zhou2019lightweight}.
-  
-  % Present Theme
-  Today, an active field of research focuses on optimizing specific-purpose architectures in terms of metrics relevant to constrained environments, which is the theme of this project. The traditionally studied metrics include latency, energy efficiency, and scalability. However, recent research~\cite{li2022hardware} has indicated the importance of a more targeted metric known as \textit{hardware efficiency}, measured as a ratio between latency and hardware resource utilization.
-  
-  % Segue and mention objective
-  Next, in Chapter~\ref{ch:rev}, a literature review will be performed to explore the domain of this theme and reveal problems that are yet unsolved or partially unsolved and whose solution may contribute significantly to the field. These problems will form the foundation to state the objective of the project in Chapter~\ref{ch:obj}.
+  Since then, new techniques were found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{chen2024fast}, and mixed-radix FFT~\cite{meng2024high}, as well as spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image}. It has also found success in CNNs required the use of large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
+
+  There remains, however, the issue of Complex-domain multiplication. Recent FPGA implementations have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}. These methods, however, do not directly address the high operation count of Complex multiplication, instead deploying extra hardware resources to overcome it. As such, their hardware-efficiency (measured in throughput per component) remains the same.
+
+  It is possible to reduce the operation count of Complex multiplication by representing its inputs as polar coordinates~\cite{lera2023hardware}. This was first implemented for CNNs in 2024 by Reis et al.~\cite{reis2024phasor} using high-level-synthesis (HLS), achieving promising results. However, HLS, while an important tool for quickly implementing designs, has been frequently criticized in CNN applications regarding resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative} and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where lower level optimizations are available, at the cost of longer development cycles.
 
 \chapter{Literature Review}\label{ch:rev}
   With regards to the optimization of convolution processing, several surveys have been performed concerning significant technological developments in this field. These include efficient algorithms~\cite{mittal2021survey}, hardware~\cite{feng2019computer}, platforms such as FPGAs~\cite{abdelouahab2018accelerating}, ASICs~\cite{moolchandani2021accelerating}, and overall optimizations~\cite{zhang2019recent}.
@@ -123,14 +119,14 @@
     \subsection{CORDIC}\label{sec:cordic}
       Coordinate Rotation Digital Computer (CORDIC) is an algorithm initially conceptualized in 1956 and later developed into an iterative algorithm capable of fast, low-cost computation of various mathematical functions~\cite{meher200950}.
       
-      \begin{figure}[htb]
-        \caption{Quintessential CORDIC Block Diagram}
-        \centering
-        \includegraphics[width=\textwidth]{figures/cordic.pdf}
-        %\legend{Source: Public domain~\cite{wikimedia_cordic}}
-        \todo{figure out how to add sources to images}
-        \label{fig:cordic}
-      \end{figure}
+      % \begin{figure}[htb]
+      %   \caption{Quintessential CORDIC Block Diagram}
+      %   \centering
+      %   \includegraphics[width=\textwidth]{figures/cordic.pdf}
+      %   %\legend{Source: Public domain~\cite{wikimedia_cordic}}
+      %   \todo{figure out how to add sources to images}
+      %   \label{fig:cordic}
+      % \end{figure}
   
       As shown in Figure~\ref{fig:cordic}, a simple CORDIC implementation requires only elementary operations and a small number of components. Despite this, it can be used to perform mathematically complex operations within a fixed number of cycles. The fully asynchronous system of Figure~\ref{fig:cordic} calculates one iteration of the CORDIC algorithm per cycle and can thus be re-utilized as part of its iterative process to increase hardware efficiency further.
   
@@ -205,7 +201,7 @@
     \begin{figure}[htb]
       \caption{High-level diagram of the FFT-CORDIC convolution algorithm developed.}
       \centering
-      \includegraphics{figures/dataflow.png}
+      \includegraphics{fig/dataflow.png}
       %\legend{Source: authors}
       \label{fig:dataflow}
     \end{figure}

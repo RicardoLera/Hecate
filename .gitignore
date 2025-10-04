@@ -15,9 +15,9 @@ templates
 ref
 *.pdf
 !doc/i3epds/fig/*.pdf
-doc/i3epds/fig/tikz*.pdf
-doc/i3epds/fig/*.tex
-!doc/i3epds/fig/tikz*.tex
+**/fig/tikz*.pdf
+**/fig/*.tex
+!**/fig/tikz*.tex
 
 
 ## Vivado
