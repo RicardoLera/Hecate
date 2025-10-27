@@ -2,12 +2,27 @@
 \section*{Editorial Section}
 This section is for editing purposes only and will not be present in the final document. Additional editing comments are listed on the main body \todo{in red}. For submission refer to \href{https://ppgee.poli.usp.br/pb/formularios/}{this link}.
 
-This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliTeX}, which was discontinued on 2023/01/12 but is still more recent than \href{http://www.ime.usp.br/~leofl/tex/modelo_poli.zip}{the version I used previously}. This document (as well as poliTeX) primalily follows \href{https://doi.org/10.11606/9786598386221}{USP's official guidelines} (hereafter referred to as UOG) with \href{https://www.poli.usp.br/bibliotecas/servicos/publicacoes-online/}{PPGEE's complements}. Additionally, \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019}{PPGEE's regulations} state very little about the contents of the written thesis, but \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.2,Ap%C3%AAndices}{Section XI.2} lists the required sections \textbf{contradicting} UOG, and as such will be ignored. Also of note, \href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018}{USP's regulations} only mentions that a thesis must contain ``título, resumo e palavras-chave em português e inglês'' which is coherent with the guidelines.
+This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliTeX} included in the standard \LaTeX~libraries since 2023/01/12, and is more recent than \href{http://www.ime.usp.br/~leofl/tex/modelo_poli.zip}{the version I used previously}. This document (as well as poliTeX) primalily follows \href{https://doi.org/10.11606/9786598386221}{USP's official guidelines} (hereafter referred to as UOG) with \href{https://www.poli.usp.br/bibliotecas/servicos/publicacoes-online/}{Poli's complements}. Additionally, \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019}{PPGEE's regulations} and \href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018}{USP's regulations} were considered, but state very little about the contents of the written thesis.
+
+The text follows standard logical structure:
+Theme Contextualization $\rightarrow$
+Literature Review $\rightarrow$
+Hypothesis $\rightarrow$
+Justification $\rightarrow$
+Objective $\rightarrow$
+Method $\rightarrow$
+Results $\rightarrow$
+Conclusions. 
+As per UOG (pg. 40) sections ``Introdução'', ``Desenvolvimento'' and ``Conclusão'' must be included, but they may have different names. \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.2,Ap%C3%AAndices}{PPGEE's regulations Section XI.2} lists the required sections in a manner incoherent to standard scientific procedure and the UOG (such as defining the objective before the literature review) and as such will be ignored.
+
+Some of the poliTeX inclusions contradict UOG:
+\begin{itemize}[nolistsep,noitemsep]
+  \item it includes a ``falsa folha de rosto'' not mentioned in any guideline. It will be ignored.
+  \item it does not include ``departamento'' in the title page (despite adding a variable for such). It will be added manually.
+\end{itemize}
 
 \subsection*{Tasklist}
-\begin{todolist}
-% To mark the squares use [\done] or [\wontfix] immediately after \item
-
+\begin{todolist}% To mark the squares use [\done] or [\wontfix]
 \item Ensure all required sections have been included (as per UOG)
 \begin{todolist}
   \item[\done] Folha de rosto
@@ -19,9 +34,7 @@ This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliT
   %\item[] 
   \item[\done] Referências
 \end{todolist}
-Note 1: Sections ``Introdução'', ``Desenvolvimento'' and ``Conclusão'' must be included, but they may have different names (UOG pg. 40)
-\\Note 2: poliTeX includes a page labeled ``falsafolhaderosto'' which is not listed on UOG and thus ignored
-\\Note 3: For the evaluation page, PPGEE requires the use of digital signatures (gov.br / USP assina) or to include the date of signatures (\href{https://ppgee.poli.usp.br/pb/formularios/}{source})
+Note: For the evaluation page, PPGEE \textbf{demands} the use of digital signatures (gov.br / USP assina) or the inclusion of signature dates (\href{https://ppgee.poli.usp.br/pb/formularios/}{source})
 
 \item Review text partitioning
 

@@ -1,4 +1,4 @@
-\documentclass[]{politex}
+\documentclass[normalnum]{politex}
 % ========== Opções ==========
 % pnumromarab - Numeração de páginas usando algarismos romanos na parte pré-textual e arábicos na parte textual
 % abnttoc - Forçar paginação no sumário conforme ABNT (inclui "p." na frente das páginas)
@@ -13,7 +13,6 @@
 %	(o padrão é usar espaçamento 1.5)
 % times - Tenta usar a fonte Times New Roman para o corpo do texto
 % noindentfirst - Não indenta o primeiro parágrafo dos capítulos/seções
-
 
 % ========== Packages ==========
 \usepackage[utf8]{inputenc}
@@ -36,15 +35,13 @@
 \newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
 \usepackage[normalem]{ulem}
 \usepackage{xcolor}
-\color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+% \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 % ========== Language options ==========
 % \usepackage[brazil]{babel}
 \usepackage[english]{babel}
-
 
 % ========== ABNT (requer ABNTeX 2) ==========
 %	http://www.ctan.org/tex-archive/macros/latex/contrib/abntex2
@@ -52,11 +49,6 @@
 
 % Forçar o abntex2 a usar [ ] nas referências ao invés de ( )
 \citebrackets{[}{]}
-
-
-% ========== Lorem ipsum ==========
-% \usepackage{blindtext}
-
 
 % ========== Opções do documento ==========
 % Título
@@ -83,7 +75,8 @@
 
 % Departamento e área de concentração
 \departamento{Departamento de Engenharia de Computação e Sistemas Digitais (PCS)}
-\areaConcentracao{Engenharia de Computação}
+\areaConcentracao{Engenharia de Computação\\~\\
+Departamento: PCS}
 
 % Local
 \local{São Paulo}
@@ -91,25 +84,21 @@
 % Ano
 \data{2025}
 
-
 \begin{document}
-
 
 %% REMOVE BEFORE SUBMISSION %%
 {\setlength{\parindent}{0cm}\include{todo.tex}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 % ========== Capa e folhas de rosto ==========
 \capa
+\newpage~\newpage
 % \falsafolhaderosto
 \folhaderosto
-
 
 % ========== Ficha catalográfica ==========
 % Fazer solicitação no site:
 %	http://www.poli.usp.br/en/bibliotecas/servicos/catalogacao-na-publicacao.html
-
 
 % ========== Folha de assinaturas (opcional) ==========
 \begin{folhadeaprovacao}
@@ -118,10 +107,8 @@
 	\assinatura{Prof.\ Z}
 \end{folhadeaprovacao}
 
-
 % ========== Dedicatória (opcional) ==========
 % \dedicatoria{Dedicatória}
-
 
 % ========== Agradecimentos ==========
 \begin{agradecimentos}
@@ -129,76 +116,40 @@
   
   To Alexandra Elbakyan and the open science community for enabling the free distribution of this project and its sources.
 
-  To Itaú Unibanco S.A. and the Center of Data Science (C2D) of the Polytechnic School of the University of São Paulo for funding this project. \todo{Do I have to name the USP institutions too?}
+  To Itaú Unibanco S.A. and the Center of Data Science (C2D) for funding this project. \todo{Do I have to name the USP institutions too?}
 \end{agradecimentos}
-
 
 % ========== Epígrafe (opcional) ==========
 \epigrafe{%
 	\begin{flushright}
-	\emph{to galfi le remna le cevni\\fa le nu ru catra ra toi}
-  \\~\\
-		pe cu'u la vincav
+    \emph{
+      lu galfi ma'a lei cevni\\
+      fa le nu catra ri li'u\\
+      pe cu'u la vincav}
 	\end{flushright}
 }
 
-
 % ========== Resumo ==========
 \begin{resumo}
-  % CONTEXTUALIZATION
-  A operação de convolução é parte essencial do processamento digital de sinais e se tornou infame desde que redes neurais convolucionais revolucionaram o campo de reconhecimento de imagens.
-  %
-  % PROBLEM
-  Porém, a complexidade inerente de convolução em larga escala frequentemente demanda \textit{hardware} suplementar, particularmente em ambientes com restrições de aplicação ou recursos (e.g. embarcados, \textit{mobile}, tempo-real, \textit{warehouse-scale computing}). Aceleradores de convolução modernos dependem de algoritmos altamente paralelizáveis porém ineficientes em termos de \textit{hardware}, incorrendo em alto consumo de energia, falta de adaptabilidade à demanda, e escalabilidade.
-  %
-  % OBJECTIVE
-  Propomos uma nova arquitetura especializada em convolução projetada para melhorar a razão entre velocidade e utilização de recursos e demonstrar que uma aplicação projetada sob este paradigma pode levar a soluções mais viáveis em ambientes restritos. 
-  %
-  % METHOD
-  Empregamos um algoritmo baseado na transformada de Fourier complementado por CORDIC para reduzir a complexidade inerente do processo de convolução e prover escalabilidade com um baixo custo de \textit{hardware}. Implementamos este sistema em tecnologia FPGA, provendo eficiência energética e um ambiente escalável. A arquitetura passa por simulação em \textit{software} e testes em placa física e é avaliada em relação a \textit{benchmarks} estado-da-arte.
-  %
-  % Results
-  % -
-  %
-  % Conclusion
-  % -
+  \todo{Rewrite}
   %
   \\[3\baselineskip]
   %
-  \textbf{Palavras-chave} -- rede neural convolucional, eficiência de hardware, baixa latência, baixa potência, CORDIC, FPGA
+  \textbf{Palavras-chave} -- \todo{Add}
 \end{resumo}
-
 
 % ========== Abstract ==========
 \begin{abstract}
-  % CONTEXTUALIZATION
-  The convolution operation is an essential part of Digital Signal Processing and has gained notoriety since Convolutional Neural Networks revolutionized the field of image recognition.
-  %
-  % PROBLEM
-  However, the inherent complexity of large-scale convolution often demands supplementary hardware, particularly in resource or implementation-constrained environments (e.g., embedded, mobile, real-time, warehouse-scale computing). State-of-the-art convolution accelerators rely on highly parallelizable but hardware-inefficient algorithms, which incur downsides such as high power consumption and lack of on-demand adaptability and scalability.
-  %
-  % OBJECTIVE
-  We propose a new convolution-specialized architecture designed to improve the ratio between speed and resource utilization and demonstrate that hardware-efficient design can lead to more viable solutions in constrained environments.
-  %
-  % METHOD
-  We employ a Fourier-based algorithm complemented by CORDIC to lower the inherent complexity of convolution and provide scalability at a low hardware cost. We implement this system in FPGA technology, providing energy efficiency and a scalable environment. The architecture undergoes software simulation and on-board testing and is evaluated against state-of-the-art benchmarks.
-  %
-  % Results
-  % -
-  %
-  % Conclusion
-  % -
+  \todo{Rewrite}
   %
   \\[3\baselineskip]
   %
-  \textbf{Keywords} -- convolutional neural network, hardware efficiency, low latency, low power, CORDIC, FPGA
+  \textbf{Keywords} -- \todo{Add}
 \end{abstract}
-
 
 % ========== Listas (opcional) ==========
 \listadefiguras
 \listadetabelas
-
 
 % ========== Listas definidas pelo usuário (opcional) ==========
 \begin{pretextualsection}{List of equations}
@@ -207,37 +158,26 @@
 
 \end{pretextualsection}
 
-
 % ========== Sumário ==========
 \sumario
-
 
 % ========== Elementos textuais ==========
 \include{body.tex}
 
-
 % ========== Referências ==========
-% --- IEEE ---
-%	http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran
-%\bibliographystyle{IEEEbib}
-
 % --- ABNT (requer ABNTeX 2) ---
 %	http://www.ctan.org/tex-archive/macros/latex/contrib/abntex2
 \bibliographystyle{abntex2-num}
-
 \bibliography{references}
-
 
 % ========== Apêndices (opcional) ==========
 % \apendice
 % \chapter{}
 % \chapter{Beta}
 
-
 % ========== Anexos (opcional) ==========
 % \anexo
 % \chapter{Alpha}
 % \chapter{}
-
 
 \end{document}
