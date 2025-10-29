@@ -304,7 +304,7 @@
     \end{equation}
 
   \subsection{Winograd}
-    Similarly to FFT convolution, the Winograd method transforms the input and kernel into a domain (more strictly, a \textit{field}) where convolution is equivalent to pointwise multiplication~\cite{lavin2016fast}. The algorithm defines convolution as $F(m^3,r^3)$, where $m$ and $r$ are integers. Let $A$ and $B$ be matrices such that their total size is equal to $(m+r-1)^3$ and $r^3$ respectively. Their convolution is
+    Similarly to FFT convolution, the Winograd method transforms the input and kernel into a domain (more strictly, a \textit{field}) where pointwise multiplication is equivalent to the convolution of the original signals~\cite{lavin2016fast}. The algorithm defines convolution as $F(m^3,r^3)$, where $m$ and $r$ are integers. Let $A$ and $B$ be matrices such that their total size is equal to $(m+r-1)^3$ and $r^3$ respectively. Their convolution is
     %
     \begin{equation*}
       A*B = (Z( (XAX^T)^RX^T \cdot (YAY^T)^RY^T )Z^T)^RZ^T,
