@@ -1,0 +1,20 @@
+% Compsoc guidelines: 100~200 word limit. Must clearly state the nature and significance of the paper; must not include mathematical expressions or bibliographic references.
+\IEEEtitleabstractindextext{
+  \begin{abstract}
+    Accelerating 3D CNNs poses a significant design challenge, due in large part to the increase in arithmetic complexity of the convolution operation in three dimensions. Winograd-based designs can achieve higher resource efficiency in networks using small kernels, yet are limited by increasingly complex transform operations in higher dimensions. FFT convolution has seen recent success in applying overlap-add to large CNNs. The Complex-domain multiplications required by the algorithm can likewise be optimized using polar coordinate representation. We propose a 3D CNN accelerator using FFT convolution augmented by overlap-add and CORDIC algorithms. We implement and test this accelerator on FPGA technology, achieving over double DSP-efficiency compared to the state-of-the-art.
+  \end{abstract}
+  \begin{IEEEkeywords}
+    % COMPSOC: http://www.computer.org/mc/keywords/keywords.htm
+    % IEEE: https://ieee-org.widen.net/s/jwk9pcxxvd/ieee-taxonomy
+    Convolutional neural networks,
+    % Neural network hardware,
+    % Open source hardware,
+    Fast Fourier transforms,
+    Computational efficiency,
+    Algorithmic efficiency,
+    Field programmable gate arrays,
+    % AI accelerators,
+    Accelerator architectures,
+    Hardware acceleration.
+  \end{IEEEkeywords}
+}

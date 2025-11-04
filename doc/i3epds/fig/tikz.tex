@@ -1,4 +1,7 @@
-%%% Credit: user:cfr - tex.stackexchange.com
+%%% NOTE TO REVIEWERS %%%
+% This file generates the images used in the article. It is not necessary to compile this file, as the images are included separately in the archive and will be pulled automatically by 'main.tex'. This file is included in the submission for the purposes of data verifiability.
+% If you choose to compile this file, note that the '-shell-escape' parameter must be included in the calls for latexmk or pdflatex. Also note that the output 'tikz.pdf' is incidental and not read by the main tex file ('main.tex').
+
 \documentclass{article}
 \usepackage{silence}
 \WarningFilter{latex}{Writing}
@@ -11,7 +14,6 @@
   arrows,
   intersections,
   math,
-  % circuits.ee.IEC,
   external}
 \usepackage{pgfplots}
   \usepgfplotslibrary{external}
@@ -42,7 +44,7 @@
   }
 \begin{document}
 
-%% HEC VS WINO - PWISE MULS SINGLE SLICE%%
+%% PWISE MULS -- SINGLE SLICE%%
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:11,
@@ -144,7 +146,7 @@
   \end{semilogyaxis}
 \end{tikzpicture}
 
-%% HEC VS WINO - PWISE MULS%% 
+%% PWISE MULS -- FULL%% 
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:11,

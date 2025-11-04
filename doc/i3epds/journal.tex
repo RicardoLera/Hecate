@@ -1,0 +1,66 @@
+%%% NOTE TO REVIEWERS %%%
+% This is the document that generates our journal submission, author information included. Below we provide two variables (\FORMAT-MODE and \TWOSIDE-MODE) which may be altered to change the formatting mode (IEEE or Compsoc) and two-sided mode, respectivelly.
+
+\def\FORMAT-MODE{compsoc} % {compsoc} or {}
+\def\TWOSIDE-MODE{} % {twoside} or {}
+\documentclass[
+  10pt,
+  journal,
+  \FORMAT-MODE,
+  \TWOSIDE-MODE
+]{IEEEtran}
+
+\input{packages.tex}
+
+\begin{document} % Page limit: 12 (including references)
+
+% Title
+\title{An FPGA-based Accelerator for 3D CNNs Using FFT convolution}
+
+% Authors
+% Note: \IEEEcompsocitemizethanks does not compile without overlapping text (see bare_jrnl_compsoc.pdf). \thanks was used instead.
+\author{
+  Ricardo~Di~Curzio~Lera, 
+  Miguel~Velasques~Abilio~Piola~Alves,
+  and~Bruno~de~Carvalho~Albertini,~\IEEEmembership{Fellow,~IEEE}%
+  \thanks{%
+    R. Lera, M. Alves and B. Albertini are with the Polytechnic School of the University of São Paulo, São Paulo, Brazil.\protect\\
+    E-mails: \href{mailto:ricardodclera@usp.br}{ricardodclera@usp.br}; \href{mailto:me@somewhere.com}{miguel.velasques@usp.br}; \href{mailto:me@somewhere.com}{balbertini@usp.br}%
+  }%
+  \thanks{Manuscript received --; revised --.}%
+}
+
+% Running heads
+\makeatletter
+  \markboth{IEEE Transactions on Parallel and Distributed Systems,~Vol.~--, No.~--, --~--}%
+  {Lera \MakeLowercase{\textit{et al.}}: \@title}
+\makeatother
+
+% Copyright line
+\IEEEpubid{\copyright~\the\year~The~Authors. Published by the IEEE Computer Society}
+
+% Abstract and Keywords
+\input{abstract.tex}
+
+\maketitle
+\IEEEdisplaynontitleabstractindextext
+
+% Document body
+\input{body.tex}
+
+% Acknowledgments - limit of one paragraph
+\ifCLASSOPTIONcompsoc
+\section*{Acknowledgments}
+  \else
+\section*{Acknowledgment}
+\fi
+  This work was funded by Itaú Unibanco S.A. and the Foundation of the University of São Paulo (FUSP); no limitations apply.
+
+% References
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,references}
+
+% Biography
+% Compsoc guidelines: Author biographies are not required.
+
+\end{document}

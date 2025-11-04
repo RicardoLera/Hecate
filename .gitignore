@@ -18,7 +18,7 @@ ref
 **/fig/tikz*.pdf
 **/fig/*.tex
 !**/fig/tikz*.tex
-
+!doc/i3epds/submission/*
 
 ## Vivado
 *.cache
