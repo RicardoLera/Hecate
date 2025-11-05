@@ -11,14 +11,19 @@ The success of CNNs lead to a substantial increase in image processing demands. 
 % Context - FPGA
 Concerns over power demands and availability lead to new research focused on resource-efficient accelerators. Field-Programmable Gate Array (FPGA) technology can provide a flexible and power-efficient platform for such applications.
 
-% Context 3D CNNs and FCONV
-CNNs have been successfully applied to both 2D and 3D image recognition. However, the jump to 3D incurs substantially higher workloads due to the quadratic complexity of the standard convolution algorithm. In response, more efficient convolution algorithms have been researched and applied to CNN accelerators, achieving high resource-efficiency and throughput. Fourier convolution (also known as FFT convolution) is one such algorithm. While FFT convolution has been proven inneficient for 2D CNNs~\cite{lavin2016fast}, it retains lower assymptotic bounds compared to any current convolution method, increasing its applicability in 3D CNNs.
+% Context - convolution algorithms preamble
+CNNs have been successfully applied to both 2D and 3D image recognition. However, the jump to 3D incurs substantially higher workloads due to the quadratic complexity of the standard convolution algorithm. In response, more efficient convolution algorithms have been researched and applied to CNN accelerators.
 
-% Context algorithmic decomposition and OA
-FFT convolution can also benefit from decomposition algorithms, specifically overlap-add~\cite{}. This allows the algorithm to break down larger inputs into slices and convolve them individually, maintaining low assymptotic complexity while benefitting from data reuse.
+% Context - convolution algorithms and algorithmic decomposition
+In 2023, we reviewed the main convolution algorithms used in CNN accelerators: matrix-multiplication, Winograd, and FFT convolutions~\cite{lera2023hardware}. We concluded that FFT convolution can be assymptotically more efficient than Winograd by using a decomposition algorithm. The main challenge in implementing FFT convolution was found to be its reliance on Complex-domain operations, particularly multiplication. We then hypothesised the use of polar coordinates to reduce the operation count of Complex multiplication. Our hypothesis was partially implemented in 2024 by Reis \textit{et al.} in high-level-synthesis (HLS) environment~\cite{reis2024phasor}. Their results, while promising, did not achieve state-of-the-art resource efficiency, due in part to the limitations of the HLS design environment.
+
+% Context - 3D CNNs and HLS
+FFT convolution scales particularly well in 3D CNNs, due to the larger kernels required to process the additional dimension. Despite this, implementations using the winograd algorithm~\cite{shen2018towards}, as well as adaptations of the matrix-multiplication method~\cite{fan2021high,liu2021accelerating} remain the state-of-the-art in 3D CNNs in terms of resource-efficiency. these implementations also utilize the HLS environment, which is designed for mass parallelism (as is the case for MMX and some winograd implementations). In order to optimize the Complex operations stemming from FFT convolution, an RTL approach is needed. This, in turn, incurs a much longer development cycle for the accelerator, which has likely impeded research.
+
+% HLS has been criticized in CNN applications due to resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative}, and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where lower level optimizations are available at the cost of longer development cycles.
 
 % State objective
-This project evaluates the applicability of FFT convolution in the context of 3D CNNs. We achieve this by implementing a 3D convolution accelerator in FPGA technology via direct RTL synthesis, measuring its throughput and resource-efficiency, and comparing it to current accelerators.
+This project evaluates the applicability of FFT convolution in the context of 3D CNNs. We achieve this by implementing a 3D convolution accelerator in FPGA via direct RTL synthesis, measuring its throughput and resource-efficiency, and comparing it to current accelerators.
 
 % Organization
 This document is organized as follows: Chapter~\ref{ch:rev} reviews the state-of-the-art for 3D CNN accelerators; Chapter\ref{ch:obj} present a hypothesis for our implementation and establishes our objective; Chapter~\ref{ch:met} elaborates on the design of our accelerator and the testing proceedures used to evaluate it; Chapter~\ref{ch:res} displays the results obtained in comparison to the state-of-the-art; and Chapter~\ref{ch:con} presents our conclusions.
@@ -140,9 +145,6 @@ Algorithmic decomposition is available for this algorithm; it is possible to cal
 
 % The standard approach is to divide the input into small blocks and convolve each with the kernel. As the input block size \textit{increases}, the number of multiplications required by the Hadamard product \textit{decreases} to a theoretical minimum of $I$~\cite{barabasz2020error}. However, the number of additions and constant multiplications required by the transform also increases exponentially, making this method more suited for applications requiring fewer transforms~\cite{zlateski2019anatomy}. Increasing input block size also increases floating-point error exponentially~\cite{alam2022winograd}.
 
-\todo{\hrule}
-\todo{Review line}
-
 \subsection{FFT Convolution}
 The Theorem of Convolution defines the operation as
 %
@@ -174,47 +176,79 @@ The class of algorithms known as \textit{Fast Fourier Transforms} (FFT) are used
 %
 where $k \in \mathbb{Z} \cap [0,N-1]$.
 
+While the input signal of the FFT is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Figure~\ref{fig:Ma} represents a signal $K$ given its dimensions all have size 2. To convolve this array with another signal of the same shape, we must first pad each dimension $d$ by $2d-1$, thus conveying its dimensionality and avoiding cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the gray line displays the order of rasterization.
 
+\begin{figure*}[htb]\centering
+  \subfloat[]{%
+    \makebox[0.7\columnwidth]{
+      \includegraphics{fig/matrix-0.pdf}
+    \label{fig:Ma}}}\qquad
+  \subfloat[]{%
+    \makebox[0.9\columnwidth]{
+      \includegraphics{fig/matrix-1.pdf}
+    \label{fig:Mb}}}%
+  \caption{A three-dimensional signal (a) and the required zero-padding to avoid cyclic convolution (b).}\label{fig:M}
+\end{figure*}
 
+The rasterized signal is further padded to its next power of two, such that radix-2 FFT can be applied across $\log_2N$ stages. The size of the resulting array, denoted $N$, as a function of the sizes of K is
+%
+\begin{equation}\label{eq:N}
+  N = 2^{\ceil{\log_2(2K_x-1)*\log_2(2K_y-1)*\log_2(2K_z-1)}},
+\end{equation}
+%
+where $\lceil~\rceil$ indicates the \textit{ceiling} function (i.e., rounding up to the nearest integer).
 
-
-
-
-The theorem states that signal convolution in a particular domain is equivalent to pointwise multiplication in its Fourier domain. This allows us to compute convolution by calculating the Discrete Fourier Transform (DFT) of the input and kernel in the domain of space (represented by $ \sigma$), applying the Hadamard product in the respective Fourier domain of space (represented by $\zeta$), and then calculating the Inverse Discrete Fourier Transform (IDFT) as such:
-
+The transformed array exiting the FFT chain is subject to \textit{hermitian symmetry}. Assume an $N$-point array of Complex numbers of the form $(a+bi)$. If the array has hermitian symmetry, each point with index $(N/2)+1$ to $N-1$ is equivalent to the Complex conjugate(i.e., $(a-bi)$) of the points with index $(N/2)-1$ to $1$, respectively. This means that almost half of the array is redundant, and can be inferred by switching the sign bit of its y-component. This property is preserved after the pointwise multiplication, as such the total number of pointwise Complex multiplications required by FFT convolution is
+%
 \begin{equation}
-[p * k](\sigma) = F^{-1}[F(p) \circ F(k)](\zeta)
-\end{equation}          
-
-The traditional DFT (matrix-multiplication between the signal and a twiddle factor matrix) has complexity $O(s^2)$. Instead, we can use the Fast Fourier Transform (FFT) algorithm, which exploits the symmetry in the Fourier Transform and has complexity $O(s\log_2s)$. The same relationship applies to the IDFT and IFFT (Inverse Fast Fourier Transform).
-
-The FFT convolution, therefore, scales almost linearly with the size of the image. It does \textit{not} scale directly with the size of the kernel, as does the matrix-multiplication method. This fact was shown to significantly increase processing speed when using larger kernels~\cite{jha2007ieee}.
-
-Furthermore, it is possible to subdivide the input into kernel-sized pieces, perform FFT convolution in each one, and add the overlapping values, resulting in the full convolution of the undivided input~\cite{highlander2016very}. This method, known as \textit{overlap-add}, reduces the asymptotic complexity of the operation to $O(s\log_2k)$.
-
-However, the arrays transformed by the FFT are in the \textit{Complex Domain}
-%\footnote{Whenever the word ``complex'' refers to the Complex Domain ($\mathbb{C}$), we shall capitalize it to differentiate it from the concept of \textit{complexity} used in other parts of the text, for the sake of cohesion. Similarly, the word ``real'' will be capitalized when referring to the Real Domain ($\mathbb{R}$).\\} %
-and thus require Complex operations. Most prominently, the Hadamard product becomes a series of Complex products, which are usually calculated as four Real products and two additions but can be simplified to three Real products using a less-known method%\footnote{$(x_0+ix_1) = [x_0y_0-x_1y_1,i(x_0y_1+x_1y_0)] = [u_cv_a-u_av_c,i(u_av_c+u_bv_b)]$,\\where $u_a=x_0;v_a=y_0;u_b=x_0+x_1;v_b=y_1;u_c=x_1-x_0;v_c=y_0+y_1$~\cite{lavin2016fast}}. %
-Regardless, the Complex product can drastically increase computational requirements depending on the hardware used.
-
-Instead, we can employ the polar representation of Complex numbers in which multiplication is equivalent to one Real multiplication (the amplitude) and one Real addition (the phase), as such:
-
-\begin{equation}\label{eq:Cmult}
-A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}
+  MUL(\mathbb{C}) = \frac{N}{2}+1.
 \end{equation}
 
-This method incurs the downside of requiring trigonometric operations, but there exist algorithms that can efficiently process these operations, as described in Section~\ref{sec:cordic}.
+In order to convolve $I$ and $K$ using FFT, the sizes of each transformed array must be equal. This can be achieved by zero-padding the smaller signal to match the larger one, however, this is inefficient in CNN applications where $I$ is much larger than $K$. Instead, we can ``slice'' the input into kernel-sized pieces and convolve each slice with the kernel. The overlapping points of each convolution are added together, forming the complete output. This is known as \textit{overlap-add}~\cite{smith1997scientist,chen2024fast} and is an example of algorithmic scaling.
 
-% FFT convolution, according to Lavin \& Gray, only becomes efficient for networks with large kernels which have lost prevalence to deeper networks using small (usually 3x3) kernels~\cite{simonyan2014very}. % The algorithm is also not, as yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
+Let $S$ be a 3D slice of $I$ over $K$, with dimensions $\{K_x,K_y,K_z\}$. The number of slices on each dimension is $\{S_x,S_y,S_z\}$, such that
+\begin{equation}
+  S_{x} = \left\lceil\frac{I_x}{K_x}\right\rceil;
+  S_{y} = \left\lceil\frac{I_y}{K_y}\right\rceil;
+  S_{z} = \left\lceil\frac{I_z}{K_z}\right\rceil.
+\end{equation}
 
-% Since then, new techniques were found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{chen2024fast}, mixed-radix FFT~\cite{meng2024high}, as well as Complex-domain CNN designs~\cite{pratt2017fcnn,liu2021accelerating, ayat2019spectral,watanabe2021image}. FFT convolution has also found success in CNNs requiring larger kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
+Complex-domain multiplication can be performed with 4 Real-domain multiplications. Let $X$ and $Y$ be Complex numbers such that $X=a+bi$ and $Y=c+di$. The product of the two signals is:
+%
+\begin{equation}\label{eq:cmul-rect}
+  XY = (a+bi)(c+di) = (ac-bd) + (ad+bc)i.
+\end{equation}
 
-% There remains, however, the issue of Complex-domain multiplication. Recent FPGA implementations have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}. These methods, however, do not directly address the high operation count of Complex multiplication, instead deploying extra hardware resources to overcome it. As such, their hardware-efficiency (measured in throughput per component) remains the same.
+As such, the total number of multiplications required by FFT convolution is
+\begin{equation}\label{eq:fconv-mul1}
+  4{\times}
+  \left\lceil\frac{I_x}{K_x}\right\rceil
+  \left\lceil\frac{I_y}{K_y}\right\rceil
+  \left\lceil\frac{I_z}{K_z}\right\rceil
+  {\times} \left(\frac{N}{2}+1\right).
+\end{equation}
+
+However, $X$ and $Y$ can also be represented in polar coordinates such that $X=A\phase{\alpha_1}$ and $Y=B\phase{\alpha_2}$, where $A,B$ are radial distances and $\alpha_1,\alpha_2$ are angular coordinates. As such
+%  
+\begin{equation}\label{eq:cmul-pol}
+  XY = A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}.
+\end{equation}
+
+This representation reduces the total operation count to 1 Real multiplication and 1 Real addition. Section~\ref{sec:cordic}~\todo{[fix]} describes the algorithm used to implement the conversions between these representations. Notably, they do not incur any multiplications, bringing the total down to
+%
+\begin{equation}\label{eq:fconv-mul2}
+  \left\lceil\frac{I_x}{K_x}\right\rceil
+  \left\lceil\frac{I_y}{K_y}\right\rceil
+  \left\lceil\frac{I_z}{K_z}\right\rceil
+  {\times} \left(\frac{N}{2}+1\right).
+\end{equation}
+
+\todo{\hrule}
+\todo{Review line}
 
 \subsection{Comparison}
-In 2023, we reviewed the convolution algorithms used in CNNs~\cite{lera2023hardware} and found that FFT convolution is assymptotically more efficient than Winograd. What makes FFT convolution difficult to implement is its reliance on Complex-domain operations, particularly multiplication. We also presented the possibility of reducing the operation count of Complex multiplication by representing its inputs as polar coordinates.
 
-% This hypothesis was implemented in 2024 by Reis \textit{et al.}~\cite{reis2024phasor} using high-level-synthesis (HLS) and achieving promising results. However, HLS has been criticized in CNN applications due to resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative}, and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where lower level optimizations are available at the cost of longer development cycles.
+\todo{insert new graphics}
 
 On a purely mathematical complexity analysis, the Coppersmith-Winograd algorithm has the potential to reach $s$ multiplications in the Hadamard operation. However, its transform still scales exponentially with $s$. In contrast, the Fast Fourier Transform and its inverse have complexity $O(s\log_2s)$, and the Hadamard operation also has $s$ multiplications, albeit in the Complex realm. In addition, the FFT method can benefit from overlap-add, effectively lowering its complexity to $O(s\log_2k)$.
 
