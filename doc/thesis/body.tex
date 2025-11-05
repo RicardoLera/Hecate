@@ -12,17 +12,17 @@ The success of CNNs lead to a substantial increase in image processing demands. 
 Concerns over power demands and availability lead to new research focused on resource-efficient accelerators implemented on Field-Programmable Gate Array (FPGA) technology.
 
 % Context 3D CNNs and FCONV
-CNNs have been successfully applied to both 2D and 3D image recognition. However, the jump to 3D incurs substantially higher workloads, due to the quadratic nature of the standard convolution algorithm. In response, more efficient convolution algorithms have been researched and applied to CNN accelerators, achieving high resource-efficiency and throughput. Fourier convolution (or FFT convolution) is one such algorithm.
+CNNs have been successfully applied to both 2D and 3D image recognition. However, the jump to 3D incurs substantially higher workloads due to the quadratic nature of the standard convolution algorithm. In response, more efficient convolution algorithms have been researched and applied to CNN accelerators, achieving high resource-efficiency and throughput. Fourier convolution (also known as FFT convolution) is one such algorithm. While FFT convolution has been proven inneficient for 2D CNNs~\cite{lavin2016fast}, it retains lower assymptotic bounds compared to any current convolution method, increasing its applicability in 3D CNNs.
 
-Our review of the state-of-the-art revealed the possibility of applying FFT convolution to 3D CNN acceleration. The method has been proven inneficient for 2D CNNs~\cite{lavin2016fast}, however it retains lower assymptotic bounds compared to any current convolution method, increasing its applicability in 3D CNNs.
-
+% State objective
 This project evaluates the applicability of FFT convolution in the context of 3D CNNs. We achieve this by implementing an accelerator in FPGA technology via direct RTL synthesis, measuring its throughput and resource-efficiency, and comparing it to current accelerators.
 
+% Organization
 This document is organized as follows: Chapter~\ref{ch:rev} reviews the state-of-the-art for 3D CNN accelerators;  Chapter\ref{ch:obj} present a hypothesis for our implementation and establishes our objective; Chapter~\ref{ch:met} elaborates on the design of our accelerator and the testing proceedures used to evaluate it; Chapter~\ref{ch:res} displays the results obtained in comparison to the state-of-the-art; and Chapter~\ref{ch:con} presents our conclusions.
 
 \chapter{Literature Review}\label{ch:rev}
 % Present surveys
-Several surveys have been published concerning hardware acceleration of CNNs. Mittal et al. broadly reviewed 2D CNN acceleration in 2020~\cite{mittal2020survey} and 3D CNN acceleration in 2021~\cite{mittal2021survey}. %Advancements in hardware~\cite{feng2019computer} as well as FPGA~\cite{abdelouahab2018accelerating} and ASICs~\cite{moolchandani2021accelerating} have also been surveyed, as well as overall optimizations methods~\cite{zhang2019recent}.
+Several surveys have been published concerning hardware acceleration of CNNs. Mittal \textit{et al.} broadly reviewed 2D CNN acceleration in 2020~\cite{mittal2020survey} and 3D CNN acceleration in 2021~\cite{mittal2021survey}. %Advancements in hardware~\cite{feng2019computer} as well as FPGA~\cite{abdelouahab2018accelerating} and ASICs~\cite{moolchandani2021accelerating} have also been surveyed, as well as overall optimizations methods~\cite{zhang2019recent}.
 \todo{review citations, add newer ones too. these should be broad}.
 
 % Multifariousness of the issue
@@ -31,7 +31,7 @@ This body of work reveals that CNN acceleration is a multifarious problem; metho
 % Optimization approaches include: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
 
 \section{Convolution Algorithms}\label{sec:convalg}
-This section describes the three convolution algorithms relevant to 3D CNNs: Matrix Multiplication, Winograd, and FFT convolutions.
+This section describes the three convolution algorithms relevant to 3D CNNs: matrix-multiplication, Winograd, and FFT convolutions.
 
 We will use the following nomenclature:
 \begin{itemize}
@@ -42,10 +42,10 @@ We will use the following nomenclature:
   \item $I*K$ is the convolution of each channel $I$ by each kernel $K$.
 \end{itemize}
 
-\subsection{Matrix Multiplication}
+\subsection{matrix-multiplication}
 % The standard discrete convolution algorithm, as well as the more widely used matrix-multiplication (MMX), have a base asymptotic complexity of $O(N^2)$ and as such scale very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs due to their larger inputs, and the resulting processing load can quickly outscale all other layers in the network~\cite{hegde2018morph}. 
 
-Digital images are represented as three-dimensional Euclidean spaces. Within this space, convolution can be defined as the ``sliding product'' of two inputs: The convolution kernel ``slides'' across the input, multiplying each pair of coincident points and adding the products together. Each of these results represents a convolution centered on a different input point, and together form the output of the convolution. This is represented by Equation~\ref{eq:slide}.
+Digital images are represented as discrete Euclidean spaces. Within such a space, convolution can be defined as the ``sliding product'' of two inputs: The convolution kernel ``slides'' across the input, multiplying each pair of coincident points and adding the products together. Each of these results represents a convolution centered on a different input point, and together form the output of the convolution. This is represented as
 
 \begin{equation}\label{eq:slide}
 \begin{gathered}
@@ -63,14 +63,14 @@ The size of the output depends on how the algorithm handles the sliding of the k
 \item $O_d = I_d + K_d - 1$, if we consider every position of the kernel that coincides with at least one valid point of data and the out-of-bounds data equal to zero. This is known as \textit{full-type} convolution.
 \end{itemize}
 
-Discrete convolution can also be defined as:
+Discrete convolution can also be defined as
 \begin{equation}\label{eq:MM}
   % \forall (I,K) \in \mathbb{R}~\exists (M,N) \in \mathbb{R}^2 \mid
   I*K = MN\,,
 \end{equation}
 where $M$ and $N$ are matrices containing $I$ and $K$. This is reffered to as convolution by matrix-multiplication (MMX)~\cite{vasudevan2017parallel}.
 
-The lack of transformations makes MMX simple to process on GPUs and other hardware design for graphical processing~\cite{zhou2021characterizing}. It does \textbf{not}, however, reduce the complexity of the algorithm~\cite{lera2023hardware}.
+The lack of transformations makes MMX simple to process on GPUs and other hardware designed for graphical processing~\cite{zhou2021characterizing}. It does \textbf{not}, however, reduce the complexity of the algorithm~\cite{lera2023hardware}.
 
 For \textit{same-type} convolution, the total number of multiplication operations, here labeled $M$, is equal to the product of each input dimension:
 \begin{equation}\label{eq:MM-mul}
@@ -82,19 +82,26 @@ For \textit{same-type} convolution, the total number of multiplication operation
 %  is a linear transform in $\mathbb{R} \rightarrow \mathbb{R}
 
 \subsection{Winograd Convolution}
-In 2016, Lavin \& Gray~\cite{lavin2016fast} proposed a new class of convolution algorithms based on the Coppersmith–Winograd series of matrix multiplication methods~\cite{coppersmith1982asymptotic}. MMX Algorithms with lower asymptotic bounds than Coppersmith–Winograd have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which hinders their applicability. As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
+In 2016, Lavin \& Gray~\cite{lavin2016fast} proposed a new class of convolution algorithms based on the Coppersmith–Winograd series of matrix-multiplication methods~\cite{coppersmith1982asymptotic}. MMX algorithms with lower asymptotic bounds than Coppersmith–Winograd have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which hinders their applicability.%As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
 
-Optimizing an MMX algorithm incurs finding omega... 
+% Optimizing an MMX algorithm incurs finding omega... 
 
-An open problem in modern mathematics is finding the smallest $\omega$ such that the number of operations required by an $N \times N$ matrix multiplication equals $N^{\omega + O(1)}$~\cite{gao2020systematic}. The naive line-by-column multiplication method has $\omega = 3$, and the current lowest known value for $\omega$ is 2.37188~\cite{duan2022faster} using a method based on the Coppersmith-Winograd algorithm, which is currently the state-of-the-art in terms of speed~\cite{lavin2016fast}.
+% An open problem in modern mathematics is finding the smallest $\omega$ such that the number of operations required by an $N \times N$ matrix-multiplication equals $N^{\omega + O(1)}$~\cite{gao2020systematic}. The naive line-by-column multiplication method has $\omega = 3$, and the current lowest known value for $\omega$ is 2.37188~\cite{duan2022faster} using a method based on the Coppersmith-Winograd algorithm, which is currently the state-of-the-art in terms of speed~\cite{lavin2016fast}.
 
-The Coppersmith-Winograd algorithm samples the input and kernel at a given set of points using transform matrices such that their Hadamard product (pointwise multiplication), followed by the respective inverse transform, equates the convolution of the original signals. This method becomes inefficient for larger kernels, so smaller kernels (e.g., 3x3 or 5x5) are most often used~\cite{alam2022winograd}.
+Winograd convolution transforms the input and kernel into a domain (more strictly, a \textit{field}) where pointwise multiplication is equivalent to the convolution of the original signals. This is achieved by sampling the input and kernel at a given set of points using transform matrices. This method becomes inefficient for large kernels where the transform matrices are non-trivial~\cite{alam2022winograd}. This is convenient for modern 2D CNNs, as they tend to have many layers with small (usually 3x3) kernels.
 
-The requirement for small kernels is convenient, considering modern CNNs tend to have many layers with small filters, such as MobileNetV2~\cite{sandler2018mobilenetv2}. However, the deeper layers of these networks use a large number of filters, which act as a third dimension of convolution. MobileNetV2 can reach a depth of 960 in the later layers, turning a 3x3 convolution into a 3x3x960 convolution and severely impairing the Coppersmith-Winograd method.
 
-The standard approach is to divide the input into small blocks and convolve each with the kernel. Coppersmith-Winograd computes multiple outputs simultaneously, converting any available parallelism opportunity into speed. As the input block size \textit{increases}, the number of multiplications required by the Hadamard product \textit{decreases} to a theoretical minimum of $s$~\cite{barabasz2020error}. However, the number of additions and constant multiplications required by the transform also increases exponentially, making this method is more suited for applications requiring fewer transforms~\cite{zlateski2019anatomy}.
 
-Additionally, increasing input block size increases the floating-point error exponentially~\cite{alam2022winograd}. Hence the method incurs an inherent trade-off between speed and precision that must be accounted for.
+
+
+
+The standard approach is to divide the input into small blocks and convolve each with the kernel. As the input block size \textit{increases}, the number of multiplications required by the Hadamard product \textit{decreases} to a theoretical minimum of $I$~\cite{barabasz2020error}. However, the number of additions and constant multiplications required by the transform also increases exponentially, making this method more suited for applications requiring fewer transforms~\cite{zlateski2019anatomy}. Increasing input block size also increases floating-point error exponentially~\cite{alam2022winograd}.
+
+In 3D CNNs, the transform matrices required for 3D convolution would not be viable for acceleration. Instead, the blocks are sliced across each dimension such that multiple 1D transforms can be performed and added together~\cite{shen2018towards}. Specifically, convolution is defined as
+
+
+
+
 
 
 \subsection{FFT Convolution}
@@ -112,9 +119,9 @@ The theorem states that signal convolution in a particular domain is equivalent 
 [p * k](\sigma) = F^{-1}[F(p) \circ F(k)](\zeta)
 \end{equation}          
 
-The traditional DFT (matrix multiplication between the signal and a twiddle factor matrix) has complexity $O(s^2)$. Instead, we can use the Fast Fourier Transform (FFT) algorithm, which exploits the symmetry in the Fourier Transform and has complexity $O(s\log_2s)$. The same relationship applies to the IDFT and IFFT (Inverse Fast Fourier Transform).
+The traditional DFT (matrix-multiplication between the signal and a twiddle factor matrix) has complexity $O(s^2)$. Instead, we can use the Fast Fourier Transform (FFT) algorithm, which exploits the symmetry in the Fourier Transform and has complexity $O(s\log_2s)$. The same relationship applies to the IDFT and IFFT (Inverse Fast Fourier Transform).
 
-The FFT convolution, therefore, scales almost linearly with the size of the image. It does \textit{not} scale directly with the size of the kernel, as does the matrix multiplication method. This fact was shown to significantly increase processing speed when using larger kernels~\cite{jha2007ieee}.
+The FFT convolution, therefore, scales almost linearly with the size of the image. It does \textit{not} scale directly with the size of the kernel, as does the matrix-multiplication method. This fact was shown to significantly increase processing speed when using larger kernels~\cite{jha2007ieee}.
 
 Furthermore, it is possible to subdivide the input into kernel-sized pieces, perform FFT convolution in each one, and add the overlapping values, resulting in the full convolution of the undivided input~\cite{highlander2016very}. This method, known as \textit{overlap-add}, reduces the asymptotic complexity of the operation to $O(s\log_2k)$.
 
@@ -140,11 +147,11 @@ This method incurs the downside of requiring trigonometric operations, but there
 \subsection{Comparison}
 In 2023, we reviewed the convolution algorithms used in CNNs~\cite{lera2023hardware} and found that FFT convolution is assymptotically more efficient than Winograd. What makes FFT convolution difficult to implement is its reliance on Complex-domain operations, particularly multiplication. We also presented the possibility of reducing the operation count of Complex multiplication by representing its inputs as polar coordinates.
 
-% This hypothesis was implemented in 2024 by Reis et al.~\cite{reis2024phasor} using high-level-synthesis (HLS) and achieving promising results. However, HLS has been criticized in CNN applications due to resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative}, and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where lower level optimizations are available at the cost of longer development cycles.
+% This hypothesis was implemented in 2024 by Reis \textit{et al.}~\cite{reis2024phasor} using high-level-synthesis (HLS) and achieving promising results. However, HLS has been criticized in CNN applications due to resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative}, and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where lower level optimizations are available at the cost of longer development cycles.
 
 On a purely mathematical complexity analysis, the Coppersmith-Winograd algorithm has the potential to reach $s$ multiplications in the Hadamard operation. However, its transform still scales exponentially with $s$. In contrast, the Fast Fourier Transform and its inverse have complexity $O(s\log_2s)$, and the Hadamard operation also has $s$ multiplications, albeit in the Complex realm. In addition, the FFT method can benefit from overlap-add, effectively lowering its complexity to $O(s\log_2k)$.
 
-The standard matrix multiplication algorithm with $ks$ multiplications has the highest potential for parallelization, as every multiplication is independent. It is usually processed as an $n \times n$ matrix multiplication resulting in $n^3$ multiplications. Accelerators such as Google's Tensor Processing Unit (TPU)~\cite{jouppi2020domain} leverage this potential in a systolic array architecture, lowering the system's overall latency, but become subject to hardware and power limitations as described in Section~\ref{sec:systolic}. Coppersmith-Winograd and the FFT methods share the ability to parallelize their Hadamard multiplications and parts of their transforms.
+The standard matrix-multiplication algorithm with $ks$ multiplications has the highest potential for parallelization, as every multiplication is independent. It is usually processed as an $n \times n$ matrix-multiplication resulting in $n^3$ multiplications. Accelerators such as Google's Tensor Processing Unit (TPU)~\cite{jouppi2020domain} leverage this potential in a systolic array architecture, lowering the system's overall latency, but become subject to hardware and power limitations as described in Section~\ref{sec:systolic}. Coppersmith-Winograd and the FFT methods share the ability to parallelize their Hadamard multiplications and parts of their transforms.
 
 Finally, regarding memory footprint, the FFT method has a higher memory requirement than Coppersmith-Winograd, due in part to its Complex operations~\cite{lavin2016fast}.
 
@@ -154,7 +161,7 @@ A large and accrescent amount of hardware acceleration technologies has been dev
 \subsection{Systolic Array}\label{sec:systolic}
 First described in 1979 as a specific-purpose VLSI system~\cite{kung1979systolic}, systolic arrays have re-appeared as a core feature of some modern low-latency implementations such as Google's TPU. A systolic array is a topological assortment of processing units commonly referred to as \textit{nodes}. Each node is designed to process fractions of the desired operation and send information to each neighbor, forming a \textit{stream} that eventually leads to a complete operation. In particular, the input of the systolic array can be shared between nodes, removing the need to re-read the input value from a register. As such, computationally complex operations can be subdivided and performed within fewer machine cycles.
 
-However, to maintain its low latency, the size of a systolic array has to grow at the same rate as the complexity of the target operation. For example, consider the convolution of a 256x256 black-and-white image with a 4x4 kernel. Using the TPU's matrix multiplication systolic array, which contains 65536 multiply-and-add nodes, the operation can be completed within exactly 16 cycles. In order to process a 512x512 image in the same number of cycles, the systolic array would now require four times as many nodes, totaling 262144.
+However, to maintain its low latency, the size of a systolic array has to grow at the same rate as the complexity of the target operation. For example, consider the convolution of a 256x256 black-and-white image with a 4x4 kernel. Using the TPU's matrix-multiplication systolic array, which contains 65536 multiply-and-add nodes, the operation can be completed within exactly 16 cycles. In order to process a 512x512 image in the same number of cycles, the systolic array would now require four times as many nodes, totaling 262144.
 
 This exponential increase in hardware requirements reduces the application's viability in constrained environments. Likewise, if the complexity of the target operation scales at a slower rate, so do the hardware requirements of the systolic array.
 
@@ -208,27 +215,27 @@ Due to an ongoing research and development process for FPGA technologies, it has
 Based on the literature review performed, we can now choose a target problem. We can then hypothesize a solution to the problem and justify it, thus composing a verisimilar conjecture. Only then can we determine our objective and expect to contribute significantly to our field by accomplishing it.
 
 \section{Target Problems}\label{ssec:prob}
-When choosing an algorithm, its complexity is the most closely related metric to hardware efficiency. While parallelization can vastly improve latency, it does not affect the raw number of operations required to complete the algorithm. This exposes a problem in systolic array matrix multiplication implementations, such as Google's TPU. While the inherent parallelism of the application can lead to extremely low latencies, the number of components scales quadratically with the input size. In other words, the speed gain provided by a single component, i.e., its \textit{hardware efficiency}, also decreases quadratically.
+When choosing an algorithm, its complexity is the most closely related metric to hardware efficiency. While parallelization can vastly improve latency, it does not affect the raw number of operations required to complete the algorithm. This exposes a problem in systolic array matrix-multiplication implementations, such as Google's TPU. While the inherent parallelism of the application can lead to extremely low latencies, the number of components scales quadratically with the input size. In other words, the speed gain provided by a single component, i.e., its \textit{hardware efficiency}, also decreases quadratically.
 
 Furthermore, edge applications, which can amortize the processing load on constrained systems, benefit from scalability and adaptability to changes in demand~\cite{ferrer2019towards}. Scalability, in turn, becomes more viable when the impact of each component is higher.
 
 state-of-the-art accelerators are commonly implemented in ASIC technology to benefit from modularity. However, in specific-purpose-constrained implementations, the unchangeable nature of ASICs can become an expensive rigidity in the design. Programmable devices and FPGAs are more capable of versatility, scalability, and adaptability.
 
 \section{Hypothesis \& Justification}\label{ssec:hyp}
-Our review shows that the FFT convolution algorithm can be employed with almost linear complexity, while the standard matrix multiplication algorithm has quadratic complexity. Both methods are highly parallelizable and do not incur a significantly high memory footprint. The main disadvantage of the FFT method is the required use of Complex multiplication, which usually requires over three times more operations than Real multiplication and is not optimized by most processors. This disadvantage, however, can be amortized by employing the CORDIC algorithm in FPGA technology.
+Our review shows that the FFT convolution algorithm can be employed with almost linear complexity, while the standard matrix-multiplication algorithm has quadratic complexity. Both methods are highly parallelizable and do not incur a significantly high memory footprint. The main disadvantage of the FFT method is the required use of Complex multiplication, which usually requires over three times more operations than Real multiplication and is not optimized by most processors. This disadvantage, however, can be amortized by employing the CORDIC algorithm in FPGA technology.
 
 % Hypothesis
 Thus, we hypothesize that higher hardware efficiency can be achieved while maintaining real-time latency by way of a new convolution-specialized architecture, consisting of a CORDIC-augmented FFT convolution algorithm and its implementation in a highly versatile and parallelizable FPGA environment.
 
 % Justification
-Such an implementation should achieve similar or linearly lower latency to matrix multiplication while exponentially decreasing hardware and power requirements. This is justified by the algorithm's linear growth of complexity, linear growth of components, and the FPGA's inherent energy efficiency.
+Such an implementation should achieve similar or linearly lower latency to matrix-multiplication while exponentially decreasing hardware and power requirements. This is justified by the algorithm's linear growth of complexity, linear growth of components, and the FPGA's inherent energy efficiency.
 
 % Objective
-The primary objective of this project is to verify whether a CORDIC-augmented FFT convolution accelerator can surpass state-of-the-art hardware efficiency. The implementation will be designed and evaluated against the established systolic array matrix multiplication architecture.
+The primary objective of this project is to verify whether a CORDIC-augmented FFT convolution accelerator can surpass state-of-the-art hardware efficiency. The implementation will be designed and evaluated against the established systolic array matrix-multiplication architecture.
 
 %The objective of this project is to verify whether such an implementation can surpass state-of-the-art hardware efficiency.
 
-%The objective of this project is to confirm the viability of an FFT convolution accelerator as a hardware-efficient alternative to the state-of-the-art matrix multiplication accelerators.
+%The objective of this project is to confirm the viability of an FFT convolution accelerator as a hardware-efficient alternative to the state-of-the-art matrix-multiplication accelerators.
 
 %demonstrate, through this implementation, 
 % This demonstration will be carried out by implementing and testing an especially-designed architecture under these paradigms.
