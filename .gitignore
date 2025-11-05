@@ -14,11 +14,11 @@
 templates
 ref
 *.pdf
-!doc/i3epds/fig/*.pdf
-**/fig/tikz*.pdf
+!**/fig/*.pdf
+**/fig/tikz.pdf
 **/fig/*.tex
-!**/fig/tikz*.tex
-!doc/i3epds/submission/*
+!**/fig/tikz.tex
+!**/submission/*
 
 ## Vivado
 *.cache

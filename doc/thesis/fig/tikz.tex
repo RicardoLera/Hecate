@@ -1,4 +1,3 @@
-%%% Credit: user:cfr - tex.stackexchange.com
 \documentclass{article}
 \usepackage{silence}
 \WarningFilter{latex}{Writing}
@@ -11,7 +10,6 @@
   arrows,
   intersections,
   math,
-  % circuits.ee.IEC,
   external}
 \usepackage{pgfplots}
   \usepgfplotslibrary{external}
@@ -42,7 +40,7 @@
   }
 \begin{document}
 
-%% HEC VS WINO - PWISE MULS SINGLE SLICE%%
+%% PWISE MULS -- SINGLE SLICE%%
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:11,
@@ -54,6 +52,16 @@
     legend style={font=\scriptsize},
     legend cell align=left,
     legend pos=north west,
+    scatter/classes={
+      a={mark=square*, blue},
+      b={mark=square*, red},
+      c={mark=square, black},
+      d={mark=triangle*, blue},
+      e={mark=triangle*, red},
+      f={mark=triangle*, black},
+      g={mark=x, black},
+      h={mark= diamond*, pink}
+    },
   ]
     % MMX
     \addplot[
@@ -64,7 +72,8 @@
       ((2+x-1)^3)*(x^3)
     };
     \addplot[
-      scatter src=none,
+      mark=x,
+      mark size=3pt,
       samples=9,
       only marks,
       color=black,
@@ -82,7 +91,8 @@
       ((2+x-1)^3)
     };
     \addplot[
-      scatter src=none,
+      mark=+,
+      mark size=3pt,
       samples=9,
       only marks,
       color=red,
@@ -100,7 +110,8 @@
       4*((pow(2,ceil(log2((2*x-1)^3)))/2)+1)
     };
     \addplot[
-      scatter src=none,
+      mark=square*,
+      mark size=2pt, 
       samples=9,
       only marks,
       color=green,
@@ -118,7 +129,8 @@
       (pow(2,ceil(log2((2*x-1)^3)))/2)+1
     };
     \addplot[
-      scatter src=none,
+      mark=triangle*,
+      mark size=2pt, 
       samples=9,
       only marks,
       color=blue,
@@ -130,7 +142,7 @@
   \end{semilogyaxis}
 \end{tikzpicture}
 
-%% HEC VS WINO - PWISE MULS%% 
+%% PWISE MULS -- FULL%% 
 \begin{tikzpicture}
   \begin{semilogyaxis}[
     domain=3:11,
@@ -152,7 +164,8 @@
       (128)*(171)*(16)*(x^3)
     };
     \addplot[
-      scatter src=none,
+      mark=x,
+      mark size=3pt,
       samples=9,
       only marks,
       color=black,
@@ -173,7 +186,8 @@
       ((2+x-1)^3)
     };
     \addplot[
-      scatter src=none,
+      mark=+,
+      mark size=3pt,
       samples=9,
       only marks,
       color=red,
@@ -195,7 +209,8 @@
       ((pow(2,ceil(log2((2*x-1)^3)))/2)+1)
     };
     \addplot[
-      scatter src=none,
+      mark=square*,
+      mark size=2pt,
       samples=9,
       only marks,
       color=green,
@@ -215,7 +230,8 @@
       ((pow(2,ceil(log2((2*x-1)^3)))/2)+1)
     };
     \addplot[
-      scatter src=none,
+      mark=triangle*,
+      mark size=2pt,
       samples=9,
       only marks,
       color=blue,
@@ -238,7 +254,7 @@
 \begin{tikzpicture}[
   >=stealth,
   line width=0.75pt,
-  every node/.style={anchor=north east,fill=white,minimum width=1.1cm,minimum height=7mm},
+  every node/.style={anchor=north east,fill=white,minimum width=1.1cm,minimum height=6mm},
   ampersand replacement=\&
 ]%
   \matrix (mA) [draw,matrix of math nodes]
@@ -252,15 +268,13 @@
     K_{0,0,0} \& K_{1,0,0} \\
     K_{0,1,0} \& K_{1,1,0} \\
   };
-
-  \draw[dashed](mA.north east)--(mB.north east);
-  \draw[dashed](mA.north west)--(mB.north west);
-  \draw[dashed](mA.south east)--(mB.south east);
+  \draw(mA.north west)--(mB.north west);
+  \draw(mA.south east)--(mB.south east);
 \end{tikzpicture}
 \begin{tikzpicture}[
   >=stealth,
   line width=0.75pt,
-  every node/.style={anchor=north east,fill=white,minimum width=1.0cm,minimum height=5mm},
+  every node/.style={anchor=north east,fill=white,minimum width=1.1cm,minimum height=6mm},
   ampersand replacement=\&
 ]%
   \matrix (mA) [draw,matrix of math nodes]
@@ -272,50 +286,49 @@
 
   \matrix (mB) [draw,matrix of math nodes] at ($(mA.south west)+(0.8,0.2)$)
   {
-    |(mB1)| M_{0,0,1} \& M_{1,0,1} \& |(mB2)| 0 \\
-    |(mB3)| M_{0,1,1} \& M_{1,1,1} \& |(mB4)| 0 \\
+    |(mB1)| K_{0,0,1} \& K_{1,0,1} \& |(mB2)| 0 \\
+    |(mB3)| K_{0,1,1} \& K_{1,1,1} \& |(mB4)| 0 \\
     |(mB5)| 0         \& 0         \& |(mB6)| 0 \\
   };
 
   \matrix (mC) [draw,matrix of math nodes] at ($(mB.south west)+(0.8,0.2)$)
   {
-    |(mC1)| M_{0,0,0} \& M_{1,0,0} \& |(mC2)| 0 \\
-    |(mC3)| M_{0,1,0} \& M_{1,1,0} \& |(mC4)| 0 \\
+    |(mC1)| K_{0,0,0} \& K_{1,0,0} \& |(mC2)| 0 \\
+    |(mC3)| K_{0,1,0} \& K_{1,1,0} \& |(mC4)| 0 \\
     |(mC5)| 0         \& 0         \& |(mC6)| 0 \\
   };
 
-  \draw[dashed](mA.north east)--(mC.north east);
-  \draw[dashed](mA.north west)--(mC.north west);
-  \draw[dashed](mA.south east)--(mC.south east);
+  \draw(mA.north west)--(mC.north west);
+  \draw(mA.south east)--(mC.south east);
 
-  \draw[->,color=green!40]     (mC1.west) -- ($(mC2.west)+(0.2,0)$);
-  \draw[color=green!40]        (mC2.west) -- (mC2.east);
-  \draw[color=green!40]        (mC2.east) -- (mC3.west);
-  \draw[->,color=green!40]     (mC3.west) -- ($(mC4.west)+(0.2,0)$);
-  \draw[color=green!40]        (mC4.west) -- (mC4.east);
-  \draw[color=green!40]        (mC4.east) -- (mC5.west);
-  \draw[->,color=green!40]     (mC5.west) -- ($(mC6.west)+(0.2,0)$);
-  \draw[color=green!40]        (mC6.west) -- (mC6.east);
-  \draw[dashed,color=green!40] (mC6.east) -- (mB1.west);
+  \draw[->,color=black!40]     (mC1.west) -- ($(mC2.west)+(0.2,0)$);
+  \draw[color=black!40]        (mC2.west) -- (mC2.east);
+  \draw[color=black!40]        (mC2.east) -- (mC3.west);
+  \draw[->,color=black!40]     (mC3.west) -- ($(mC4.west)+(0.2,0)$);
+  \draw[color=black!40]        (mC4.west) -- (mC4.east);
+  \draw[color=black!40]        (mC4.east) -- (mC5.west);
+  \draw[->,color=black!40]     (mC5.west) -- ($(mC6.west)+(0.2,0)$);
+  \draw[color=black!40]        (mC6.west) -- (mC6.east);
+  \draw[dashed,color=black!40] (mC6.east) -- (mB1.west);
 
-  \draw[->,color=green!40]     (mB1.west) -- ($(mB2.west)+(0.2,0)$);
-  \draw[color=green!40]        (mB2.west) -- (mB2.east);
-  \draw[color=green!40]        (mB2.east) -- (mB3.west);
-  \draw[->,color=green!40]     (mB3.west) -- ($(mB4.west)+(0.2,0)$);
-  \draw[color=green!40]        (mB4.west) -- (mB4.east);
-  \draw[color=green!40]        (mB4.east) -- (mB5.west);
-  \draw[->,color=green!40]     (mB5.west) -- ($(mB6.west)+(0.2,0)$);
-  \draw[color=green!40]        (mB6.west) -- (mB6.east);
-  \draw[dashed,color=green!40] (mB6.east) -- (mA1.west);
+  \draw[->,color=black!40]     (mB1.west) -- ($(mB2.west)+(0.2,0)$);
+  \draw[color=black!40]        (mB2.west) -- (mB2.east);
+  \draw[color=black!40]        (mB2.east) -- (mB3.west);
+  \draw[->,color=black!40]     (mB3.west) -- ($(mB4.west)+(0.2,0)$);
+  \draw[color=black!40]        (mB4.west) -- (mB4.east);
+  \draw[color=black!40]        (mB4.east) -- (mB5.west);
+  \draw[->,color=black!40]     (mB5.west) -- ($(mB6.west)+(0.2,0)$);
+  \draw[color=black!40]        (mB6.west) -- (mB6.east);
+  \draw[dashed,color=black!40] (mB6.east) -- (mA1.west);
 
-  \draw[->,color=green!40]     (mA1.west) -- ($(mA2.west)+(0.2,0)$);
-  \draw[color=green!40]        (mA2.west) -- (mA2.east);
-  \draw[color=green!40]        (mA2.east) -- (mA3.west);
-  \draw[->,color=green!40]     (mA3.west) -- ($(mA4.west)+(0.2,0)$);
-  \draw[color=green!40]        (mA4.west) -- (mA4.east);
-  \draw[color=green!40]        (mA4.east) -- (mA5.west);
-  \draw[->,color=green!40]     (mA5.west) -- ($(mA6.west)+(0.2,0)$);
-  \draw[color=green!40]        (mA6.west) -- (mA6.east);
+  \draw[->,color=black!40]     (mA1.west) -- ($(mA2.west)+(0.2,0)$);
+  \draw[color=black!40]        (mA2.west) -- (mA2.east);
+  \draw[color=black!40]        (mA2.east) -- (mA3.west);
+  \draw[->,color=black!40]     (mA3.west) -- ($(mA4.west)+(0.2,0)$);
+  \draw[color=black!40]        (mA4.west) -- (mA4.east);
+  \draw[color=black!40]        (mA4.east) -- (mA5.west);
+  \draw[->,color=black!40]     (mA5.west) -- ($(mA6.west)+(0.2,0)$);
+  \draw[color=black!40]        (mA6.west) -- (mA6.east);
 
 \end{tikzpicture}
 \end{document}
