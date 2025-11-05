@@ -112,7 +112,7 @@
     The rasterized signal is further padded to its next power of two, such that radix-2 FFT can be applied across $\log_2N$ stages. The size of the resulting array, denoted $N$, as a function of the sizes of K is
     %
     \begin{equation}\label{eq:N}
-      N = 2^{\ceil{\log_2(2K_x-1)*\log_2(2K_y-1)*\log_2(2K_z-1)}},
+      N = 2^{\ceil{\log_2(2K_x-1){\times}\log_2(2K_y-1){\times}\log_2(2K_z-1)}},
     \end{equation}
     %
     where $\lceil~\rceil$ indicates the \textit{ceiling} function (i.e., rounding up to the nearest integer).
