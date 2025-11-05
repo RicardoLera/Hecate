@@ -71,7 +71,7 @@
       I[c] * K[f] = \mathcal{F}^{-1}(\mathcal{F}(I[c]) \cdot \mathcal{F}(K[f])),
     \end{equation}
     %
-    where $\cdot$ represents the pointwise product (also known as \textit{Hadamard} product) and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse. Note that this method calculates \textit{Full} convolution.
+    where $\cdot$ represents the pointwise product (also known as \textit{Hadamard} product) and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse. This method calculates \textit{full}-type convolution.
 
     \begin{figure*}[htb]\centering
       \subfloat[]{%
@@ -116,7 +116,6 @@
     \end{equation}
     %
     where $\lceil~\rceil$ indicates the \textit{ceiling} function (i.e., rounding up to the nearest integer).
-
 
     The transformed array exiting the FFT chain is subject to \textit{hermitian symmetry}. Assume an $N$-point array of Complex numbers of the form $(a+bi)$. If the array has hermitian symmetry, each point with index $(N/2)+1$ to $N-1$ is equivalent to the Complex conjugate(i.e., $(a-bi)$) of the points with index $(N/2)-1$ to $1$, respectively. This means that almost half of the array is redundant, and can be inferred by switching the sign bit of its y-component. This property is preserved after the pointwise multiplication, as such the total number of pointwise Complex multiplications required by FFT convolution is
     %
@@ -170,9 +169,9 @@
       A*B = (Z( (XAX^T)^RX^T \cdot (YAY^T)^RY^T )Z^T)^RZ^T,
     \end{equation*}
     %
-    where the superscript $R$ denotes clockwise rotation, while $T$ denotes transposing. The result of this operation has size $m^3$ and constitutes a \textit{valid}-type convolution.
+    where the superscript $R$ denotes clockwise rotation and $T$ denotes transposing. The result of this operation has size $m^3$ and constitutes a \textit{valid}-type convolution.
 
-    The transform matrices depend on $m$ and $r$. CNN applications generally use $F(2^3,3^3)$, where
+    The transform matrices depend on $m$ and $r$, as well as the point-selection procedure used. 3D CNN applications require at least $F(2^3,3^3)$ and trivial matrices for this operation have been found, such as the set used by Shen \textit{et al.} (2018)~\cite{shen2018towards}:
     %
     \begin{equation*}
       \begin{gathered}
@@ -198,7 +197,7 @@
       \end{gathered}
     \end{equation*}
 
-    This is useful because these transform matrices do not incur any multiplications, as multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
+    These matrices are considered \textit{trivial} because their multiplication by another matrix is computationally efficient: multiplying by 0 or 1 is trivial and multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
 
     Similarly to the FFT method, it is possible to calculate multiple $F(m^3,r^3)$ convolutions and add the overlapping points to form a complete output~\cite{lan2017high}. For an image $I$, the total number of multiplications is
     %

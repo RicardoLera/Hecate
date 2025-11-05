@@ -16,12 +16,29 @@
 
 % ========== Packages ==========
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath,amsthm,amsfonts,amssymb}
-\usepackage{graphicx,cite,enumerate}
+\usepackage{
+  amsmath,
+  amsthm,
+  amsfonts,
+  amssymb,
+  graphicx,
+  cite,
+  enumerate}
 
 % Author-included
-\usepackage{steinmetz}
-\usepackage{hyperref}
+\usepackage{
+  hyperref,
+  xcolor,
+  steinmetz,
+  multirow,
+  mathtools}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\hypersetup{colorlinks = true, allcolors = {blue}}
+\renewcommand{\arraystretch}{1.5}
+\interdisplaylinepenalty=2500
+\graphicspath{{figs/}}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
 
 %% REMOVE BEFORE SUBMISSION %%
 \usepackage{enumitem}
@@ -34,7 +51,6 @@
 \hspace{-2.5pt}}
 \newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
 \usepackage[normalem]{ulem}
-\usepackage{xcolor}
 % \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \newcommand*{\todo}[1]{\textcolor{red}{#1}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,7 +64,7 @@
 \usepackage[num]{abntex2cite}
 
 % Forçar o abntex2 a usar [ ] nas referências ao invés de ( )
-\citebrackets{[}{]}
+\citebrackets{\textcolor{blue}{[}}{\textcolor{blue}{]}}
 
 % ========== Opções do documento ==========
 % Título
@@ -57,21 +73,12 @@
 % Autor
 \autor{Ricardo Di Curzio Lera}
 
-% Para múltiplos autores (TCC)
-%\autor{Nome Sobrenome\\%
-%		Nome Sobrenome\\%
-%		Nome Sobrenome}
-
 % Orientador / Coorientador
 \orientador{Prof. Dr. Bruno de Carvalho Albertini}
 %\coorientador{Nome do coorientador (opcional)}
 
 % Tipo de documento
-%\tcc{Eletricista com ênfase em Sistemas Eletrônicos}
-% \dissertacao{Engenharia Elétrica}
 \teseDOC{Engenharia Elétrica}
-%\teseLD
-%\memorialLD
 
 % Departamento e área de concentração
 \departamento{Departamento de Engenharia de Computação e Sistemas Digitais (PCS)}
@@ -125,7 +132,7 @@ Departamento: PCS}
     \emph{
       lu galfi ma'a lei cevni\\
       fa le nu catra ri li'u\\
-      pe cu'u la vincav}
+      pe cu'u la .vincav.}
 	\end{flushright}
 }
 

@@ -1,24 +1,27 @@
 \chapter{Introduction}\label{ch:int}
 % Context - Convolution
-Convolution is a mathematical operation that relates two signals into a third, representing how one is modified by the other. The operation is fundamental in digital signal processing by enabling impulse decomposition and pattern recognition~\cite{smith1997scientist}.
+Convolution is a mathematical operation that relates two signals into a third, representing how one is modified by the other. The operation is fundamental in digital signal processing as it enables impulse decomposition and pattern recognition~\cite{smith1997scientist}.
 
 % Context - CNNs
-Convolutional Neural Network (CNN) is a computational model based on Artificial Neural Networks and capable of finding patterns in input images via discrete convolution. The convolution kernels, which encode the desired patters, are optimized by a backpropagation algorithm, similar to the training of weights and biases of its predecessors. This technology has revolutionized the field of computer vision due to its high accuracy and ability to train over large sets of data~\cite{alzubaidi2021review}.
+Convolutional Neural Network (CNN) is a computational model based on Artificial Neural Networks and capable of finding patterns in input images via discrete convolution. The convolution kernels, which encode the target patterns, are optimized by a backpropagation algorithm, similar to the training of weights and biases of its predecessors. This technology has revolutionized the field of computer vision due to its high accuracy and ability to train over large sets of data~\cite{alzubaidi2021review}.
 
 % Context - Resource-efficiency
-The success of CNNs lead to a substantial increase in image processing demands. Algorithms such as \texttt{im2col}~\cite{im2col} restructure convolution as matricial multiplication, enabling efficient processing on GPUs. Despite this, the training and inference of large CNNs remains costly, leading to the development of accelerator technologies, such as Google's TPU~\cite{jouppi2020domain}.
+The success of CNNs lead to a substantial increase in image processing demands. Convolution can be restructured as a matricial multiplication, enabling more efficient processing on GPUs. Despite this, the training and inference of large CNNs remains costly, leading to the development of accelerator technologies, such as Google's TPU~\cite{jouppi2020domain}.
 
 % Context - FPGA
-Concerns over power demands and availability lead to new research focused on resource-efficient accelerators implemented on Field-Programmable Gate Array (FPGA) technology.
+Concerns over power demands and availability lead to new research focused on resource-efficient accelerators. Field-Programmable Gate Array (FPGA) technology can provide a flexible and power-efficient platform for such applications.
 
 % Context 3D CNNs and FCONV
-CNNs have been successfully applied to both 2D and 3D image recognition. However, the jump to 3D incurs substantially higher workloads due to the quadratic nature of the standard convolution algorithm. In response, more efficient convolution algorithms have been researched and applied to CNN accelerators, achieving high resource-efficiency and throughput. Fourier convolution (also known as FFT convolution) is one such algorithm. While FFT convolution has been proven inneficient for 2D CNNs~\cite{lavin2016fast}, it retains lower assymptotic bounds compared to any current convolution method, increasing its applicability in 3D CNNs.
+CNNs have been successfully applied to both 2D and 3D image recognition. However, the jump to 3D incurs substantially higher workloads due to the quadratic complexity of the standard convolution algorithm. In response, more efficient convolution algorithms have been researched and applied to CNN accelerators, achieving high resource-efficiency and throughput. Fourier convolution (also known as FFT convolution) is one such algorithm. While FFT convolution has been proven inneficient for 2D CNNs~\cite{lavin2016fast}, it retains lower assymptotic bounds compared to any current convolution method, increasing its applicability in 3D CNNs.
+
+% Context algorithmic decomposition and OA
+FFT convolution can also benefit from decomposition algorithms, specifically overlap-add~\cite{}. This allows the algorithm to break down larger inputs into slices and convolve them individually, maintaining low assymptotic complexity while benefitting from data reuse.
 
 % State objective
-This project evaluates the applicability of FFT convolution in the context of 3D CNNs. We achieve this by implementing an accelerator in FPGA technology via direct RTL synthesis, measuring its throughput and resource-efficiency, and comparing it to current accelerators.
+This project evaluates the applicability of FFT convolution in the context of 3D CNNs. We achieve this by implementing a 3D convolution accelerator in FPGA technology via direct RTL synthesis, measuring its throughput and resource-efficiency, and comparing it to current accelerators.
 
 % Organization
-This document is organized as follows: Chapter~\ref{ch:rev} reviews the state-of-the-art for 3D CNN accelerators;  Chapter\ref{ch:obj} present a hypothesis for our implementation and establishes our objective; Chapter~\ref{ch:met} elaborates on the design of our accelerator and the testing proceedures used to evaluate it; Chapter~\ref{ch:res} displays the results obtained in comparison to the state-of-the-art; and Chapter~\ref{ch:con} presents our conclusions.
+This document is organized as follows: Chapter~\ref{ch:rev} reviews the state-of-the-art for 3D CNN accelerators; Chapter\ref{ch:obj} present a hypothesis for our implementation and establishes our objective; Chapter~\ref{ch:met} elaborates on the design of our accelerator and the testing proceedures used to evaluate it; Chapter~\ref{ch:res} displays the results obtained in comparison to the state-of-the-art; and Chapter~\ref{ch:con} presents our conclusions.
 
 \chapter{Literature Review}\label{ch:rev}
 % Present surveys
@@ -26,12 +29,12 @@ Several surveys have been published concerning hardware acceleration of CNNs. Mi
 \todo{review citations, add newer ones too. these should be broad}.
 
 % Multifariousness of the issue
-This body of work reveals that CNN acceleration is a multifarious problem; methods are presented as complementary parts of highly complex systems. In light of this, while narrowing our search to FPGA-based accelerators, we will also comment on the tangencial advances concerning this theme. 
+This body of work reveals that CNN acceleration is a multifarious problem; methods are presented as complementary parts of highly complex systems. In light of this, while narrowing our search to FPGA-based accelerators, we will also comment on relevant tangencial advances concerning this theme.
 
 % Optimization approaches include: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; massive parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparcity~\cite{jiang2021optimized,fan2021high}.
 
 \section{Convolution Algorithms}\label{sec:convalg}
-This section describes the three convolution algorithms relevant to 3D CNNs: matrix-multiplication, Winograd, and FFT convolutions.
+This section describes the three convolution algorithms relevant to CNN acceleration: matrix-multiplication, Winograd, and FFT convolutions.
 
 We will use the following nomenclature:
 \begin{itemize}
@@ -42,7 +45,7 @@ We will use the following nomenclature:
   \item $I*K$ is the convolution of each channel $I$ by each kernel $K$.
 \end{itemize}
 
-\subsection{matrix-multiplication}
+\subsection{Matrix-multiplication}
 % The standard discrete convolution algorithm, as well as the more widely used matrix-multiplication (MMX), have a base asymptotic complexity of $O(N^2)$ and as such scale very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs due to their larger inputs, and the resulting processing load can quickly outscale all other layers in the network~\cite{hegde2018morph}. 
 
 Digital images are represented as discrete Euclidean spaces. Within such a space, convolution can be defined as the ``sliding product'' of two inputs: The convolution kernel ``slides'' across the input, multiplying each pair of coincident points and adding the products together. Each of these results represents a convolution centered on a different input point, and together form the output of the convolution. This is represented as
@@ -70,7 +73,7 @@ Discrete convolution can also be defined as
 \end{equation}
 where $M$ and $N$ are matrices containing $I$ and $K$. This is reffered to as convolution by matrix-multiplication (MMX)~\cite{vasudevan2017parallel}.
 
-The lack of transformations makes MMX simple to process on GPUs and other hardware designed for graphical processing~\cite{zhou2021characterizing}. It does \textbf{not}, however, reduce the complexity of the algorithm~\cite{lera2023hardware}.
+Transforming the image and kernel into matrices can be done efficiently via algorithms like \texttt{im2col}~\cite{im2col}. The multiplication itself can be efficiently processed by GPUs and other hardware designed for graphical processing~\cite{zhou2021characterizing}. This method does not, however, reduce the complexity of the algorithm~\cite{lera2023hardware}.
 
 For \textit{same-type} convolution, the total number of multiplication operations, here labeled $M$, is equal to the product of each input dimension:
 \begin{equation}\label{eq:MM-mul}
@@ -88,30 +91,94 @@ In 2016, Lavin \& Gray~\cite{lavin2016fast} proposed a new class of convolution 
 
 % An open problem in modern mathematics is finding the smallest $\omega$ such that the number of operations required by an $N \times N$ matrix-multiplication equals $N^{\omega + O(1)}$~\cite{gao2020systematic}. The naive line-by-column multiplication method has $\omega = 3$, and the current lowest known value for $\omega$ is 2.37188~\cite{duan2022faster} using a method based on the Coppersmith-Winograd algorithm, which is currently the state-of-the-art in terms of speed~\cite{lavin2016fast}.
 
-Winograd convolution transforms the input and kernel into a domain (more strictly, a \textit{field}) where pointwise multiplication is equivalent to the convolution of the original signals. This is achieved by sampling the input and kernel at a given set of points using transform matrices. This method becomes inefficient for large kernels where the transform matrices are non-trivial~\cite{alam2022winograd}. This is convenient for modern 2D CNNs, as they tend to have many layers with small (usually 3x3) kernels.
+Winograd convolution transforms the input and kernel into a domain (more strictly, a \textit{field}) where pointwise multiplication is equivalent to the convolution of the original signals~\cite{lavin2016fast}. This is achieved by sampling the input and kernel at a given set of points using transform matrices. This method becomes inefficient for large kernels where the transform matrices are non-trivial~\cite{alam2022winograd}. For 2D CNNs, this limitation is mostly inconsequential, as they tend to have many layers with small (usually 3x3) kernels. For 3D CNNs, the complexity of the transform matrices can severely affect performance depending on the method used to select them.
 
+Winograd convolution, following the nomenclature introduced by Lavin \& Gray, is denoted as $F(m^3,r^3)$, where $m$ and $r$ are integers. Let $A$ and $B$ be matrices such that their total size is equal to $(m+r-1)^3$ and $r^3$ respectively. Their convolution is
+%
+\begin{equation*}
+  A*B = (Z( (XAX^T)^RX^T \cdot (YAY^T)^RY^T )Z^T)^RZ^T,
+\end{equation*}
+%
+where the superscript $R$ denotes clockwise rotation and $T$ denotes transposing. The result of this operation has size $m^3$ and constitutes a \textit{valid}-type convolution.
 
+The transform matrices depend on $m$ and $r$, as well as the point-selection procedure used. 3D CNN applications require at least $F(2^3,3^3)$ and trivial matrices for this operation have been found, such as the set used by Shen \textit{et al.} (2018)~\cite{shen2018towards}:
+%
+\begin{equation*}
+  \begin{gathered}
+    X = 
+    \begin{bmatrix}
+      1 &  0 & -1 &  0\\
+      0 &  1 &  1 &  0\\
+      0 & -1 &  1 &  0\\
+      0 &  1 &  0 & -1
+    \end{bmatrix};
+    Y = 
+    \begin{bmatrix}
+      1 & 0 & 0\\
+      \frac{1}{2} & \frac{1}{2} & \frac{1}{2}\\
+      \frac{1}{2} & -\frac{1}{2} & \frac{1}{2}\\
+      0 & 0 & 1
+    \end{bmatrix};\\
+    Z = 
+    \begin{bmatrix}
+      1 &  1 &  1 &  0\\
+      0 &  1 & -1 & -1
+    \end{bmatrix}.
+  \end{gathered}
+\end{equation*}
 
+These matrices are considered \textit{trivial} because their multiplication by another matrix is computationally efficient: multiplying by 0 or 1 is trivial and multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
 
-
-
-The standard approach is to divide the input into small blocks and convolve each with the kernel. As the input block size \textit{increases}, the number of multiplications required by the Hadamard product \textit{decreases} to a theoretical minimum of $I$~\cite{barabasz2020error}. However, the number of additions and constant multiplications required by the transform also increases exponentially, making this method more suited for applications requiring fewer transforms~\cite{zlateski2019anatomy}. Increasing input block size also increases floating-point error exponentially~\cite{alam2022winograd}.
-
-In 3D CNNs, the transform matrices required for 3D convolution would not be viable for acceleration. Instead, the blocks are sliced across each dimension such that multiple 1D transforms can be performed and added together~\cite{shen2018towards}. Specifically, convolution is defined as
-
-
-
-
-
-
-\subsection{FFT Convolution}
-The Theorem of Convolution defines the operation as follows:
-
-\begin{equation}
-[g * h](x) \Leftrightarrow F^{-1}[G \circ H](y),
+Algorithmic decomposition is available for this algorithm; it is possible to calculate multiple $F(m^3,r^3)$ convolutions and add the overlapping points to form a complete output~\cite{lan2017high}. For an image $I$, the total number of multiplications is
+%
+\begin{equation}\label{eq:wino-mul}
+  \left\lceil\frac{I_x-r}{m}\right\rceil
+  \left\lceil\frac{I_y-r}{m}\right\rceil
+  \left\lceil\frac{I_z-r}{m}\right\rceil
+  (m+r-1)^3.
 \end{equation}
 
-\noindent where $G$ and $H$ are the \textit{Fourier Transforms} of the respective signals $g$ and $h$; $F^{-1}$ is the \textit{Inverse Fourier Transform}; $*$ denotes convolution; $\circ$ denotes the Hadamard product (pointwise product); $x$ denotes an arbitrary domain and $y$ denotes the respective Fourier domain of $x$.
+% The standard approach is to divide the input into small blocks and convolve each with the kernel. As the input block size \textit{increases}, the number of multiplications required by the Hadamard product \textit{decreases} to a theoretical minimum of $I$~\cite{barabasz2020error}. However, the number of additions and constant multiplications required by the transform also increases exponentially, making this method more suited for applications requiring fewer transforms~\cite{zlateski2019anatomy}. Increasing input block size also increases floating-point error exponentially~\cite{alam2022winograd}.
+
+\todo{\hrule}
+\todo{Review line}
+
+\subsection{FFT Convolution}
+The Theorem of Convolution defines the operation as
+%
+\begin{equation}
+  I[c] * K[f] = \mathcal{F}^{-1}(\mathcal{F}(I[c]) \cdot \mathcal{F}(K[f])),
+\end{equation}
+%
+where $\cdot$ represents the pointwise product (also known as \textit{Hadamard} product) and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse. This method calculates \textit{full}-type convolution.
+
+\begin{figure*}[htb]\centering
+  \subfloat[]{%
+    \makebox[0.9\columnwidth]{
+      \includegraphics{fig/fft-1.pdf}
+    \label{fig:fft1}}}\qquad
+  \subfloat[]{%
+    \makebox[0.9\columnwidth]{
+      \includegraphics{fig/fft-0.pdf}
+    \label{fig:fft2}}}%
+  \caption{Visual representation of an 8-point radix-2 FFT using Decimation in Frequency (a) and Decimation in Time (b).}\label{fig:fft}
+\end{figure*}
+
+\todo{fix FFT figure alignment}
+
+The class of algorithms known as \textit{Fast Fourier Transforms} (FFT) are used to compute the DFTs. By definition, an FFT computes an $N$-point DFT in $O(N\log_2N)$. The standard radix-2 FFT~\cite{gauss1866nachlass,cooley1965algorithm} breaks down the DFT into $\log_2N$ steps, each consisting of multiple ``butterfly operations'' paired with twiddle-factor multiplications. The order of operations depend on the recursion method used: Decimation in Frequency (DIF) or Decimation in Time (DIT), as illustrated by Figures~\ref{fig:fft1} and \ref{fig:fft2} respectively. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each twiddle-factor multiplier calculates a product by a root-of-unity $\omega$ with the form
+%
+\begin{equation}
+  \omega_{N}^{k} = e^{\frac{2{\pi}i}{N}k},
+\end{equation}
+%
+where $k \in \mathbb{Z} \cap [0,N-1]$.
+
+
+
+
+
+
 
 The theorem states that signal convolution in a particular domain is equivalent to pointwise multiplication in its Fourier domain. This allows us to compute convolution by calculating the Discrete Fourier Transform (DFT) of the input and kernel in the domain of space (represented by $ \sigma$), applying the Hadamard product in the respective Fourier domain of space (represented by $\zeta$), and then calculating the Inverse Discrete Fourier Transform (IDFT) as such:
 

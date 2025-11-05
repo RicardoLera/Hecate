@@ -10,36 +10,42 @@
 % (4) COMPSOC guidelines (https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=1549819) [2025]
 
 % Template packages and settings
-\usepackage{amsmath,amsfonts}
-\interdisplaylinepenalty=2500
-\usepackage{cite}
+\usepackage{
+  amsmath,
+  amsfonts,
+  algorithmic,
+  array,
+  stfloats,
+  url,
+  hyperref,
+  textcomp,
+  verbatim,
+  balance}
 \usepackage[pdftex]{graphicx}
-\graphicspath{{figs/}}
-\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-\usepackage{algorithmic}
-\usepackage{array}
 \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
-\usepackage{stfloats}
-\usepackage{url}
-\usepackage{hyperref}
-\usepackage{textcomp}
-\usepackage{verbatim}
-\usepackage{balance}
-\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-  T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\ifCLASSOPTIONcompsoc
+  \usepackage[nocompress]{cite}
+\else
+  \usepackage{cite}
+\fi
 \ifCLASSOPTIONcaptionsoff
   \usepackage[nomarkers]{endfloat}
   \let\MYoriglatexcaption\caption
   \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
 \fi
+\interdisplaylinepenalty=2500
+\graphicspath{{figs/}}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+  T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 % Author-included packages and settings
-\usepackage{xcolor}
-\usepackage{datetime}
-\usepackage{steinmetz} % Polar coordinate representation
-\usepackage{multirow}
-\usepackage{mathtools}
+\usepackage{
+  xcolor,
+  steinmetz,
+  multirow,
+  mathtools}
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 \hypersetup{colorlinks = true, allcolors = {blue}}
 \renewcommand{\citeleft}{\textcolor{blue}{[}}
