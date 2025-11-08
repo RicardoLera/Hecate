@@ -1,14 +1,13 @@
 %%% NOTE TO REVIEWERS %%%
 % This is the document that generates our journal submission, author information included.
-% Below we provide two variables (\FORMAT-MODE and \TWOSIDE-MODE) which may be altered to change the formatting of the document, as needed.
+% The documentclass options below may be altered to change the formatting of the documen as needed.
 
-\def\FORMAT-MODE{compsoc} % {compsoc} or {}
-\def\TWOSIDE-MODE{} % {twoside} or {}
 \documentclass[
   10pt,
   journal,
-  \FORMAT-MODE,
-  \TWOSIDE-MODE
+  compsoc,
+  % draftcls,
+  % twoside
 ]{IEEEtran}
 
 \input{packages.tex}
