@@ -14,7 +14,6 @@ zip -FSr submission/anonymized_main_document \
   abstract.tex \
   body.tex \
   references.bib \
-  fig/tikz.tex \
   fig/*0.pdf \
   fig/*1.pdf
 rm anonymized_main_document.tex
@@ -24,3 +23,6 @@ cp peer_review.pdf submission/anonymized_main_document.pdf
 
 # title page (yes it needs to be in word format, blame IEEE)
 pandoc -s title_page_word.tex -o submission/title_page.docx
+
+# tikz.tex, added as "Supplementary Material for Review"
+cp fig/tikz.tex submission/tikz.tex
