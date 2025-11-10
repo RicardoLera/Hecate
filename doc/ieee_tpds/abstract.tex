@@ -3,18 +3,20 @@
   \begin{abstract}
     The high arithmetic complexity of 2D and 3D CNNs has lead to new research regarding efficient hardware-based accelerators. This complexity stems from the convolutional layers of these networks which often rely on poorly-scaling algorithms, particularly in 3D. Winograd-based designs can achieve high resource efficiency in networks using small kernels, yet are limited by increasingly complex transform operations in higher dimensions. FFT convolution has seen recent success in applying decomposition algorithms, such as overlap-add, to CNNs, increasing its efficiency for large inputs. Likewise, the Complex-domain multiplications required by the algorithm can be optimized using polar coordinate representation. Our analysis reveals the lower assymptotic bound of overlap-add FFT compared to Winograd convolution. We propose a 3D CNN accelerator using FFT convolution augmented by overlap-add and CORDIC algorithms. We implement and test this design on FPGA technology using RTL synthesis, achieving over 2x the DSP-efficiency of other state-of-the-art accelerators.
   \end{abstract}
-  \begin{IEEEkeywords}
-    % COMPSOC: http://www.computer.org/mc/keywords/keywords.htm
-    % IEEE: https://ieee-org.widen.net/s/jwk9pcxxvd/ieee-taxonomy
-    Convolutional neural networks,
-    % Neural network hardware,
-    % Open source hardware,
-    Fast Fourier transforms,
-    Computational efficiency,
-    Algorithmic efficiency,
-    Field programmable gate arrays,
-    % AI accelerators,
-    Accelerator architectures,
-    Hardware acceleration.
-  \end{IEEEkeywords}
+  \ifjournal
+    \begin{IEEEkeywords}
+      % COMPSOC: http://www.computer.org/mc/keywords/keywords.htm
+      % IEEE: https://ieee-org.widen.net/s/jwk9pcxxvd/ieee-taxonomy
+      Convolutional neural networks,
+      % Neural network hardware,
+      % Open source hardware,
+      Fast Fourier transforms,
+      Computational efficiency,
+      Algorithmic efficiency,
+      Field programmable gate arrays,
+      % AI accelerators,
+      Accelerator architectures,
+      Hardware acceleration.
+    \end{IEEEkeywords}
+  \fi
 }

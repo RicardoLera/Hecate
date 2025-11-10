@@ -27,7 +27,20 @@
   
   This document is organized as follows: In Section~\ref{sec:alg} we discuss the state-of-the art convolution algorithms and their computational complexity; In Section~\ref{sec:imp}, we describe the design choices, optimizations, and testing procedures of our proposed architecture; Section~\ref{sec:res} lists the results obtained and comparisons to the state-of-the-art; Section~\ref{sec:rela} discusses related work; and Section~\ref{sec:conc} presents our conclusions.
 
-  % Unused paragraphs moved to notes, check there if you want to add extra information to the introduction
+  % Figures 
+  \ifCLASSOPTIONcompsoc
+    \begin{figure*}[!tb]\centering
+  \else
+    \begin{figure*}[!t]\centering
+  \fi
+    \subfloat[]{%
+      \makebox[0.9\columnwidth]{%
+        \includegraphics{fig/fft-1.pdf}\label{fig:fft1}}}\qquad%
+    \subfloat[]{%
+      \makebox[0.9\columnwidth]{%
+        \includegraphics{fig/fft-0.pdf}\label{fig:fft2}}}%
+    \caption{Visual representation of an 8-point radix-2 FFT using Decimation in Frequency (a) and Decimation in Time (b).}\label{fig:fft}
+  \end{figure*}
 
 \section{Convolution Algorithms}\label{sec:alg}
   Comparative algorithmic analyses of Matrix Multiplication (MMX), Winograd, and FFT convolution have been performed previously by Lavin \& Gray~\cite{lavin2016fast} as well as later publications~\cite{shen2018towards}. Our focus in this Section is on an often overlooked property of these algorithms: their scalability; and how it affects the total complexity of the system.
@@ -73,18 +86,6 @@
     %
     where $\cdot$ represents the pointwise product (also known as \textit{Hadamard} product) and $\mathcal{F}$ and $\mathcal{F}^{-1}$ represent the Discrete Fourier Transform (DFT) and its inverse. This method calculates \textit{full} mode convolution.
 
-    \begin{figure*}[htb]\centering
-      \subfloat[]{%
-        \makebox[0.9\columnwidth]{
-          \includegraphics{fig/fft-1.pdf}
-        \label{fig:fft1}}}\qquad
-      \subfloat[]{%
-        \makebox[0.9\columnwidth]{
-          \includegraphics{fig/fft-0.pdf}
-        \label{fig:fft2}}}%
-      \caption{Visual representation of an 8-point radix-2 FFT using Decimation in Frequency (a) and Decimation in Time (b).}\label{fig:fft}
-    \end{figure*}
-
     The class of algorithms known as \textit{Fast Fourier Transforms} (FFT) are used to compute the DFTs. By definition, an FFT computes an $N$-point DFT in $O(N\log_2N)$. The standard radix-2 FFT~\cite{gauss1866nachlass,cooley1965algorithm} breaks down the DFT into $\log_2N$ steps, each consisting of multiple ``butterfly operations'' paired with twiddle-factor multiplications. The order of operations depend on the recursion method used: Decimation in Frequency (DIF) or Decimation in Time (DIT), as illustrated by Figures~\ref{fig:fft1} and \ref{fig:fft2} respectively. Each ``butterfly'' receives a pair $(A,B)$ and outputs $(A+B,A-B)$, where $A$ and $B$ are Complex numbers. Each twiddle-factor multiplier calculates a product by a root-of-unity $\omega$ with the form
     %
     \begin{equation}
@@ -97,15 +98,17 @@
     
     While the input signal of the FFT is one-dimensional, it is possible to represent an arbritrary number of dimensions using zero-padding. Figure~\ref{fig:Ma} represents a signal $K$ given its dimensions all have size 2. To convolve this array with another signal of the same shape, we must first pad each dimension $d$ by $2d-1$, thus conveying its dimensionality and avoiding cyclic convolution. Figure~\ref{fig:Mb} represents the padded signal; the gray line displays the order of rasterization.
 
-    \begin{figure*}[htb]\centering
+    \ifCLASSOPTIONcompsoc
+      \begin{figure*}[!tb]\centering
+    \else
+      \begin{figure*}[!t]\centering
+    \fi
       \subfloat[]{%
-        \makebox[0.7\columnwidth]{
-          \includegraphics{fig/matrix-0.pdf}
-        \label{fig:Ma}}}\qquad
+        \makebox[0.7\columnwidth]{%
+          \includegraphics{fig/matrix-0.pdf}\label{fig:Ma}}}\qquad%
       \subfloat[]{%
-        \makebox[0.9\columnwidth]{
-          \includegraphics{fig/matrix-1.pdf}
-        \label{fig:Mb}}}%
+        \makebox[0.9\columnwidth]{%
+          \includegraphics{fig/matrix-1.pdf}\label{fig:Mb}}}%
       \caption{A three-dimensional signal (a) and the required zero-padding to avoid cyclic convolution (b).}\label{fig:M}
     \end{figure*}
 
@@ -213,15 +216,19 @@
   \subsection{Comparison}
     Figures \ref{fig:alg1} and \ref{fig:alg2} are plots of Equations \ref{eq:MM-mul} (baseline), \ref{eq:wino-mul} (Winograd), \ref{eq:fconv-mul1} (FFT convolution) and \ref{eq:fconv-mul2} (FFT convolution using polar multiplication); for different kernel sizes and assuming $K$ is equilateral and has size $k$. Figure~\ref{fig:alg1} assumes $I=(k+1)^3$, or one semi-convolution. Figure~\ref{fig:alg2} assumes $I=128{\times}171{\times}16$, the input size used by C3D~\cite{tran2015learning}, a 3D CNN widely used as a benchmark.
 
-    \begin{figure}\centering
-      \includegraphics[width=0.9\columnwidth]{fig/plot-0.pdf}
-      \caption{Multiplications (log) vs kernel-size for $I=4{\times}4{\times}4$}\label{fig:alg1}
-    \end{figure}
-    
-    \begin{figure}\centering
-      \includegraphics[width=0.9\columnwidth]{fig/plot-1.pdf}
-      \caption{Multiplications (log) vs kernel-size for $I=128{\times}171{\times}16$}\label{fig:alg2}
-    \end{figure}
+    \ifCLASSOPTIONcompsoc
+      \begin{figure*}[!tb]\centering
+    \else
+      \begin{figure*}[!t]\centering
+    \fi
+      \subfloat[]{%
+        \makebox[0.95\columnwidth]{%
+          \includegraphics{fig/plot-0.pdf}\label{fig:alg1}}}\qquad%
+      \subfloat[]{%
+        \makebox[0.95\columnwidth]{%
+          \includegraphics{fig/plot-1.pdf}\label{fig:alg2}}}%
+      \caption{Number of multiplications (log-scale) vs kernel-size for $I=4{\times}4{\times}4$ (a) and $I=128{\times}171{\times}16$ (b).}\label{fig:alg}
+    \end{figure*}
 
     These graphs do not account for the multiplications stemming from Winograd's transform at higher kernel-sizes, nor the twiddle-factor multiplications used by FFT convolution, as both of them are multiplications by constants and can be better optimized in hardware.
 
@@ -276,7 +283,11 @@
 
   The values of $\arctan(2^{-j})$ are also constant and can be pre-calculated and stored in a lookup table. However, the convolution operation requires adding two angular coordinates before the transformation back into rectangular coordinates. The resulting angle can exceed $\pi$ radians, causing issues with the algorithm. To circumvent this, we store the \textit{quadrant} of each angular coordinate in the unit circle, normalize them to the first quadrant, perform the add operation, and convert the result into the respective quadrant. To simplify this computation, we divide each $\arctan(2^{-j})$ by $2\pi$. The resulting binary, encoded in 16-bits, represents fractions of $\pi$, with its two most-significant bits representing the quadrant of the vector in the unit circle, as shown in Figure~\ref{fig:pfb}. This allows quick access to the quadrant of the angle, as well as enabling normalization to any quadrant by simply setting its first two bits.
 
-  \begin{figure}[htb]\centering
+  \ifCLASSOPTIONcompsoc
+    \begin{figure}[!tb]\centering
+  \else
+    \begin{figure}[!t]\centering
+  \fi
     \includegraphics[width=0.9\columnwidth]{fig/unit_circle-0.pdf}
     \caption{Four symmetric angles encoded as $\pi$-fractions.}\label{fig:pfb}
   \end{figure}
@@ -306,8 +317,12 @@
   \subsection{Pipelining}\label{ssec:pipe}
     Each step of the proposed algorithm can be pipelined to greatly increase its throughput. Figure~\ref{fig:pipeline} illustrates our pipelined design, optimized for hardware efficiency. The system consists of two phases, as delimited by the green line. Hardware across phases is reused instead of replicated.
 
-    \begin{figure*}[htb]\centering
-      \includegraphics[width=2\columnwidth]{fig/pipeline-0.pdf}
+    \ifCLASSOPTIONcompsoc
+      \begin{figure*}[!tb]\centering
+    \else
+      \begin{figure*}[!t]\centering
+    \fi
+      \includegraphics[width=2.04\columnwidth]{fig/pipeline-0.pdf}
       \caption{Fully-pipelined FFT-conv design.}\label{fig:pipeline}
     \end{figure*}
 
@@ -336,7 +351,7 @@
   \subsection{Parallelism}
     The design in Figure~\ref{fig:pipeline} is compact and scalable, useful for implementation across a range of FPGA devices. However, we can further improve the hardware efficiency of the design using parallelism.
 
-    Previously, we only synthesized one butterfly and twiddle-factor multiplier per FFT stage. We can instead synthesize every block on each stage, allowing the synthesizer to better optimize the redundant twidle-factor multiplications.
+    Previously, we synthesized one butterfly and twiddle-factor multiplier per FFT stage. We can instead synthesize every block on each stage, allowing the synthesizer to better optimize the redundant twidle-factor multiplications.
 
     To maintain uninterrupted data flow along the pipeline, the CORDIC chain is scaled accordingly. Similarly to the FFT chain, many CORDIC blocks will become redundant and will be optimized away during synthesis.
 
@@ -349,9 +364,11 @@
 
   Software testing was carried out to ascertain correctness and measure precision. A randomized trial was performed, comparing its results to a standard convolution algorithm at each iteration. Edge-case trials were also performed to ascertain correctness for very large or small inputs.
 
-  Table~\ref{tab:ru} displays the resource usage metrics of both cores for $K = 3{\times}3{\times}3$. 
-
-  \begin{table}[htb]
+  \ifCLASSOPTIONcompsoc
+    \begin{table}[!tb]
+  \else
+    \begin{table}[!t]
+  \fi
     \caption{Resource usage of pipelined and parallel cores in VC709 environment.}
     \centering
     \label{tab:ru}
@@ -364,28 +381,11 @@
     \end{tabular}
   \end{table}
 
-  Throughput ($GOP/s$) was measured on the parallel-core using the first CONV layer of C3D~\cite{tran2015learning}, where $I=128{\times}171{\times}3$, $I_c=3$ and $K_f=16$.
-
-  Resource efficiency was calculated as the product of throughput and number of DSPs inferred~\cite{fan2021high,li2022hardware,kyriakos2022resources,jiang2025fpga}. This is expressed as
-  %
-  \begin{equation}\label{eq:mu-he}
-    \frac{GOP}{s{\times}DSP}.
-  \end{equation}
-
-  This metric can be normalized across different FPGA devices by dividing it by the operational frequency~\cite{meyer2020evaluating, montgomerie2023pass, jiang2025fpga}. This is expressed as
-  %
-  \begin{equation}\label{eq:mu-nhe}
-    \frac{GOP}{s{\times}DSP{\times}MHz}.
-  \end{equation}
-
-\section{Results}\label{sec:res}
-  Software testing using 24-bit fixed-point values with 16 fractional bits revealed a worst-case precision of $2^{-8}$. In other words, the 16 most significant bits always returned the correct value across both the randomized and edge-case trials. This is sufficient for both training and inference of CNNs~\cite{courbariaux2014training}.
-
-  To the extent of our research regarding FPGA-based acceleration of 3D CNNs, Fan \textit{et al.} (2021)~\cite{fan2021high} achieves the highest resource efficiency. Their choice of convolution algorithm is the standard matrix-multiplication, however, the implementation of floating-point quantization enables more efficient operations within the algorithm. Shen \textit{et al.} (2018)~\cite{shen2018towards} remains the most resource efficient FPGA-based accelerator that uses Winograd convolution and that is capable of processing 3D convolutional filters.
-
-  Table~\ref{tab:he-comp} displays the throughput ($GOP/s$), hardware efficiency (\ref{eq:mu-he}), and normalized hardware efficiency (\ref{eq:mu-nhe}) of our parallel-core design and the state-of-the-art. This comparison is analogous to the ones made by previous projects in their analyses~\cite{shen2018towards,fan2021high}. Liu \textit{et al.}~\cite{liu2019uniform} and Yang \textit{et al.}~\cite{yang2023fgpa} have also made contributions to the state-of-the-art and were included in this comparison.
-
-  \begin{table*}
+  \ifCLASSOPTIONcompsoc
+    \begin{table*}[!b] % prevent table from appearing on references page
+  \else
+    \begin{table*}[!t]
+  \fi
     \caption{Comparison of different FPGA accelerator architectures applied on C3D.}
     \centering
     \label{tab:he-comp}
@@ -410,6 +410,29 @@
         &                           2.06  & 3.06   & 1.55     & 5.19        & 1.59   & 11.05  \\\hline
     \end{tabular}
   \end{table*}
+
+  Table~\ref{tab:ru} displays the resource usage metrics of both cores for $K = 3{\times}3{\times}3$. 
+
+  Throughput ($GOP/s$) was measured on the parallel-core using the first CONV layer of C3D~\cite{tran2015learning}, where $I=128{\times}171{\times}3$, $I_c=3$ and $K_f=16$.
+
+  Resource efficiency was calculated as the product of throughput and number of DSPs inferred~\cite{fan2021high,li2022hardware,kyriakos2022resources,jiang2025fpga}. This is expressed as
+  %
+  \begin{equation}\label{eq:mu-he}
+    \frac{GOP}{s{\times}DSP}.
+  \end{equation}
+
+  This metric can be normalized across different FPGA devices by dividing it by the operational frequency~\cite{meyer2020evaluating, montgomerie2023pass, jiang2025fpga}. This is expressed as
+  %
+  \begin{equation}\label{eq:mu-nhe}
+    \frac{GOP}{s{\times}DSP{\times}MHz}.
+  \end{equation}
+
+\section{Results}\label{sec:res}
+  Software testing using 24-bit fixed-point values with 16 fractional bits revealed a worst-case precision of $2^{-8}$. In other words, the 16 most significant bits always returned the correct value across both the randomized and edge-case trials. This is sufficient for both training and inference of CNNs~\cite{courbariaux2014training}.
+
+  To the extent of our research regarding FPGA-based acceleration of 3D CNNs, Fan \textit{et al.} (2021)~\cite{fan2021high} achieves the highest resource efficiency. Their choice of convolution algorithm is the standard matrix-multiplication, however, the implementation of floating-point quantization enables more efficient operations within the algorithm. Shen \textit{et al.} (2018)~\cite{shen2018towards} remains the most resource efficient FPGA-based accelerator that uses Winograd convolution and that is capable of processing 3D convolutional filters.
+
+  Table~\ref{tab:he-comp} displays the throughput ($GOP/s$), hardware efficiency (\ref{eq:mu-he}), and normalized hardware efficiency (\ref{eq:mu-nhe}) of our parallel-core design and the state-of-the-art. This comparison is analogous to the ones made by previous projects in their analyses~\cite{shen2018towards,fan2021high}. Liu \textit{et al.}~\cite{liu2019uniform} and Yang \textit{et al.}~\cite{yang2023fgpa} have also made contributions to the state-of-the-art and were included in this comparison.
 
 \section{Related Work}\label{sec:rela}
   CNN acceleration is a broad and actively-researched field. This section covers some relevant bibliography not previously mentioned.
