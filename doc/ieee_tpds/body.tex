@@ -3,17 +3,31 @@
 \else
   \section{Introduction}
 \fi
-  \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success of Convolutional Neural Networks (CNNs) in two-dimensional image recognition. Several accelerator architectures have been developed to attend to these demands; a method that has seen wide success in 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} CNNs.
+  % BCA \IEEEPARstart{I}{mage} processing demands have increased substantially in the last decade, due in part to the success of Convolutional Neural Networks (CNNs) in two-dimensional image recognition. Several accelerator architectures have been developed to attend to these demands; a method that has seen wide success in 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} CNNs.
+  \IEEEPARstart{T}{he} computational demands for image pattern recognition have risen substantially over the past decade, driven largely by the success of Convolutional Neural Networks (CNNs) in 2D image processing. In response, several hardware accelerator architectures have been developed. Hardware acceleration has proven successful for both 2D~\cite{mittal2020survey} and 3D~\cite{mittal2021survey} CNN implementations.
 
   A variety of optimization approaches have been developed for the task of accelerating CNNs, including: efficient memory access~\cite{han2016cnn,jiang2021optimized,doumet2024h2pipe}; parallelization methods~\cite{jouppi2020domain,choquette2021nvidia} often via systolic-array inference~\cite{chua2022systolic}; optimizing floating-point operations~\cite{fan2021high}; quantizing weights and activations~\cite{he2023research,salah2025post}; and addressing data sparsity~\cite{jiang2021optimized,fan2021high}.
 
-  One approach that has also garnered attention is the application of more efficient convolution algorithms. The standard discrete convolution algorithm, as well as the more widely used matrix-multiplication (MMX), have a base asymptotic complexity of $O(N^2)$, scaling very poorly with image and kernel sizes. This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly surpass all other layers in the network~\cite{hegde2018morph}.
+  % BCA One approach that has also garnered attention is the application of more efficient convolution algorithms. 
+  Complementing hardware acceleration, another strategy involves the creation of more efficient convolution algorithms.
+  The standard discrete convolution algorithm, as well as the more widely used matrix-multiplication (MMX), have a base asymptotic complexity of $O(N^2)$, scaling very poorly with image and kernel sizes. 
+  % BCA This is particularly relevant to 3D CNNs, as the processing load of its convolution layers can quickly outscale all other layers in the network~\cite{hegde2018morph}.
+  This is particularly relevant for 3D CNNs, as the computational load of their convolutional layers can rapidly dominate that of all other layers combined~\cite{hegde2018morph}.
 
-  In 2016, Lavin \& Gray~\cite{lavin2016fast} reviewed the relevant convolution algorithms---which were, at the time, MMX and FFT convolution---and proposed a new class of algorithms based on the Coppersmith–Winograd series of matrix multiplication methods~\cite{coppersmith1982asymptotic}. Similar algorithms with lower asymptotic bounds have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which severely hinders their applicability. As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}. Lavin \& Gray deemed FFT convolution inefficient, as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks using small (usually 3\texttimes3) kernels~\cite{simonyan2014very}. The algorithm is also not easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
+  In 2016, Lavin \& Gray~\cite{lavin2016fast} reviewed the relevant convolution algorithms --- which were, at the time, MMX and FFT convolution --- and proposed a new class of algorithms based on the Coppersmith–Winograd series of matrix multiplication methods~\cite{coppersmith1982asymptotic}. 
+  %  BCA MMX Algorithms with lower asymptotic bounds have been discovered~\cite{karstadt2020matrix,schwartz2023pebbling}, however, they incur increasingly complex transforms which severely hinders their applicability. 
+  The development of convolution algorithms with improved asymptotic complexity~\cite{karstadt2020matrix,schwartz2023pebbling} presents a critical trade-off: the theoretical gain in efficiency is often offset by the computational overhead and implementation complexity of the required transforms, limiting their practical utility.
+  % BCA  As such, the so-called Winograd class of convolution algorithms has become the standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
+  Consequently, the Winograd class of convolution algorithms has become the de facto standard for hardware-efficient CNN designs~\cite{shen2018towards,barabasz2019winograd,vardhana2025high}.
+
+  % FFT convolution was deemed inefficient for modern CNN designs as its upsides only overweight its downsides for convolutions using large kernels~\cite{lavin2016fast}, a method which has lost prevalence to deeper networks that use small (usually 3x3) kernels~\cite{simonyan2014very}. The algorithm is also not, as yet, easily implemented in high-level designs, due in large part to its reliance on Complex-domain operations.
+  The computational advantages of FFT-based convolution are negated in modern CNN architectures for two primary reasons. First, its efficiency is contingent upon large kernel sizes~\cite{lavin2016fast}, which have been largely superseded by the prevalent use of small, 3x3 kernels in deeper networks~\cite{simonyan2014very}. Second, its inherent reliance on complex-domain operations presents a significant implementation barrier for high-level design methodologies.
   
-  Since then, new techniques have been found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{highlander2016very,chen2024fast}, mixed-radix FFT~\cite{meng2024high}, and spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating,ayat2019spectral,han2021deep,watanabe2021image}. It has also found success in CNNs required the use of large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
+  % Since then, new techniques were found to optimize key parts of the algorithm, such as convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{highlander2016very,chen2024fast}, and mixed-radix FFT~\cite{meng2024high}, as well as spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating,ayat2019spectral,han2021deep,watanabe2021image}. It has also found success in CNNs required the use of large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
+  Subsequent research has produced optimizations for FFT convolution, including methods like convolution splitting~\cite{chitsaz2020acceleration}, overlap-add~\cite{highlander2016very,chen2024fast}, and mixed-radix FFT~\cite{meng2024high}. These advances, along with the development of spectral CNNs~\cite{pratt2017fcnn,liu2021accelerating,ayat2019spectral,han2021deep,watanabe2021image}, have renewed its relevance for architectures that inherently employ large kernels, such as 3D CNNs~\cite{nguyen2016energy, lan2017high, li20243d}.
 
-  There remains, however, the issue of Complex-domain multiplication. Recent FPGA implementations have addressed this issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}. These methods, however, do not directly address the high operation count of Complex multiplication, and instead deploy extra hardware resources to overcome it. As such, their hardware efficiency (measured in throughput per component) remains the same.
+  % BCA  There remains, however, the issue of Complex-domain multiplication. Recent FPGA implementations have addressed the issue using parallelization~\cite{li2024split} and pipelining~\cite{fan2021high}. These methods, however, do not directly address the high operation count of Complex multiplication, instead deploying extra hardware resources to overcome it. As such, their hardware efficiency (measured in throughput per component) remains the same.
+  Despite these advances, the high operational complexity of complex multiplication is still a burden. Current FPGA-based solutions employ parallelization~\cite{li2024split} and pipelining~\cite{fan2021high} to mitigate latency. However, these strategies leverage increased hardware resources to mask the high operation count rather than reducing it. Consequently, the underlying hardware efficiency (measured as throughput per component) remains unimproved.
 
   It is possible to reduce the operation count of Complex multiplication by representing its inputs as polar coordinates~\cite{lera2023hardware}. This was first implemented for CNNs in 2024 by Reis \textit{et al.}~\cite{reis2024phasor} using high-level synthesis (HLS) and achieving promising results. However, HLS, while an important tool for quickly implementing designs, has been frequently criticized in CNN applications regarding resource underutilization~\cite{xu2024flare,jiang2025fpga,antunes2025fpga}, high power consumption~\cite{salman2020comparative} and general performance issues~\cite{faber2022challenges,ahmed2023autohls,lau2024rapidstream}. This is opposed to RTL models, written in hardware-description languages (HDL), where low-level optimizations are available at the cost of longer development cycles.
 
@@ -56,7 +70,8 @@
     \item \textit{Valid:} $O_d = I_d - K_d$
   \end{itemize}
   
-  The baseline method of convolution used by CNNs, discrete convolution, uses \textit{Same} mode. It is defined as
+  % BCA The baseline method of convolution used by CNNs, discrete convolution, uses \textit{Same} mode and can be defined as
+  The baseline method of discrete convolution used by CNNs uses \textit{Same} mode and can be defined as:
   %
   \begin{equation}
     \begin{gathered}
@@ -64,7 +79,9 @@
     \end{gathered}
   \end{equation}
 
-  This method shares its complexity with the more commonly used MMX algorithm~\cite{lera2023hardware}. We will calculate the total number of multiplications required by each algorithm, labeled $M$. For discrete and MMX convolutions, this number is equal to the product of each dimension processed, i.e.,
+  % BCA This method shares its complexity with the more commonly used matrix-multiplication algorithm~\cite{lera2023hardware}. To simplify calculations, we will consider the total number of multiplications required by each algorithm, here labeled $M$. For discrete and matrix-multiplication convolutions, this number is equal to the product of each dimension processed, i.e.,
+  This method shares its complexity with the commonly used matrix-multiplication algorithm~\cite{lera2023hardware}. To simplify calculations, we consider the total number of multiplications required by each algorithm: $M$. For discrete and matrix-multiplication convolutions, this number is equal to the product of each dimension processed, i.e.,
+
   %
   \begin{equation}\label{eq:MM-mul}
     \begin{gathered}
@@ -115,23 +132,28 @@
     %
     where $\lceil~\rceil$ indicates the \textit{ceiling} function.
 
-    The transformed array exiting the FFT chain is subject to \textit{hermitian symmetry}. Assume an $N$-point array of Complex numbers of the form $(a+bi)$. If the array has hermitian symmetry, the points with indexes $[N/2+1]$ to $[N-1]$ are equivalent to the Complex conjugate of the points with indexes $[N/2-1]$ to $1$, respectively. This means that almost half of the array is redundant, and can be inferred by switching the sign bit of its y-component. This property is preserved after the pointwise multiplication, and as such the total number of pointwise Complex multiplications required by FFT convolution is
+
+    % BCA The transformed array exiting the FFT chain is subject to \textit{hermitian symmetry}. Assume an $N$-point array of Complex numbers of the form $(a+bi)$. If the array has hermitian symmetry, each point with index $(N/2)+1$ to $N-1$ is equivalent to the Complex conjugate(i.e., $(a-bi)$) of the points with index $(N/2)-1$ to $1$, respectively. This means that almost half of the array is redundant, and can be inferred by switching the sign bit of its y-component. This property is preserved after the pointwise multiplication, as such the total number of pointwise Complex multiplications required by FFT convolution is
+    The transformed array produced by the FFT chain is subject to \textit{hermitian symmetry}. Assume an $N$-point array of Complex numbers  $(a+bi)$. If the array has hermitian symmetry, each point with index $(N/2)+1$ to $N-1$ is equivalent to the Complex conjugate (i.e., $(a-bi)$) of the points with index $(N/2)-1$ to $1$, respectively. This means that almost half of the array is redundant, and can be inferred by switching the sign bit of its y-component. This property is preserved after the pointwise multiplication, so the total number of pointwise Complex multiplications required by FFT convolution is:
     %
     \begin{equation}
       M(\mathbb{C}) = \frac{N}{2}+1.
     \end{equation}
 
-    In order to convolve $I$ and $K$ in this manner, the sizes of each transformed array must be equal. This can be achieved by zero-padding the smaller signal to match the larger one, however, this is inefficient in CNN applications where $I$ is much larger than $K$. Instead, we can ``slice'' the input into kernel-sized pieces and convolve each slice with the kernel. The overlapping points of each convolution are added together, forming the complete output. This is known as \textit{overlap-add}~\cite{smith1997scientist,chen2024fast}.
+    In order to convolve $I$ and $K$ using FFT, the sizes of each transformed array must be equal. 
+    % BCA This can be achieved by zero-padding the smaller signal to match the larger one, however, this is inefficient in CNN applications where $I$ is much larger than $K$. 
+    Direct zero-padding of the kernel to match the input dimensions is computationally inefficient for CNNs, as the significant size disparity ($I \gg K$) leads to an unacceptable increase in the cost of the subsequent transform.
+    Instead, we can ``slice'' the input into kernel-sized pieces and convolve each slice with the kernel. The overlapping points of each convolution are added together, forming the complete output. This is known as \textit{overlap-add}~\cite{smith1997scientist,chen2024fast} and is an example of algorithmic scaling.
 
-    Let $S$ be a 3D slice of $I$ with dimensions $\{K_x,K_y,K_z\}$. The number of slices per dimension is $\{S_x,S_y,S_z\}$, such that
-    %
+    % BCA A fluidez do texto está quebrada aqui
+    Let $S$ be a 3D slice of $I$ over $K$, with dimensions $\{K_x,K_y,K_z\}$. The number of slices on each dimension is $\{S_x,S_y,S_z\}$, such that:
     \begin{equation}
       S_{x} = \left\lceil\frac{I_x}{K_x}\right\rceil;\quad
       S_{y} = \left\lceil\frac{I_y}{K_y}\right\rceil;\quad
       S_{z} = \left\lceil\frac{I_z}{K_z}\right\rceil.
     \end{equation}
 
-    Complex-domain multiplication can be performed with 4 Real-domain multiplications. Let $X$ and $Y$ be Complex numbers such that $X=a+bi$ and $Y=c+di$. The product of the two signals is:
+    A Complex-domain multiplication can be performed with 4 Real-domain multiplications. Let $X$ and $Y$ be Complex numbers such that $X=a+bi$ and $Y=c+di$. The product of the two signals is:
     %
     \begin{equation}\label{eq:cmul-rect}
       XY = (a+bi)(c+di) = (ac-bd) + (ad+bc)i.
@@ -148,7 +170,7 @@
       \left(\frac{N}{2}+1\right).
     \end{equation}
 
-    However, $X$ and $Y$ can also be represented in polar coordinates such that $X=A\phase{\alpha_1}$ and $Y=B\phase{\alpha_2}$, where $A,B$ are radial distances and $\alpha_1,\alpha_2$ are angular coordinates. As such
+    However, $X$ and $Y$ can also be represented in polar coordinates such that $X=A\phase{\alpha_1}$ and $Y=B\phase{\alpha_2}$, where $A,B$ are radial distances and $\alpha_1,\alpha_2$ are angular coordinates:
     %  
     \begin{equation}\label{eq:cmul-pol}
       XY = A\phase{\alpha_1} \cdot B\phase{\alpha_2} = AB\phase{\alpha_1+\alpha_2}.
@@ -199,7 +221,8 @@
       \end{gathered}
     \end{equation*}
 
-    These matrices are considered \textit{trivial} because their multiplication by another matrix is computationally efficient: multiplying by 0 or 1 is trivial and multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
+    % BCA This is useful because these transform matrices do not incur any multiplications, as multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
+    These transform matrices do not incur any multiplications, as multiplying by $\frac{1}{2}$ can be computed as a right-bit-shift. Higher values of $m$ and $r$ incur different matrices where this property cannot be guaranteed.
 
     It is possible to calculate multiple $F(m^3,r^3)$ convolutions and add the overlapping points to form a complete output~\cite{lan2017high}. However, this approach differs from the FFT method in that it requires calculating one convolution per stride of the kernel, as the output is \textit{valid} type. For an image $I$ and stride 1, the total number of multiplications is
     %
