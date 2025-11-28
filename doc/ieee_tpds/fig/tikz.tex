@@ -720,16 +720,29 @@
     (recursion3) --++ (0:0.6) coordinate (mul)
     (recursion4) --++ (0:0.6) coordinate (add);
   \draw
-    (mul) --++ (0:1.5) coordinate (cordic2in1)
-    (add) --++ (0:1.5) coordinate (cordic2in2)
-    (mul) --++ (0:1) coordinate (mul0)
+    (mul) --++ (0:2) coordinate (cordic2in1)
+    (add) --++ (0:2) coordinate (cordic2in2)
+    (mul) --++ (0:1.5) coordinate (mul0)
       node[text=violet,circle,draw,fill=white] {\scriptsize$\times$}
     --++ (90:1)
       node[rectangle,draw,fill=white] {\scriptsize{$K_x$ LUT}}
-    (add) --++ (0:1) coordinate (add0)
+    (add) --++ (0:1.5) coordinate (add0)
       node[text=red,circle,draw,fill=white] {\scriptsize$+$}
     --++ (-90:1)
       node[rectangle,draw,fill=white] {\scriptsize{$K_z$ LUT}};
+
+  % Mirror line
+  \path
+    (cordic1) --++ (0:4.75/2) coordinate (mirror1)
+    ($(mul0)!0.5!(add0)$) --++ (180:0.6) coordinate (mirror2)
+    (mirror1) --   coordinate (mirror0) (mirror2)
+    (mirror0) --++ (90:4) coordinate (mirror);
+  \draw[color=green,dashed]
+    (mirror)  --++ (-90:8);
+  \node[text=black!60!green,draw=green,left,xshift=-0.5cm,yshift=-0.25cm]
+    at (mirror) {Phase I};
+  \node[text=black!60!green,draw=green,right,xshift=0.5cm,yshift=-0.25cm]
+    at (mirror) {Phase II};
 
   % CORDIC-2 points
   \path
@@ -742,19 +755,6 @@
       --++ (0:1.5)      coordinate (cordic2yout)
       --++ (90:0.6666)  coordinate (cordic2xout)
       --++ (-90:1.3222) coordinate (cordic2zout);
-
-  % Mirror line
-  \path
-    ($(mul0)!0.5!(add0)$) --++ (0:0.6) coordinate (mirror1) 
-    (cordic2) --++ (180:4.75/2) coordinate (mirror2)
-    (mirror1) --   coordinate (mirror0) (mirror2)
-    (mirror0) --++ (90:4) coordinate (mirror);
-  \draw[color=green,dashed]
-    (mirror)  --++ (-90:8);
-  \node[text=black!60!green,draw=green,left,xshift=-0.5cm,yshift=-0.25cm]
-    at (mirror) {Phase I};
-  \node[text=black!60!green,draw=green,right,xshift=0.5cm,yshift=-0.25cm]
-    at (mirror) {Phase II};
 
   % CORDIC-2 connections  
   \draw
