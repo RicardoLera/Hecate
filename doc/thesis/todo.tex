@@ -2,7 +2,7 @@
 \section*{Editorial Section}
 This section is for editing purposes only and will not be present in the final document. Additional editing comments are listed on the main body \todo{in red}. For submission refer to \href{https://ppgee.poli.usp.br/pb/formularios/}{this link}.
 
-This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliTeX} included in the standard \LaTeX~libraries since 2023/01/12, and is more recent than \href{http://www.ime.usp.br/~leofl/tex/modelo_poli.zip}{the version I used previously}. This document (as well as poliTeX) primalily follows \href{https://doi.org/10.11606/9786598386221}{USP's official guidelines} (hereafter referred to as UOG) with \href{https://www.poli.usp.br/bibliotecas/servicos/publicacoes-online/}{Poli's complements}. Additionally, \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019}{PPGEE's regulations} and \href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018}{USP's regulations} were considered, but state very little about the contents of the written thesis.
+This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliTeX} which was discontinued in 2023/01/12 but is more recent than \href{https://github.com/brunocfp/capa-epusp-abntex2}{capa-epusp-abntex2} and \href{http://www.ime.usp.br/~leofl/tex/modelo_poli.zip}{the version I used previously}. This document (as well as poliTeX) primarily follows \href{https://doi.org/10.11606/9786598386221}{USP's official guidelines} (hereafter referred to as UOG) with \href{https://www.poli.usp.br/bibliotecas/servicos/publicacoes-online/}{Poli's complements}. Additionally, \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019}{PPGEE's regulations} and \href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018}{USP's regulations} were considered, but state very little about the contents of the written thesis.
 
 The text follows standard logical structure:
 Theme Contextualization $\rightarrow$
@@ -21,30 +21,28 @@ Some of the poliTeX inclusions contradict UOG:
   \item it does not include ``departamento'' in the title page (despite adding a variable for such). It will be added manually.
 \end{itemize}
 
-\subsection*{Tasklist}
+\newpage
+\section*{Tasklist}
 \begin{todolist}% To mark the squares use [\done] or [\wontfix]
 \item Ensure all required sections have been included (as per UOG)
 \begin{todolist}
   \item[\done] Folha de rosto
   \item Ficha catálografica (can be issued \href{https://www.poli.usp.br/bibliotecas/servicos/catalogacao-na-publicacao/}{here})
-  \item Folha de avaliação
+  \item[\done] Folha de avaliação
   \item[\done] Resumo na língua vernácula
   \item[\done] Resumo em língua estrangeira
   \item[\done] Sumário
-  %\item[] 
   \item[\done] Referências
 \end{todolist}
 Note: For the evaluation page, PPGEE \textbf{demands} the use of digital signatures (gov.br / USP assina) or the inclusion of signature dates (\href{https://ppgee.poli.usp.br/pb/formularios/}{source})
 
-\item Review text partitioning
+\item[\done] Review text partitioning
 
-\item Manually complete equation list
+\item[\done] Review title
 
-\item Review title
+\item[\done] Ensure all \todo{todo commands} have been resolved and erased
 
-\item Ensure all \todo{todo commands} have been resolved and erased
-
-\item After finishing all items above, remove from \texttt{head.tex} the \textbf{two} sections enclosed in \texttt{\%\% REMOVE BEFORE SUBMISSION \%\%}
+\item[\done] After finishing all items above, remove from \texttt{head.tex} the \textbf{two} sections enclosed in \texttt{\%\% REMOVE BEFORE SUBMISSION \%\%}
 
 \end{todolist}
 \addtocontents{toc}{\protect\setcounter{tocdepth}{4}}

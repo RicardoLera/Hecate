@@ -23,7 +23,9 @@
   amssymb,
   graphicx,
   cite,
-  enumerate}
+  enumerate,
+  pdfpages
+}
 
 % Author-included
 \usepackage{
@@ -39,21 +41,6 @@
 \interdisplaylinepenalty=2500
 \graphicspath{{figs/}}
 \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
-
-%% REMOVE BEFORE SUBMISSION %%
-\usepackage{enumitem}
-\newlist{todolist}{itemize}{2}
-\setlist[todolist]{label=$\square$}
-\usepackage{pifont}
-\newcommand{\cmark}{\ding{51}}%
-\newcommand{\xmark}{\ding{55}}%
-\newcommand{\done}{\rlap{$\square$}{\raisebox{2pt}{\large\hspace{1pt}\cmark}}%
-\hspace{-2.5pt}}
-\newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
-\usepackage[normalem]{ulem}
-% \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
-\newcommand*{\todo}[1]{\textcolor{red}{#1}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % ========== Language options ==========
 % \usepackage[brazil]{babel}
@@ -89,13 +76,9 @@ Departamento: PCS}
 \local{São Paulo}
 
 % Ano
-\data{2025}
+\data{2026}
 
 \begin{document}
-
-%% REMOVE BEFORE SUBMISSION %%
-{\setlength{\parindent}{0cm}\include{todo.tex}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % ========== Capa e folhas de rosto ==========
 \capa
@@ -104,7 +87,8 @@ Departamento: PCS}
 \folhaderosto
 
 % ========== Ficha catalográfica ==========
-% Fazer solicitação no site:
+\includepdf[pages=-]{EPUSP-Catalogacao-na-Fonte.pdf}
+% From:
 %	http://www.poli.usp.br/en/bibliotecas/servicos/catalogacao-na-publicacao.html
 
 % ========== Folha de assinaturas (opcional) ==========
@@ -123,35 +107,35 @@ Departamento: PCS}
   
   To Alexandra Elbakyan and the open science community for enabling the free distribution of this project and its sources.
 
-  To Itaú Unibanco S.A. and the Center of Data Science (C2D) for funding this project. \todo{Do I have to name the USP institutions too?}
+  To the \textit{Fundação da Universidade de São Paulo} (FUSP) and \textit{Itaú Unibanco S.A.} for funding this project.
 \end{agradecimentos}
 
 % ========== Epígrafe (opcional) ==========
-\epigrafe{%
-	\begin{flushright}
-    \emph{
-      lu galfi ma'a lei cevni\\
-      fa le nu catra ri li'u\\
-      pe cu'u la .vincav.}
-	\end{flushright}
-}
+% \epigrafe{%
+% 	\begin{flushright}
+%     \emph{
+%       lu galfi ma'a lei cevni\\
+%       fa le nu catra ri li'u\\
+%       pe cu'u la .vincav.}
+% 	\end{flushright}
+% }
 
 % ========== Resumo ==========
 \begin{resumo}
-  \todo{Rewrite}
+  A alta complexidade aritmética das redes neurais convolucionais em 2D e 3D levou a novas pesquisas sobre aceleradores eficientes implementados em hardware. Essa complexidade decorre das camadas convolucionais dessas redes que frequentemente dependem de algoritmos com baixa escalabilidade, particularmente em 3D. Projetos baseados em Winograd podem alcançar alta eficiência de recursos em redes que usam kernels pequenos, porém são limitados por operações de transformação cada vez mais complexas em dimensões mais altas. A convolução por FFT obteve recente sucesso na aplicação de algoritmos de decomposição, como overlap-add, às CNNs, aumentando sua eficiência para grandes inputs. Da mesma forma, as multiplicações no domínio complexo exigidas pelo algoritmo podem ser otimizadas usando coordenadas polares. Nossa análise revela o limite assintótico inferior da FFT overlap-add em comparação com o método de Winograd. Propomos um acelerador de CNN 3D usando convolução FFT aperfeiçoada por overlap-add e CORDIC. Implementamos e testamos este projeto em tecnologia FPGA usando síntese RTL, alcançando mais que o dobro da eficiência DSP de outros aceleradores de última geração baseados em FPGA.
   %
   \\[3\baselineskip]
   %
-  \textbf{Palavras-chave} -- \todo{Add}
+  \textbf{Palavras-chave} -- Redes neurais convolucionais, FFT, Eficiência computacional, Eficiência algorítmica, FPGA, Arquiteturas de aceleradores, Aceleração por hardware.
 \end{resumo}
 
 % ========== Abstract ==========
 \begin{abstract}
-  \todo{Rewrite}
+  The high arithmetic complexity of 2D and 3D CNNs has lead to new research regarding efficient hardware-based accelerators. This complexity stems from the convolutional layers of these networks which often rely on poorly-scaling algorithms, particularly in 3D. Winograd-based designs can achieve high resource efficiency in networks using small kernels, yet are limited by increasingly complex transform operations in higher dimensions. FFT convolution has seen recent success in applying decomposition algorithms, such as overlap-add, to CNNs, increasing its efficiency for large inputs. Likewise, the Complex-domain multiplications required by the algorithm can be optimized using polar coordinate representation. Our analysis reveals the lower asymptotic bound of overlap-add FFT compared to Winograd convolution. We propose a 3D CNN accelerator using FFT convolution augmented by overlap-add and CORDIC algorithms. We implement and test this design on FPGA technology using RTL synthesis, achieving over twice the DSP efficiency of other FPGA-based state-of-the-art accelerators.
   %
   \\[3\baselineskip]
   %
-  \textbf{Keywords} -- \todo{Add}
+  \textbf{Keywords} -- Convolutional neural networks, Fast Fourier transforms, Computational efficiency, Algorithmic efficiency, Field programmable gate arrays, Accelerator architectures, Hardware acceleration.
 \end{abstract}
 
 % ========== Listas (opcional) ==========
@@ -159,11 +143,11 @@ Departamento: PCS}
 \listadetabelas
 
 % ========== Listas definidas pelo usuário (opcional) ==========
-\begin{pretextualsection}{List of equations}
+% \begin{pretextualsection}{List of equations}
 
-  \todo{This has to be written manually}
+%   \todo{This has to be written manually}
 
-\end{pretextualsection}
+% \end{pretextualsection}
 
 % ========== Sumário ==========
 \sumario
