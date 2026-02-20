@@ -1,10 +1,29 @@
 \addtocontents{toc}{\protect\setcounter{tocdepth}{-2}}
 \section*{Editorial Section}
-This section is for editing purposes only and will not be present in the final document. Additional editing comments are listed on the main body \todo{in red}. For submission refer to \href{https://ppgee.poli.usp.br/pb/formularios/}{this link}.
 
-This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliTeX} which was discontinued in 2023/01/12 but is more recent than \href{https://github.com/brunocfp/capa-epusp-abntex2}{capa-epusp-abntex2} and \href{http://www.ime.usp.br/~leofl/tex/modelo_poli.zip}{the version I used previously}. This document (as well as poliTeX) primarily follows \href{https://doi.org/10.11606/9786598386221}{USP's official guidelines} (hereafter referred to as UOG) with \href{https://www.poli.usp.br/bibliotecas/servicos/publicacoes-online/}{Poli's complements}. Additionally, \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019}{PPGEE's regulations} and \href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018}{USP's regulations} were considered, but state very little about the contents of the written thesis.
+Normative documents in effect:
+\begin{itemize}[nolistsep,noitemsep]
+  \item \href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018}{RESOLUÇÃO Nº 7493, DE 27 DE MARÇO DE 2018} (USP)
+  \item \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7612-de-21-de-fevereiro-de-2019}{RESOLUÇÃO CoPGr Nº 7612, DE 21 DE FEVEREIRO DE 2019} (CPG/Poli)
+  \item \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019}{RESOLUÇÃO CoPGr Nº 7658, DE 20 DE MAIO DE 2019} (CCP/PPGEE)
+\end{itemize}
 
-The text follows standard logical structure:
+This document is modeled using \href{https://github.com/lfochamon/poliTeX}{poliTeX} which was discontinued in 2023/01/12 but is more recent than \href{https://github.com/brunocfp/capa-epusp-abntex2}{capa-epusp-abntex2} and \href{http://www.ime.usp.br/~leofl/tex/modelo_poli.zip}{the version I used previously}. This document (as well as poliTeX) primarily follows \href{https://doi.org/10.11606/9786598386221}{USP's official guidelines} (hereafter referred to as UOG) with \href{https://www.poli.usp.br/bibliotecas/servicos/publicacoes-online/}{CPG's complements}.
+
+The following is an exhaustive list of changes made to the politex template and politex.cls:
+\begin{itemize}[nolistsep,noitemsep]
+  \item Author name changed to non-bold font (UOG)
+  \item Title changed to lower-case formatting except for first letter (UOG)
+  \item Folha de rosto: included ``Original Version'' (UOG); changed descriptors to English (UOG); and increased comment space to fit concentration area and advisor name without hyphenization
+  \item Removed numbering from References section (UOG)
+  \item Included title in Portuguese (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2084}{USP A.84})
+  \item Lists of Figures, Illustrations, Equations, and Tables are \textbf{not} optional (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.2,Ap%C3%AAndices}{PPGEE XI.2}, superceding UOG 3.1.2.1.10)
+  \item Removed ``falsa folha de rosto'' (not mentioned in any guideline)
+  \item As per UOG (pg. 40) sections ``Introdução'', ``Desenvolvimento'' and ``Conclusão'' must be included, but may have different names.
+\end{itemize}
+
+The text follows standard structure:
+
 Theme Contextualization $\rightarrow$
 Literature Review $\rightarrow$
 Hypothesis $\rightarrow$
@@ -12,37 +31,55 @@ Justification $\rightarrow$
 Objective $\rightarrow$
 Method $\rightarrow$
 Results $\rightarrow$
-Conclusions. 
-As per UOG (pg. 40) sections ``Introdução'', ``Desenvolvimento'' and ``Conclusão'' must be included, but they may have different names. \href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.2,Ap%C3%AAndices}{PPGEE's regulations Section XI.2} lists the required sections in a manner incoherent to standard scientific procedure and the UOG (such as defining the objective before the literature review) and as such will be ignored.
-
-Some of the poliTeX inclusions contradict UOG:
-\begin{itemize}[nolistsep,noitemsep]
-  \item it includes a ``falsa folha de rosto'' not mentioned in any guideline. It will be ignored.
-  \item it does not include ``departamento'' in the title page (despite adding a variable for such). It will be added manually.
-\end{itemize}
+Conclusions.
 
 \newpage
-\section*{Tasklist}
+\section*{Submission Procedure}
 \begin{todolist}% To mark the squares use [\done] or [\wontfix]
-\item Ensure all required sections have been included (as per UOG)
+
+\item STEP I -- Request deposit to CCP \url{posgrad.eletrica.poli@usp.br} with
 \begin{todolist}
-  \item[\done] Folha de rosto
-  \item Ficha catálografica (can be issued \href{https://www.poli.usp.br/bibliotecas/servicos/catalogacao-na-publicacao/}{here})
-  \item[\done] Folha de avaliação
-  \item[\done] Resumo na língua vernácula
-  \item[\done] Resumo em língua estrangeira
-  \item[\done] Sumário
-  \item[\done] Referências
+  \item Thesis PDF
+  \\\todo{NOTE:} Remove from \texttt{head.tex} the \textbf{two} sections enclosed in \texttt{\%\% REMOVE BEFORE SUBMISSION \%\%}
+  \item \href{https://ppgee.poli.usp.br/wp-content/uploads/sites/92/2023/12/Formulario-de-deposito-revisado-10.10.2023-PPGEE-Atila.doc}{Signed deposit form}
+  \\\todo{NOTE:} Include title and keywords in portuguese as well (\href{https://www.poli.usp.br/ensino/posgraduacao/atendimento-pos-graduacao/deposito-de-dissertacao-ou-tese/}{CPG website})
+  \item Article PDF, with proof of accept or publishing
+  \\\todo{NOTE:} Proof of submission is \textbf{not} sufficient unless the student has published in another \textbf{journal} (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.3.3,Ap%C3%AAndices}{CPG XI.3.3})
+  \item \href{https://lattes.cnpq.br/5021331797153494}{Link to Lattes resume}
+  \item Ficha do aluno (Janus)
 \end{todolist}
-Note: For the evaluation page, PPGEE \textbf{demands} the use of digital signatures (gov.br / USP assina) or the inclusion of signature dates (\href{https://ppgee.poli.usp.br/pb/formularios/}{source})
 
-\item[\done] Review text partitioning
+\item STEP II -- Perform deposit at Janus (Aluno Regular / Depósito Digital)
+\begin{todolist}
+  \item Signed deposit form (from previous step)
+  \item \href{https://www.poli.usp.br/wp-content/uploads/2021/02/Formulario-de-autorizacao.pdf}{Digital Library authorization form}
+  \item \href{https://www.poli.usp.br/wp-content/uploads/2021/02/Termo-de-originalidade-Deposito.pdf}{Term of originality}
+  \item \href{https://www.poli.usp.br/wp-content/uploads/2023/11/TERMO-DE-COMPROMISSO-DE-ENTREGA-DE-EXEMPLARES-IMPRESSOS-Salvo-Automaticamente-1.pdf}{Term of compromise}
+  \item Undergraduate diploma
+  \item RG / CIN
+  \\\todo{NOTE:} CANNOT be older than 10 years
+  \item \href{https://www.poli.usp.br/wp-content/uploads/2018/10/ficha-cadastral-dados-pessoais.docx}{Personal data update form}
+\end{todolist}
 
-\item[\done] Review title
+\item STEP III -- Request evaluation board to CCP (\todo{email?}) (see \href{https://docs.google.com/forms/d/e/1FAIpQLSeHB4a1P63WxYpSeWkumORVAxbXNUYVHFVGrGOeByf7EDbdcg/viewform}{board request form})
+\begin{itemize}
+  \item Five members, including advisor, and five respective substitutes (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7612-de-21-de-fevereiro-de-2019#:~:text=IV.2}{CPG IV.2})
+  \item Members must be Doctors. The majority (3+) must be from outside PPGEE, and at least 1 outside Poli (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2089}{USP A.89})
+  \item Must be decided (by CPG) up to 45 days after deposit. May be altered until evaluation date (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2086}{USP A.86}).
+  \item Evaluation must occur within 105 days of first decision by CPG (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2087}{USP A.87})
+  \item For each board member external to USP, fill \href{https://ppgee.poli.usp.br/wp-content/uploads/sites/92/2016/02/cadastro-de-professores-externos_0.doc}{this form}. Advisor must submit them to CPG (from \href{https://docs.google.com/forms/d/e/1FAIpQLSeHB4a1P63WxYpSeWkumORVAxbXNUYVHFVGrGOeByf7EDbdcg/viewform}{board request form})
+\end{itemize}
 
-\item[\done] Ensure all \todo{todo commands} have been resolved and erased
+\item STEP IV (Advisor) -- Inform evaluation date to CPG \url{servico.posgraduacao.poli@usp.br}
 
-\item[\done] After finishing all items above, remove from \texttt{head.tex} the \textbf{two} sections enclosed in \texttt{\%\% REMOVE BEFORE SUBMISSION \%\%}
+\item STEP V -- Present thesis; board evaluation
+\\\todo{NOTE:} Signatures must be digital OR include date (\href{https://ppgee.poli.usp.br/pb/formularios/}{PPGEE website})
+
+\item STEP VI -- \todo{?}
+
+\item \todo{Also validate credits at some point}
+
+
 
 \end{todolist}
 \addtocontents{toc}{\protect\setcounter{tocdepth}{4}}

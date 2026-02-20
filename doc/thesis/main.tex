@@ -42,6 +42,21 @@
 \graphicspath{{figs/}}
 \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
 
+%% REMOVE BEFORE SUBMISSION %%
+\usepackage{enumitem}
+\newlist{todolist}{itemize}{2}
+\setlist[todolist]{label=$\square$}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\newcommand{\done}{\rlap{$\square$}{\raisebox{2pt}{\large\hspace{1pt}\cmark}}%
+\hspace{-2.5pt}}
+\newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
+\usepackage[normalem]{ulem}
+% \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+\newcommand*{\todo}[1]{\textcolor{red}{#1}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % ========== Language options ==========
 % \usepackage[brazil]{babel}
 \usepackage[english]{babel}
@@ -55,7 +70,7 @@
 
 % ========== Opções do documento ==========
 % Título
-\titulo{A resource-efficient\\FFT convolution accelerator}
+\titulo{A resource-efficient FFT convolution accelerator}
 
 % Autor
 \autor{Ricardo Di Curzio Lera}
@@ -65,12 +80,11 @@
 %\coorientador{Nome do coorientador (opcional)}
 
 % Tipo de documento
-\teseDOC{Engenharia Elétrica}
+\teseDOC{Doctor of Science}
 
 % Departamento e área de concentração
 \departamento{Departamento de Engenharia de Computação e Sistemas Digitais (PCS)}
-\areaConcentracao{Engenharia de Computação\\~\\
-Departamento: PCS}
+\areaConcentracao{Computational Engineering}
 
 % Local
 \local{São Paulo}
@@ -79,6 +93,10 @@ Departamento: PCS}
 \data{2026}
 
 \begin{document}
+
+%% REMOVE BEFORE SUBMISSION %%
+{\setlength{\parindent}{0cm}\include{todo.tex}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % ========== Capa e folhas de rosto ==========
 \capa
@@ -93,9 +111,93 @@ Departamento: PCS}
 
 % ========== Folha de assinaturas (opcional) ==========
 \begin{folhadeaprovacao}
-	\assinatura{Prof.\ X}
-	\assinatura{Prof.\ Y}
-	\assinatura{Prof.\ Z}
+  {\noindent}LERA, R. C. \textbf{A resource-efficient FFT convolution accelerator}. 2026. Tese (Doutorado em Engenharia da Computação) -- Escola Politécnica, Universidade de São Paulo, São Paulo, 2026.
+
+  \vspace{0.5cm}
+  Aprovado em:
+
+  \vspace{1cm}
+  {\noindent}\begin{minipage}{.16\textwidth}%
+    Prof. Dr.\\
+    Instituição:\\
+    Julgamento:
+  \end{minipage}%
+  {\noindent}\begin{minipage}{.40\textwidth}%
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}
+  \end{minipage}%
+  \hfil{\noindent}\begin{minipage}{.30\textwidth}%
+    \centering\vspace{1cm}\rule{5cm}{.8pt}\\%
+    {\nopagebreak}Assinatura\par
+  \end{minipage}
+
+  \vspace{1cm}
+  {\noindent}\begin{minipage}{.16\textwidth}%
+    Prof. Dr.\\
+    Instituição:\\
+    Julgamento:
+  \end{minipage}%
+  {\noindent}\begin{minipage}{.40\textwidth}%
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}
+  \end{minipage}%
+  \hfil{\noindent}\begin{minipage}{.30\textwidth}%
+    \centering\vspace{1cm}\rule{5cm}{.8pt}\\%
+    {\nopagebreak}Assinatura\par
+  \end{minipage}
+
+  \vspace{1cm}
+  {\noindent}\begin{minipage}{.16\textwidth}%
+    Prof. Dr.\\
+    Instituição:\\
+    Julgamento:
+  \end{minipage}%
+  {\noindent}\begin{minipage}{.40\textwidth}%
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}
+  \end{minipage}%
+  \hfil{\noindent}\begin{minipage}{.30\textwidth}%
+    \centering\vspace{1cm}\rule{5cm}{.8pt}\\%
+    {\nopagebreak}Assinatura\par
+  \end{minipage}
+
+  \vspace{1cm}
+  {\noindent}\begin{minipage}{.16\textwidth}%
+    Prof. Dr.\\
+    Instituição:\\
+    Julgamento:
+  \end{minipage}%
+  {\noindent}\begin{minipage}{.40\textwidth}%
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}
+  \end{minipage}%
+  \hfil{\noindent}\begin{minipage}{.30\textwidth}%
+    \centering\vspace{1cm}\rule{5cm}{.8pt}\\%
+    {\nopagebreak}Assinatura\par
+  \end{minipage}
+
+  \vspace{1cm}
+  {\noindent}\begin{minipage}{.16\textwidth}%
+    Prof. Dr.\\
+    Instituição:\\
+    Julgamento:
+  \end{minipage}%
+  {\noindent}\begin{minipage}{.40\textwidth}%
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}\\
+    \hfil\rule[-0.9em]{\textwidth}{.4pt}
+  \end{minipage}%
+  \hfil{\noindent}\begin{minipage}{.30\textwidth}%
+    \centering\vspace{1cm}\rule{5cm}{.8pt}\\%
+    {\nopagebreak}Assinatura\par
+  \end{minipage}%
+	% \assinatura{Prof.\ X}
+	% \assinatura{Prof.\ Y}
+	% \assinatura{Prof.\ Z}
 \end{folhadeaprovacao}
 
 % ========== Dedicatória (opcional) ==========
@@ -158,6 +260,7 @@ Departamento: PCS}
 % ========== Referências ==========
 % --- ABNT (requer ABNTeX 2) ---
 %	http://www.ctan.org/tex-archive/macros/latex/contrib/abntex2
+\pagenumbering{gobble}
 \bibliographystyle{abntex2-num}
 \bibliography{references}
 

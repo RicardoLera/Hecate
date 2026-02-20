@@ -1,3 +1,5 @@
+% Edited to conform to UOG
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % POLITEX.CLS
@@ -949,11 +951,11 @@
 
 \providecommand{\ABNTautordata}{}
 \newcommand{\autor}[1]{\renewcommand{\ABNTautordata}{\uppercase{#1}}}
-\newcommand{\autorformat}{\large\ABNTsectionfont}
+\newcommand{\autorformat}{\large}
 
 \providecommand{\ABNTorientadordata}{}
 \providecommand{\ABNTorientadorname}{}
-\newcommand{\orientador}[2][Orientador:\vspace{1mm}\\]%
+\newcommand{\orientador}[2][Advisor: ]%
   {\renewcommand{\ABNTorientadorname}{#1}%
    \renewcommand{\ABNTorientadordata}{#2}}
 \newcommand{\orientadornameformat}{}
@@ -984,7 +986,7 @@
 
 \providecommand{\ABNTareaconcdata}{}
 \providecommand{\ABNTareaconcname}{}
-\newcommand{\areaConcentracao}[2][\'Area de Concentra\c{c}\~ao:\vspace{1mm}\\]%
+\newcommand{\areaConcentracao}[2][Concentration area:]%
   {\renewcommand{\ABNTareaconcname}{#1}%
    \renewcommand{\ABNTareaconcdata}{#2}}
 \newcommand{\areaconcnameformat}{}
@@ -1014,7 +1016,7 @@
 	% Distance = 12cm - (margin top) - (authors height)
 	\setlength{\authorTitleLength}{12cm - 3.2cm - \totalheightof{\vbox{\autorformat \ABNTautordata}}}
 	\vspace{\authorTitleLength}
-    {\tituloformat \ABNTuppercasetitulodata}
+    {\tituloformat \ABNTtitulodata}
 
     % local e data
     \vfill
@@ -1071,14 +1073,20 @@
     \espaco{1.2}
     {\autorformat \ABNTautordata} \par
 	% Distance = 12cm - (margin top) - (authors height)
-	\setlength{\authorTitleLength}{12cm - 3.2cm - \totalheightof{\vbox{\autorformat \ABNTautordata}}}
+	\setlength{\authorTitleLength}{4cm - \totalheightof{\vbox{\autorformat \ABNTautordata}}}
 	\vspace{\authorTitleLength}
-    {\tituloformat \ABNTuppercasetitulodata}
+    {\tituloformat \ABNTtitulodata}
+
+  \vspace{\authorTitleLength}
+    {\tituloformat Um acelerador de convolução FFT com uso eficiente de recursos}
+
+    \vspace{\authorTitleLength}
+    \textbf{Original Version}
 
     % comentário
     \vspace{2cm}
-    \hspace{.5\textwidth} % posicionando a minipage 
-    \begin{minipage}{.49\textwidth}
+    \hspace{.44\textwidth} % posicionando a minipage 
+    \begin{minipage}{.55\textwidth}
       \begin{espacoumemeio}
         \begin{sloppypar}
             {\comentarioformat\ABNTcomentariodata}
@@ -1141,10 +1149,7 @@
 %% Tese de doutorado
 \newcommand{\teseDOC}[1]{%
   \renewcommand{\PoliTipoDocData}{Tese (Doutorado)}
-  \comentario{Tese apresentada à Escola
-    Politécnica da Universidade de
-    São Paulo para obtenção do
-    Título de Doutor em #1.}%
+  \comentario{Thesis presented to the Graduate Program in Electrical Engineering at the Polytechnic School of the University of São Paulo to obtain the degree of #1.}%
 }
 
 %% Tese de livre docência
