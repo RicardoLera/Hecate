@@ -15,6 +15,7 @@ templates
 ref
 *.pdf
 !**/fig/*.pdf
+!**/fig/*.png
 **/fig/tikz.pdf
 **/fig/*.tex
 !**/fig/tikz.tex
