@@ -19,6 +19,9 @@ ref
 **/fig/*.tex
 !**/fig/tikz.tex
 !**/submission/*
+!**/EPUSP-Catalogacao-na-Fonte.pdf
+*.equ
+*.tocloft
 
 ## Vivado
 *.cache

@@ -150,7 +150,7 @@
 	\def\ABNTeatbrackets[#1]{\relax}
 
 	\renewcommand{\newcounter}[1]{%
-		\ifthenelse{\equal{#1}{figure}\or\equal{#1}{table}}%
+		\ifthenelse{\equal{#1}{figure}\or\equal{#1}{table}\or\equal{#1}{equation}}%
 			{\ABNToldnewcounter{#1}%
 			\@ifnextchar[{\ABNTeatbrackets}{} }%
 			{\ABNToldnewcounter{#1}}%
@@ -167,6 +167,7 @@
 	\let\newcounter\ABNToldnewcounter\relax
 	\renewcommand*{\thefigure}{\arabic{figure}}
 	\renewcommand*{\thetable}{\arabic{table}}
+  \renewcommand*{\theequation}{\arabic{equation}}
 }{}
 
 
@@ -854,6 +855,21 @@
 
 %% Portuguese name
 \let\listadetabelas\listoftables\relax
+
+
+%%%%%%  LIST OF EQUATIONS  %%%%%%
+\newcommand\listofequations{%
+\if@openright\cleardoublepage\else\clearpage\fi%
+  \ifthenelse{\boolean{@twocolumn}}%
+    {\setboolean{ABNTrestorecol}{true}\onecolumn}%
+    {\setboolean{ABNTrestorecol}{false}}%
+  \ifthenelse{\boolean{ABNThypertoc}}{\renewcommand{\chaptertype}{listofequations.}}{}%
+  \pretextualchapter{List of Equations}%
+  \ifthenelse{\boolean{ABNThypertoc}}{\renewcommand{\chaptertype}{}}{}%
+  \@starttoc{equ}%
+  \ifthenelse{\boolean{ABNTrestorecol}}{\twocolumn}{}%
+}
+\let\listadeequacoes\listofequations\relax
 
 
 %%%%%%  BIBLIOGRAPHY  %%%%%%
