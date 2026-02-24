@@ -49,21 +49,6 @@
 \setlength{\cftequationsnumwidth}{2.5em}
 \setlength{\cftequationsindent}{1.5em}
 
-%% REMOVE BEFORE SUBMISSION %%
-\usepackage{enumitem}
-\newlist{todolist}{itemize}{2}
-\setlist[todolist]{label=$\square$}
-\usepackage{pifont}
-\newcommand{\cmark}{\ding{51}}%
-\newcommand{\xmark}{\ding{55}}%
-\newcommand{\done}{\rlap{$\square$}{\raisebox{2pt}{\large\hspace{1pt}\cmark}}%
-\hspace{-2.5pt}}
-\newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
-\usepackage[normalem]{ulem}
-% \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
-\newcommand*{\todo}[1]{\textcolor{red}{#1}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % ========== Language options ==========
 % \usepackage[brazil]{babel}
 \usepackage[english]{babel}
@@ -100,10 +85,6 @@
 \data{2026}
 
 \begin{document}
-
-%% REMOVE BEFORE SUBMISSION %%
-{\setlength{\parindent}{0cm}\include{todo.tex}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % ========== Capa e folhas de rosto ==========
 \capa

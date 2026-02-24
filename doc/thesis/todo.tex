@@ -1,5 +1,51 @@
-\addtocontents{toc}{\protect\setcounter{tocdepth}{-2}}
-\section*{Editorial Section}
+\documentclass[normalnum]{politex}
+
+\usepackage{
+  amsmath,
+  amsthm,
+  amsfonts,
+  amssymb,
+  graphicx,
+  cite,
+  enumerate,
+  hyperref,
+  xcolor,
+  steinmetz,
+  multirow,
+  mathtools,
+  pdfpages,
+  tocloft,
+  enumitem,
+  pifont
+}
+
+\usepackage[normalem]{ulem}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\hypersetup{colorlinks = true, allcolors = {blue}}
+\newlist{todolist}{itemize}{2}
+\setlist[todolist]{label=$\square$}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\newcommand{\done}{\rlap{$\square$}{\raisebox{2pt}{\large\hspace{1pt}\cmark}}%
+\hspace{-2.5pt}}
+\newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
+\newcommand*{\todo}[1]{\textcolor{red}{#1}}
+% \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+\renewcommand{\arraystretch}{1.5}
+\interdisplaylinepenalty=2500
+\graphicspath{{figs/}}
+\DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\newlistof{equations}{equ}{}
+\newcommand{\listequation}[1]{\ABNTaddcontentsline{equ}{equations}%
+{\protect\numberline{\theequation}#1}}
+\setlength{\cftequationsnumwidth}{2.5em}
+\setlength{\cftequationsindent}{1.5em}
+
+\begin{document}\setlength{\parindent}{0cm}
+
+\section*{Thesis -- Editorial Section}
 
 Normative documents in effect:
 \begin{itemize}[nolistsep,noitemsep]
@@ -81,4 +127,4 @@ Conclusions.
 \item STEP VI -- \todo{?}
 
 \end{todolist}
-\addtocontents{toc}{\protect\setcounter{tocdepth}{4}}
+\end{document}
