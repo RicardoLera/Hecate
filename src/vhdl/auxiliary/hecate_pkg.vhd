@@ -9,17 +9,18 @@ package hecate_pkg is
     -- Main Parameters --
     --=================--
 
-    constant ix : natural := 3;
-    constant iy : natural := 3;
+    constant ix : natural := 128;
+    constant iy : natural := 171;
     constant iz : natural := 3;
+    constant ic : natural := 3;
   
     constant kx : natural := 3;
     constant ky : natural := 3;
     constant kz : natural := 3;
-    constant kn : natural := 1;
+    constant kf : natural := 16;
 
-    constant signed_size  : natural := 32; -- number of bits in signed signals 
-    constant signed_point : natural := 24; -- number of bits past the point 
+    constant signed_size  : natural := 24; -- number of bits in signed signals 
+    constant signed_point : natural := 16; -- number of bits past the point 
     constant pfb_size     : natural := 24; -- number of bits in pi-factor binary
 
     constant test_n       : natural  := 1;
@@ -50,7 +51,6 @@ package hecate_pkg is
   type t_had_state       is (initial, vector_mul, pre_rot, rot_kmul, final);
   type t_hec_state       is (initial, ker_fft, latch_ker, slice_fft, had, latch_had, ifft, accumulate, hold, sl_reset);
   type t_vivado_tb_state is (initial, serial_in, conv_slice, serial_out, final);
-
 
 
 

@@ -232,4 +232,5 @@ axs[2][1].plot(np.linspace(0, np.size(had) - 1, np.size(had)), had, linestyle='-
 axs[2][1].set_xlabel("2*N - 1")
 axs[2][1].grid(True, which="both")
 
-# plot.show()
+fig.tight_layout()
+plot.show()

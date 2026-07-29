@@ -49,6 +49,11 @@
 \setlength{\cftequationsnumwidth}{2.5em}
 \setlength{\cftequationsindent}{1.5em}
 
+%% REMOVE BEFORE SUBMISSION %%
+% \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
+\newcommand*{\todo}[1]{\textcolor{red}{#1}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % ========== Language options ==========
 % \usepackage[brazil]{babel}
 \usepackage[english]{babel}
@@ -234,8 +239,30 @@
 \listadeequacoes
 
 % ========== Listas definidas pelo usuário (opcional) ==========
-% \begin{pretextualsection}{List of equations}
-% \end{pretextualsection}
+\begin{pretextualsection}{List of Abbreviations}
+  \begin{spacing}{\taxaespacoduplo}
+    \begin{align*}
+      &\textrm{FFT}    &\textrm{Fast Fourier Transform}\\
+      &\textrm{IFFT}   &\textrm{Inverse Fast Fourier Transform}\\
+      &\textrm{DFT}    &\textrm{Discrete Fourier Transform}\\
+      &\textrm{IDFT}   &\textrm{Inverse Discrete Fourier Transform}\\
+      &\textrm{FPGA}   &\textrm{Field-Programmable Gate Array}\\
+      &\textrm{CORDIC} &\textrm{Coordinate Rotation Digital Computer}\\
+      &\textrm{CNN}    &\textrm{Convolutional Neural Network}\\
+      &\textrm{HLS}    &\textrm{High-Level Synthesis}\\
+      &\textrm{MMX}    &\textrm{Matrix-Multiplication}\\
+      &\textrm{RTL}    &\textrm{Register-Transfer Level}\\
+      &\textrm{ASIC}   &\textrm{Application-Specific Integrated Circuit}\\
+      &\textrm{DIF}    &\textrm{Decimation in Frequency}\\
+      &\textrm{DIT}    &\textrm{Decimation in Time}\\
+      &\textrm{LUT}    &\textrm{Look-Up Table}\\
+      &\textrm{DSP}    &\textrm{Digital Signal Processor}\\
+      &\textrm{FF}     &\textrm{Flip-Flop}\\
+      &\textrm{GOP}    &\textrm{Giga-Operations}\\
+      &\textrm{OA}     &\textrm{Overlap-Add}
+    \end{align*}
+  \end{spacing}
+\end{pretextualsection}
 
 % ========== Sumário ==========
 \sumario

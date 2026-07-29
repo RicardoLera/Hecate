@@ -18,7 +18,7 @@ CNNs have been successfully applied to both 2D and 3D image recognition. However
 In our review, we concluded that FFT convolution can be asymptotically more efficient than Winograd by using a decomposition algorithm. The main challenge in implementing FFT convolution was found to be its reliance on Complex-domain operations, particularly multiplication. We then hypothesized the use of polar coordinates to reduce the operation count of Complex multiplication. Our hypothesis was partially implemented in 2024 by Reis \textit{et al.} in high-level-synthesis (HLS) environment~\cite{reis2024phasor}. Their results, while promising, did not achieve state-of-the-art resource efficiency, due in part to the limitations of the HLS design environment.
 
 % Context - 3D CNNs and HLS
-FFT convolution scales particularly well in 3D CNNs, due to the larger kernels required to process the additional dimension. Despite this, implementations using the winograd algorithm~\cite{shen2018towards}, as well as adaptations of the matrix-multiplication method~\cite{fan2021high,liu2021accelerating} remain the state-of-the-art in 3D CNNs in terms of resource-efficiency. These implementations also utilize the HLS environment, which is designed for mass parallelism (as is the case for MMX and some winograd implementations). In order to optimize the Complex operations stemming from FFT convolution, an RTL approach is needed. This, in turn, incurs longer development cycles for accelerator architectures, which has likely impeded research.
+FFT convolution scales particularly well in 3D CNNs, due to the larger kernels required to process the additional dimension. Despite this, implementations using the Winograd algorithm~\cite{shen2018towards}, as well as adaptations of the matrix-multiplication method~\cite{fan2021high,liu2021accelerating} remain the state-of-the-art in 3D CNNs in terms of resource-efficiency. These implementations also utilize the HLS environment, which is designed for mass parallelism (as is the case for MMX and some Winograd implementations). In order to optimize the Complex operations stemming from FFT convolution, an RTL approach is needed. This, in turn, incurs longer development cycles for accelerator architectures, which has likely impeded research.
 
 % State objective
 This project evaluates the applicability of FFT convolution in the context of 3D CNNs. We achieve this by implementing a 3D convolution accelerator in FPGA via direct RTL synthesis, measuring its throughput and resource-efficiency, and comparing it to current accelerators.
@@ -61,7 +61,7 @@ Digital images are represented as discrete Euclidean spaces. Within this space, 
 
 \listequation{Convolution by sliding product}%
 
-Discrete convolution can also be defined as a matrix multiplication:
+Discrete convolution can also be defined as a matrix multiplication:~\todo{Include mathematical description}
 %
 \begin{equation}\label{eq:MM}
   % \forall (I,K) \in \mathbb{R}~\exists (M,N) \in \mathbb{R}^2 \mid
@@ -70,7 +70,7 @@ Discrete convolution can also be defined as a matrix multiplication:
 %
 where $M$ and $N$ are matrices containing $I$ and $K$. This is referred to as convolution by matrix-multiplication (MMX)~\cite{vasudevan2017parallel}.
 
-Transforming the image and kernel into matrices can be done efficiently via algorithms like \texttt{im2col}~\cite{jouppi2020domain}. The multiplication itself can be efficiently processed by GPUs and other hardware designed for graphical processing~\cite{zhou2021characterizing}. This method does not reduce the complexity of the algorithm~\cite{lera2023hardware}.
+Transforming the image and kernel into matrices can be done efficiently via algorithms like \texttt{im2col}~\cite{jouppi2020domain}. The multiplication itself can be efficiently processed by GPUs and other hardware designed for graphical processing~\cite{zhou2021characterizing}. This method does not reduce the complexity of the algorithm~\cite{lera2023hardware}. \todo{Mention how this is our contribution}
 
 For \textit{same} convolution, the total number of multiplication operations, here labeled $M$, is equal to the product of each input dimension:
 %
@@ -137,7 +137,7 @@ Algorithmic decomposition is available for this algorithm; it is possible to cal
 \listequation{Number of multiplications in Winograd convolution}%
 
 \section{FFT Convolution}
-The Theorem of Convolution defines the operation as:
+The Theorem of Convolution defines the operation as: \todo{Describe the theorem}
 %
 \begin{equation}
   I[c] * K[f] = \mathcal{F}^{-1}(\mathcal{F}(I[c]) \cdot \mathcal{F}(K[f])),
@@ -355,7 +355,7 @@ We will focus on fixed-point multiplication, as neural network implementations h
 
 For two arbitrary $n$-bit integers (or otherwise fixed-point numbers), the classical long multiplication has complexity $O(n^2)$, and the hardware required by a naive implementation of this algorithm also grows quadratically. Lower asymptotic bounds have been achieved with the Karatsuba~\cite{karatsuba1962multiplication}, Toom–3~\cite{wang2000explicit}, Schönhage–Strassen~\cite{schonhage1971fast}, and Harvey-Hoeven~\cite{harvey2021integer} algorithms. The latter is conjectured to have reached the lowest possible asymptotic bound for this problem: $O(n\log_2n)$. However, these algorithms require increasingly large input values to become efficient outside of asymptotic analysis. Harvey-Hoeven is theorized to become efficient for inputs of roughly $10^{86}$ digits.
 
-The Karatsuba algorithm is estimated to be faster than long multiplication at about 128 bits~\cite{machhout2008efficient}, which is much lower than the number of bits required by the other algorithms mentioned. Karatsuba is a particular case of the Toom-Cook algorithm and is technically referred to as Toom-2. It is a divide-and-conquer algorithm capable of recursively subdividing an $n$-bit fixed-point multiplication into a maximum of $n^{\log_23}$ single-bit multiplications, hence $O(n^{\log_23}) \approx O(n^{1.58496\ldots})$.
+The Karatsuba algorithm is estimated to be faster than long multiplication at about 128 bits~\cite{machhout2008efficient}, which is much lower than the number of bits required by the other algorithms mentioned. Karatsuba is a special case of the Toom-Cook algorithm and is technically referred to as Toom-2. It is a divide-and-conquer algorithm capable of recursively subdividing an $n$-bit fixed-point multiplication into a maximum of $n^{\log_23}$ single-bit multiplications, hence $O(n^{\log_23}) \approx O(n^{1.58496\ldots})$.
 
 Using the previously established nomenclature for Complex numbers, Karatsuba defines three intermediate variables:
 %
@@ -422,7 +422,7 @@ The polar multiplication step consists of one multiplier and one adder, in accor
 
 The output of CORDIC during Phase-II is joined at the final stage, forming one point of the $N$-sized array. The respective Complex conjugate (denoted $\bar{z}$) is inferred and sent into the FFT chain. The $N/2$ exception to hermitian symmetry is always a Real number whose polar-coordinate conversion is trivial and need not be processed by CORDIC.
 
-The FFT chain then executes the inverse transform. The last stage of DIF is equivalent to the first stage of DIT (see Figure~\ref{fig:fft}), allowing data to flow seemingly along the pipeline. As the mirror to DIF, DIT places most non-redundant twiddle-factor multiplications at the end. The data leaving the pipeline is on the Real domain, as all Complex components shall cancel-out.
+The FFT chain then executes the inverse transform. The last stage of DIF is equivalent to the first stage of DIT (see Figure~\ref{fig:fft}), allowing data to flow seamlessly along the pipeline. As the mirror to DIF, DIT places most non-redundant twiddle-factor multiplications at the end. The data leaving the pipeline is on the Real domain, as all Complex components shall cancel-out.
 
 Finally, the overlap-add module (OA) receives the two Real points and adds them to the respective indexes in the feature map. This process is repeated for all channels and all kernels. Consequently, Phase-II is $K_f$ times longer than Phase-I, and for large $K_f$ (as is usual for modern CNNs), Phase-II is responsible for nearly all processing time.
 
@@ -477,10 +477,10 @@ Table~\ref{tab:he-comp} displays the throughput ($GOP/s$), hardware efficiency (
   \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     Project &
-      \multicolumn{2}{c|}{Shen \textit{et al.} (2018)~\cite{shen2018towards}} &
-      Liu \textit{et al.} (2019)~\cite{liu2019uniform} &
-      Fan \textit{et al.} (2021)~\cite{fan2021high} &
-      Yang \textit{et al.} (2023)~\cite{yang2023fgpa} &
+      \multicolumn{2}{c|}{Shen \textit{et al.} (2018)} &
+      Liu \textit{et al.} (2019) &
+      Fan \textit{et al.} (2021) &
+      Yang \textit{et al.} (2023) &
       Our Design\\\hline
     Algorithm    & \multicolumn{2}{c|}{Winograd} & MMX      & MMX         & MMX    & FFT    \\\hline
     Precision    & \multicolumn{2}{c|}{16-fixed} & 16-fixed & $<$16-float & (unmentioned)   & 16-fixed \\\hline
@@ -489,15 +489,17 @@ Table~\ref{tab:he-comp} displays the throughput ($GOP/s$), hardware efficiency (
     Frequency (MHz)             & 150   & 200    & 120      & 220         & 100    & 150    \\\hline
     DSP                         & 1536  & 1536   & 3595     & 1345        & 1317   & 65     \\\hline
     Throughput ($GOP/s$)        & 474.3 & 940.6  & 667.7    & 1536        & 209.4  & 107.8  \\\hline
-    Resource efficiency (\ref{eq:mu-he})
+    Resource efficiency
       &                           0.31  & 0.61   & 0.19     & 1.14        & 0.16   & 1.66   \\
-    Normalized (\ref{eq:mu-nhe})
+    Normalized
       &                           2.06  & 3.06   & 1.55     & 5.19        & 1.59   & 11.05  \\\hline
   \end{tabular}
   }
   \caption{Comparison of different FPGA accelerator architectures applied on C3D.}
   \label{tab:he-comp}
 \end{table}
+
+\chapter{Contributions}
 
 \chapter{Conclusions}\label{ch:con}
 This work has established the lower computational complexity of FFT convolution using the overlap-add method and introduced a corresponding FPGA accelerator that leverages polar-coordinate multiplication to achieve state-of-the-art resource efficiency. 
