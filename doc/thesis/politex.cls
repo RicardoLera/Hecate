@@ -1165,7 +1165,7 @@
 %% Tese de doutorado
 \newcommand{\teseDOC}[1]{%
   \renewcommand{\PoliTipoDocData}{Tese (Doutorado)}
-  \comentario{Thesis presented to the Graduate Program in Electrical Engineering at the Polytechnic School of the University of São Paulo to obtain the degree of #1.}%
+  \comentario{Thesis presented to the Graduate Program in Electrical Engineering at the Escola Politécnica da Universidade de São Paulo to obtain the degree of #1.}%
 }
 
 %% Tese de livre docência
