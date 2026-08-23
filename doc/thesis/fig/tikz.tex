@@ -853,10 +853,226 @@
 \end{document}
 \end{filecontents*}
 
+%%% Overlap-Add %%%
+\begin{filecontents*}[overwrite]{oa.tex}
+\documentclass[tikz]{standalone}
+\begin{document}
+\begin{tikzpicture}%
+  % Input
+  \node (in) at (0,0) {};
+
+  \path
+    (in) --++ (0:1.5) --++ (90:3.5)
+    node[
+      fill=red!20,
+      minimum width=2cm,
+      minimum height=2cm
+    ] {}
+    
+    --++ (0:2)
+    node[
+      fill=blue!20,
+      minimum width=2cm,
+      minimum height=2cm
+    ] {}
+
+    --++ (270:2)
+    node[
+      fill=orange!20,
+      minimum width=2cm,
+      minimum height=2cm
+    ] {}
+
+    --++ (180:2)
+    node[
+      fill=green!20,
+      minimum width=2cm,
+      minimum height=2cm
+    ] {};
+
+  \node[
+    text=black,
+    above,
+    xshift=2.5cm,
+    yshift=4.5cm
+  ] at (in) {Input (4$\times$4)};
+
+  \draw[
+    step=1.0,
+    black,
+    thin
+  ] let
+      \p1=(in)
+    in
+      (in) grid[xshift=0.5cm,yshift=0.5cm] (\x1 + 4 cm,\y1 + 4 cm);
+
+  \path
+    (in) --++ (0:1.5) --++ (90:3.5)
+    node[
+      rectangle,
+      draw=red,
+      dashed,
+      line width = 1 mm,
+      minimum width=1.9cm,
+      minimum height=1.9cm
+    ] {} coordinate (is0)
+
+    --++ (0:2)
+    node[
+      rectangle,
+      draw=blue,
+      dashed,
+      line width = 1 mm,
+      minimum width=1.9cm,
+      minimum height=1.9cm
+    ] {} coordinate (is1)
+
+    --++ (270:2)
+    node[
+      rectangle,
+      draw=orange,
+      dashed,
+      line width = 1 mm,
+      minimum width=1.9cm,
+      minimum height=1.9cm
+    ] {} coordinate (is3)
+
+    --++ (180:2)
+    node[
+      rectangle,
+      draw=green,
+      dashed,
+      line width = 1 mm,
+      minimum width=1.9cm,
+      minimum height=1.9cm
+    ] {} coordinate (is2);
+
+  \node[
+    text=red,
+    xshift = -1.2cm,
+    yshift = 1.2cm
+  ] at (is0) {$S_0$};
+
+  \node[
+    text=blue,
+    xshift = 1.2cm,
+    yshift = 1.2cm
+  ] at (is1) {$S_1$};
+
+  \node[
+    text=green,
+    xshift = -1.2cm,
+    yshift = -1.2cm
+  ] at (is2) {$S_2$};
+
+  \node[
+    text=orange,
+    xshift = 1.2cm,
+    yshift = -1.2cm
+  ] at (is3) {$S_3$};
+
+  % Output
+  \node (out) at (6,0) {};
+
+  \node[
+    text=black,
+    above,
+    xshift=2.5cm,
+    yshift=5cm
+  ] at (out) {Output (5$\times$5)};
+
+  \fill[red!20]
+    (out) --++ (90:5) coordinate (red) --++ (0:2.5) --++ (270:2.5) --++ (180:2.5);
+  \fill[blue!20]
+    (red) --++ (0:2.5) --++ (0:2.5) --++ (270:2.5) --++ (180:2.5) --++ (90:2.5);
+  \fill[green!20]
+    (out) --++ (90:2.5) coordinate (green) --++ (0:2.5) --++ (270:2.5) --++ (180:2.5);
+  \fill[orange!20]
+    (green) --++ (0:2.5) --++ (0:2.5) --++ (270:2.5) --++ (180:2.5) --++ (90:2.5);
+
+  \draw[
+    step=1.0,
+    black,
+    thin
+  ] let
+      \p1=(out)
+    in
+      (out) grid (\x1 + 5 cm,\y1 + 5 cm);
+
+  \path
+    (out) --++ (0:1.5) --++ (90:3.5)
+    node[
+      rectangle,
+      draw=red,
+      dashed,
+      line width = 1 mm,
+      minimum width=3cm,
+      minimum height=3cm
+    ] {} coordinate (os0)
+
+    --++ (0:2)
+    node[
+      rectangle,
+      draw=blue,
+      dashed,
+      line width = 1 mm,
+      minimum width=3cm,
+      minimum height=3cm
+    ] {} coordinate (os1)
+
+    --++ (270:2)
+    node[
+      rectangle,
+      draw=orange,
+      dashed,
+      line width = 1 mm,
+      minimum width=3cm,
+      minimum height=3cm
+    ] {} coordinate (os3)
+
+    --++ (180:2)
+    node[
+      rectangle,
+      draw=green,
+      dashed,
+      line width = 1 mm,
+      minimum width=3cm,
+      minimum height=3cm
+    ] {} coordinate (os2);
+
+  \node[
+    text=red,
+    xshift = -1.7cm,
+    yshift = 1.7cm
+  ] at (os0) {$S_0$};
+
+  \node[
+    text=blue,
+    xshift = 1.7cm,
+    yshift = 1.7cm
+  ] at (os1) {$S_1$};
+
+  \node[
+    text=green,
+    xshift = -1.7cm,
+    yshift = -1.7cm
+  ] at (os2) {$S_2$};
+
+  \node[
+    text=orange,
+    xshift = 1.7cm,
+    yshift = -1.7cm
+  ] at (os3) {$S_3$};
+
+\end{tikzpicture}
+\end{document}
+\end{filecontents*}
+
 \begin{document}
   \input{plot}
   \input{matrix}
   \input{unit_circle}
   \input{fft}
   \input{pipeline}
+  \input{oa}
 \end{document}

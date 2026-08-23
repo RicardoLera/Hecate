@@ -31,7 +31,6 @@
 \newcommand{\done}{\rlap{$\square$}{\raisebox{2pt}{\large\hspace{1pt}\cmark}}%
 \hspace{-2.5pt}}
 \newcommand{\wontfix}{\rlap{$\square$}{\large\hspace{1pt}\xmark}}
-\newcommand*{\todo}[1]{\textcolor{red}{#1}}
 % \color[rgb]{1,1,1}\pagecolor[rgb]{0,0,0}
 \renewcommand{\arraystretch}{1.5}
 \interdisplaylinepenalty=2500
@@ -65,7 +64,7 @@ The following is an exhaustive list of changes made to the politex template and 
   \item Included title in Portuguese (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2084}{USP A.84})
   \item Removed ``falsa folha de rosto'' (not mentioned in any guideline)
   \item As per UOG (pg. 40) sections ``Introdução'', ``Desenvolvimento'' and ``Conclusão'' must be included, but may have different names.
-  \item Lists of \todo{Figures}, Illustrations, Equations, and Tables are \textbf{not} optional (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.2,Ap%C3%AAndices}{PPGEE XI.2}, superceding UOG 3.1.2.1.10). The UOG has absolutely no mention of a ``Lista de Figuras''; it uses the term ``Figura'' interchangibly with ``Ilustração''. I've elected to include only one of the two, plus equations and tables.
+  \item Lists of Figures, Illustrations, Equations, and Tables are \textbf{not} optional (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.2,Ap%C3%AAndices}{PPGEE XI.2}, superceding UOG 3.1.2.1.10). The UOG has absolutely no mention of a ``Lista de Figuras''; it uses the term ``Figura'' interchangibly with ``Ilustração''. I've elected to include only one of the two, plus equations and tables.
 \end{itemize}
 
 The text follows standard structure:
@@ -88,11 +87,11 @@ Conclusions.
 \item[\done] STEP I -- Request deposit to CCP \url{posgrad.eletrica.poli@usp.br} with
 \begin{todolist}
   \item[\done] Thesis PDF
-  \\\todo{NOTE:} Remove from \texttt{head.tex} the \textbf{two} sections enclosed in \texttt{\%\% REMOVE BEFORE SUBMISSION \%\%}
+  \\NOTE: Remove from \texttt{head.tex} the \textbf{two} sections enclosed in \texttt{\%\% REMOVE BEFORE SUBMISSION \%\%}
   \item[\done] \href{https://ppgee.poli.usp.br/wp-content/uploads/sites/92/2023/12/Formulario-de-deposito-revisado-10.10.2023-PPGEE-Atila.doc}{Signed deposit form}
-  \\\todo{NOTE:} Include title and keywords in portuguese as well (\href{https://www.poli.usp.br/ensino/posgraduacao/atendimento-pos-graduacao/deposito-de-dissertacao-ou-tese/}{CPG website})
+  \\NOTE: Include title and keywords in portuguese as well (\href{https://www.poli.usp.br/ensino/posgraduacao/atendimento-pos-graduacao/deposito-de-dissertacao-ou-tese/}{CPG website})
   \item[\done] Article PDF, with proof of accept or publishing
-  \\\todo{NOTE:} Proof of submission is \textbf{not} sufficient unless the student has published in conference (parameters not defined) (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.3.3}{CPG XI.3.3})
+  \\NOTE: Proof of submission is \textbf{not} sufficient unless the student has published in conference (parameters not defined) (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7658-de-20-de-maio-de-2019#:~:text=XI.3.3}{CPG XI.3.3})
   \item[\done] \href{https://lattes.cnpq.br/5021331797153494}{Link to Lattes resume}
   \item[\done] Ficha do aluno (Janus)
 \end{todolist}
@@ -105,14 +104,14 @@ Conclusions.
   \item[\done] \href{https://www.poli.usp.br/wp-content/uploads/2023/11/TERMO-DE-COMPROMISSO-DE-ENTREGA-DE-EXEMPLARES-IMPRESSOS-Salvo-Automaticamente-1.pdf}{Term of compromise}
   \item[\done] Undergraduate diploma
   \item[\done] RG / CIN
-  \\\todo{NOTE:} CANNOT be older than 10 years (\href{https://ppgee.poli.usp.br/pb/regras-para-deposito-digital/}{CCP website})
+  \\NOTE: CANNOT be older than 10 years (\href{https://ppgee.poli.usp.br/pb/regras-para-deposito-digital/}{CCP website})
   \item[\done] \href{https://www.poli.usp.br/wp-content/uploads/2018/10/ficha-cadastral-dados-pessoais.docx}{Personal data update form}
 \end{todolist}
 
-\item[\done] STEP III -- Request evaluation board to CCP (\todo{email?}) (see \href{https://docs.google.com/forms/d/e/1FAIpQLSeHB4a1P63WxYpSeWkumORVAxbXNUYVHFVGrGOeByf7EDbdcg/viewform}{board request form})
+\item[\done] STEP III -- Request evaluation board to CCP (see \href{https://docs.google.com/forms/d/e/1FAIpQLSeHB4a1P63WxYpSeWkumORVAxbXNUYVHFVGrGOeByf7EDbdcg/viewform}{board request form})
 \begin{itemize}
   \item[\done] Five members, including advisor, and five respective substitutes (\href{https://leginf.usp.br/?resolucao=resolucao-copgr-no-7612-de-21-de-fevereiro-de-2019#:~:text=IV.2}{CPG IV.2})
-  \item[\done] Members must be Doctors. The majority (3+) must be from outside \todo{``the project''} and at least 1 outside Poli (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2089}{USP A.89})
+  \item[\done] Members must be Doctors. The majority (3+) must be from outside usp and at least 1 outside Poli (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2089}{USP A.89})
   \item[\done] For each board member external to USP, fill \href{https://ppgee.poli.usp.br/wp-content/uploads/sites/92/2016/02/cadastro-de-professores-externos_0.doc}{this form}. Advisor must submit them to CPG (from \href{https://docs.google.com/forms/d/e/1FAIpQLSeHB4a1P63WxYpSeWkumORVAxbXNUYVHFVGrGOeByf7EDbdcg/viewform}{board request form})
   \item[\done] Must be decided (by CPG) up to 45 days after deposit. May be altered until evaluation date (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2086}{USP A.86}).
   \item[\done] Evaluation must occur within 105 days of first decision by CPG (\href{https://leginf.usp.br/?resolucao=resolucao-no-7493-de-27-de-marco-de-2018#:~:text=Artigo%2087}{USP A.87})
@@ -122,7 +121,7 @@ Conclusions.
 \item[\done] STEP IV (Advisor) -- Inform evaluation date to CPG \url{servico.posgraduacao.poli@usp.br}
 
 \item[\done] STEP V -- Present thesis; board evaluation
-\\\todo{NOTE:} Signatures must be digital OR include date (\href{https://ppgee.poli.usp.br/pb/formularios/}{CCP website})
+\\NOTE: Signatures must be digital OR include date (\href{https://ppgee.poli.usp.br/pb/formularios/}{CCP website})
 
 \end{todolist}
 
@@ -135,7 +134,7 @@ Conclusions.
   \item \textbf{(ALL)} Open the source and link it somewhere in the document
   \item[\done] \textbf{(ALL)} Add relevant pseudocode throughout the document, where relevant. Particularly on the FFT and CORDIC sections
   \item[\done] \textbf{(ALL)} Add acronym table. Don't forget to add FFT, IFFT, FF, HDL, DIF, DIT, OA
-  \item \textbf{(ALL)} Include somewhere a better description (figure/pseudocode) of Overlap-Add
+  \item[\done] \textbf{(ALL)} Include somewhere a better description (figure/pseudocode) of Overlap-Add
   \item[\done] \textbf{(ALL)} Consider making a proper algorithmic analysis for FFT vs Wino
   \item[\done] \textbf{(ALL)} Explicitly list this project's contributions somewhere
   \item[\done] \textbf{(ALL)} Add an explicit list of published articles
@@ -149,22 +148,22 @@ Conclusions.
   \item[\done] \textbf{(Section 2: Literature Review)} Update. If necessary, update comparative tables as well
   \item[\done] \textbf{(Section 2.3: FFT Convolution)} Detail it further
   \item[\done] \textbf{(Pg.21)} Complement description of other FFT algorithms. Explain why we did not use these algorithms.
-  \item \textbf{(Section 3: Objective)} Review and complement the hypothesis and objective statement. Mention hermitian symmetry, kernel size limitations and advantages of this method compared to others, etc.
-  \item \textbf{(Section 3: Objective)} Review Mittal's papers and maybe cite them here, if they came to similar conclusions
+  \item[\done] \textbf{(Section 3: Objective)} Review and complement the hypothesis and objective statement. Mention hermitian symmetry, kernel size limitations and advantages of this method compared to others, etc.
+  \item[\done] \textbf{(Section 3: Objective)} Review Mittal's papers and maybe cite them here, if they came to similar conclusions
   \item[\done] \textbf{(Section 4: Method)} Detail the usage of Python and the software tests
-  \item \textbf{(Section 4: Method)} Explain why we chose VC709 and how we accessed it remotely
+  \item[\done] \textbf{(Section 4: Method)} Explain why we chose VC709 and how we accessed it remotely
   \item[\done] \textbf{(Section 4.2: Efficient Multiplication)} Better describe Karatsuba. Mathematically as well
   \item[\done] \textbf{(Section 4.4: HDL Design)} Better describe Fully-pipelined design: use pseudocode and/or equations and/or other figures 
   \item[\done] \textbf{(Pg.30)} ``seemingly'' to ``seamlessly''
-  \item \textbf{(Pg.30)} further explain ``completes one slice per cycle in Phase-II''
-  \item \textbf{(Section 5: Results)} Explain (either here or previously) why we used 2x2x2 and 3x3x3 kernels/images
-  \item \textbf{(Section 5: Results)} Explain what the ``golden reference model'' is (use pseudocode)
+  \item[\done] \textbf{(Pg.30)} further explain ``completes one slice per cycle in Phase-II''
+  \item[\done] \textbf{(Section 5: Results)} Explain (either here or previously) why we used 2x2x2 and 3x3x3 kernels/images
+  \item[\done] \textbf{(Section 5: Results)} Explain what the ``golden reference model'' is (use pseudocode)
   \item[\done] \textbf{(Section 5: Results)} Replace ``extreme values'' with a description such as ``borderline numerical conditions'' and show examples
-  \item \textbf{(Section 5: Results)} Explain the $2^{-8}$ error result
+  \item[\done] \textbf{(Section 5: Results)} Explain the $2^{-8}$ error result
   \item[\done] \textbf{(Table 5.2: Comparative Table)} Review listed data on comparative projects
   \item[\done] \textbf{(Table 5.2: Comparative Table)} Describe mathematically (and correctly link) the descriptions of hardware efficiency and normalized hardware efficiency
-  \item[\wontfix] \textbf{(Table 5.2: Comparative Table)} Change ``(unmentioned)'' to something more descriptive \item \textbf{(ALL)} (use an asterisk and explain/deduce a value)
-  \item \textbf{(Table 6: Conclusions)} Specify the conditions for these conclusions (kernel size limitations; restricted environments etc)
+  \item[\wontfix] \textbf{(Table 5.2: Comparative Table)} Change ``(unmentioned)'' to something more descriptive (use an asterisk and explain/deduce a value)
+  \item[\done] \textbf{(Table 6: Conclusions)} Specify the conditions for these conclusions (kernel size limitations; restricted environments etc)
   \item \textbf{(Extratextual)} Include ENIAC paper on lattes
 
 \end{todolist}
